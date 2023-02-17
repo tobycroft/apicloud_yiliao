@@ -1,0 +1,59 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-white">
+  <div id="app">
+    <template>
+      <div class="news-detail-container" v-if="detailData && Object.keys(detailData).length > 0">
+        <div class="title">{{detailData.title}}</div>
+        <div class="desc">{{detailData.time}}</div>
+        <div class="content" v-html="detailData.content">
+        </div>
+      </div>
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      var app = new Vue({
+        el: '#app',
+        data: {
+          id: api.pageParam.id,
+          detailData: {}
+        },
+        mounted: function(){
+          this.getData();
+        },
+        methods: {
+          getData:function(){
+            var _this = this;
+            var params = {
+              id: this.id
+            }
+            Pub.post('community/index/announce_detail', params, function(res){
+              if(res.code == 0){
+                _this.detailData = res.data;
+              }
+            });
+          }
+        }
+      });
+    }
+</script>
+
+</html>

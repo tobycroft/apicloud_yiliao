@@ -1,0 +1,71 @@
+var bankStr = [{
+  bank:"nongye",
+  name:"农业银行",
+  icon:"../../skin/default/images/bank/icon_nongye.svg",
+  bg:"../../skin/default/images/bank/bg_nongye.svg"
+},{
+  bank:"jianshe",
+  name:"建设银行",
+  icon:"../../skin/default/images/bank/icon_jianshe.svg",
+  bg:"../../skin/default/images/bank/bg_jianshe.svg"
+},{
+  bank:"gongshang",
+  name:"工商银行",
+  icon:"../../skin/default/images/bank/icon_gongshang.svg",
+  bg:"../../skin/default/images/bank/bg_gongshang.svg"
+},{
+  bank:"zhongguo",
+  name:"中国银行",
+  icon:"../../skin/default/images/bank/icon_zhongguo.svg",
+  bg:"../../skin/default/images/bank/bg_zhongguo.svg"
+},{
+  bank:"jiaotong",
+  name:"交通银行",
+  icon:"../../skin/default/images/bank/icon_jiaotong.svg",
+  bg:"../../skin/default/images/bank/bg_jiaotong.svg"
+},{
+  bank:"minsheng",
+  name:"民生银行",
+  icon:"../../skin/default/images/bank/icon_minsheng.svg",
+  bg:"../../skin/default/images/bank/bg_minsheng.svg"
+},{
+  bank:"pingan",
+  name:"平安银行",
+  icon:"../../skin/default/images/bank/icon_pingan.svg",
+  bg:"../../skin/default/images/bank/bg_pingan.svg"
+},{
+  bank:"pufa",
+  name:"浦发银行",
+  icon:"../../skin/default/images/bank/icon_pufa.svg",
+  bg:"../../skin/default/images/bank/bg_pufa.svg"
+},{
+  bank:"xingye",
+  name:"兴业银行",
+  icon:"../../skin/default/images/bank/icon_xingye.svg",
+  bg:"../../skin/default/images/bank/bg_xingye.svg"
+},{
+  bank:"youzheng",
+  name:"邮政银行",
+  icon:"../../skin/default/images/bank/icon_youzheng.svg",
+  bg:"../../skin/default/images/bank/bg_youzheng.svg"
+},{
+  bank:"zhongxin",
+  name:"中信银行",
+  icon:"../../skin/default/images/bank/icon_zhongxin.svg",
+  bg:"../../skin/default/images/bank/bg_zhongxin.svg"
+},{
+  bank:"zhaoshang",
+  name:"招商银行",
+  icon:"../../skin/default/images/bank/icon_zhaoshang.svg",
+  bg:"../../skin/default/images/bank/bg_zhaoshang.svg"
+},{
+  bank:"guangda",
+  name:"光大银行",
+  icon:"../../skin/default/images/bank/icon_guangda.svg",
+  bg:"../../skin/default/images/bank/bg_guangda.svg"
+},{
+  bank:"guangfa",
+  name:"广发银行",
+  icon:"../../skin/default/images/bank/icon_guangfa.svg",
+  bg:"../../skin/default/images/bank/bg_guangfa.svg"
+}]

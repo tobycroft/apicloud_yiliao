@@ -1,0 +1,81 @@
+<!doctype html>
+<html class="bgc-base">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="" class="bgc-base">
+  <div id="app">
+    <template>
+      <div class="group-cell-font mt-20">
+        <ul>
+          <li @click="setNoticeStatus" tapmode>
+            <div class="name">{{lang.Push_notification_settings}}</div>
+            <div class="desc"><span :class="['switch', {'active': noticeStatus == 1}]"></span></div>
+          </li>
+          <!-- <li @click="setGroupStatus" tapmode>
+            <div class="name">群聊通知设置</div>
+            <div class="desc"><span :class="['switch', {'active': groupStatus == 1}]"></span></div>
+          </li> -->
+        </ul>
+      </div>
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      var app = new Vue({
+        el: '#app',
+        data: {
+          noticeStatus: 0,
+          lang:{
+            Push_notification_settings: Pub.getLang("push_notification_settings"),
+          }
+        },
+        mounted: function(){
+          this.getData();
+        },
+        methods: {
+          getData: function(){
+            var _this = this;
+            Pub.post('User/myinfo', {}, function(res){
+              if(res.code == 0){
+                _this.noticeStatus = res.data.can_notice;
+                console.log('通知状态：' + _this.noticeStatus);
+              }
+            });
+          },
+          setNoticeStatus: function(){
+            var _this = this;
+            var status = 0;
+            if(this.noticeStatus == 0){
+              status = 1;
+            }
+            var params = {
+              can_notice: status
+            }
+            Pub.post('user/can_notice_set', params, function(res){
+              if(res.code == 0){
+                Pub.msg(Pub.getLang("set_up_successfully"));
+                _this.noticeStatus = status;
+              }
+            });
+          },
+        }
+      })
+    }
+</script>
+
+</html>

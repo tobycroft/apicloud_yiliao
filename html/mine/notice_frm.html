@@ -1,0 +1,87 @@
+<!doctype html>
+<html class="bgc-base">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="" class="bgc-base">
+  <div id="app">
+    <template>
+      <div class="group-cell-font mt-20">
+        <ul>
+          <li class="link" @click="toList('1')">
+            <div class="name" set-lang="text:system_message">系统公告</div>
+            <div class="desc"><span class="badge-num" v-show="num1 > 0">{{num1}}</span></div>
+          </li>
+          <li class="link" @click="toList('2')">
+            <div class="name" set-lang="text:user_message">用户消息</div>
+            <div class="desc"><span class="badge-num" v-show="num2 > 0">{{num2}}</span></div>
+          </li>
+          <li class="link" @click="toList('3')">
+            <div class="name" set-lang="text:recharge_message">充值消息</div>
+            <div class="desc"><span class="badge-num" v-show="num3 > 0">{{num3}}</span></div>
+          </li>
+          <li class="link" @click="toList('4')">
+            <div class="name" set-lang="text:withdraw_message">提现消息</div>
+            <div class="desc"><span class="badge-num" v-show="num4 > 0">{{num4}}</span></div>
+          </li>
+        </ul>
+      </div>
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      var app = new Vue({
+        el: '#app',
+        data: {
+          num1: 0,
+          num2: 0,
+          num3: 0,
+          num4: 0,
+        },
+        mounted: function(){
+          var _this = this;
+          this.getNum();
+          Pub.eventListen('notice_status', function(){
+              _this.getNum();
+          });
+        },
+        methods: {
+          getNum: function(){
+            var _this = this;
+            Pub.post('system/unread', {}, function(res){
+              if(res.code == 0){
+                var data = res.data;
+                _this.num1 = data.system;
+                _this.num2 = data.user;
+                _this.num3 = data.charge;
+                _this.num4 = data.withdraw;
+              }
+            })
+          },
+          toList: function(type){
+            Pub.openView('./notice_list_win', {
+              pageParam: {
+                type: type
+              }
+            });
+          }
+        }
+      })
+    }
+</script>
+
+</html>

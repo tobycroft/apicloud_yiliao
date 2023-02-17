@@ -1,0 +1,70 @@
+<!doctype html>
+<html class="bgc-green">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-green">
+  <div class="receive-qr-container">
+    <p class="title">无需加好友，扫二维码向我付钱</p>
+    <div class="amount" id="amount"></div>
+    <div class="qr" id="qrcode">
+      <img src="" alt="">
+    </div>
+    <p class="item" onclick="setAmount()" isAmount="0" id="setAmount">设置金额</p>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+var phone,amount=0;
+    apiready = function() {
+        api.parseTapmode();
+        getData();
+        Pub.eventListen("set_receive_qr_amount",function(ret){
+          amount = ret.value.amount;
+          console.log(amount);
+          $("#amount").html("￥"+amount);
+          $("#setAmount").attr("isAmount","1");
+          $("#setAmount").html("清除金额");
+          createQrcode();
+        })
+    }
+    function getData(){
+      Pub.post(Pub.apiChat+"user/info/myinfo",{},function(res){
+        if(res.code == 0){
+          phone = res.data.telephone;
+          var uid = $api.getStorage('uid');
+          $api.setStorage(uid+'_user_info', res.data);
+          createQrcode();
+        }
+      })
+    }
+    function createQrcode(){
+      var url = {appname:"yiliao",amount:amount,phone:phone};
+      Pub.createQrcode(url,function(img){
+        $('#qrcode').html('<img src="'+img+'">');
+      })
+    }
+    function setAmount(){
+      if($("#setAmount").attr("isAmount")=="0"){
+        Pub.openView("./set_amount_win",{pageParam:{
+          type:"receive"
+        }});
+      }else{
+        $("#amount").html("");
+        amount = 0;
+        $("#setAmount").attr("isAmount","0");
+        $("#setAmount").html("设置金额");
+        createQrcode();
+      }
+    }
+</script>
+
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html class="bg-transparent">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+<body class="bg-transparent">
+  <div class="chat-video-user" id="chat_header">
+    <div class="user-box">
+      <div class="avatar" id="avatar"></div>
+      <div class="info">
+        <div class="name" id="user_name">&nbsp;</div>
+        <div class="desc" id="desc"></div>
+      </div>
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/AgoraRTCSDK-2.6.1"></script>
+<script type="text/javascript">
+    var id = '';
+    apiready = function() {
+      var header = $api.byId('chat_header');
+      $api.fixStatusBar(header);
+      id = api.pageParam.id;
+      getUserInfo();
+      if(!api.pageParam.isSender){
+        $('#desc').text('对方邀请您视频聊天');
+      }else{
+        $('#desc').text('等待对方接受邀请');
+      }
+    }
+    function getUserInfo(){
+      console.log(id);
+      if(id){
+        var params = {
+            fid: id
+        }
+        Pub.post(Pub.apiChat +'friend/info/userinfo', params, function(res){
+            console.log('好友信息:'+JSON.stringify(res));
+            if(res.code == 0){
+                var data = res.data;
+                var avatar = '';
+                if(data.face){
+                    if(data.face.indexOf('http') == -1){
+                        avatar = Pub.imgHost + data.face;
+                    }else{
+                      avatar = data.face;
+                    }
+                    $('#avatar').html('<img src="'+avatar+'">');
+                }else{
+                  $('#avatar').html('<img src="../../icon/logo.png">');
+                }
+                $('#user_name').text(data.uname);
+            }
+        });
+      }
+    }
+</script>
+
+</html>

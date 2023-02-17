@@ -1,0 +1,242 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+          content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,initial-scale=1.0,width=device-width"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title set-lang="text:mine_extract_coin">提币</title>
+    <!-- <link rel="stylesheet" type="text/css" href="../../css/aui.css"/> -->
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+    <div class="extract-coin-container">
+        <div class="input-box-cell">
+            <div class="name" set-lang="text:wallet_choose_coin">选择币种</div>
+            <div class="input">
+                <div class="aui-list-item-input">
+                    <select id="coin_list">
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="input-box-cell">
+            <div class="name" set-lang="text:account_balance">账户余额</div>
+            <div class="input">
+                <div class="aui-list-item-input">
+                    <input type="text" value="0.00" id="amount" readonly="">
+                </div>
+            </div>
+            <!-- <div class="handle"><a style="color: #999">NBY</a></div> -->
+        </div>
+        <div class="input-box-cell">
+            <div class="name" set-lang="text:wallet_get_coin_num">提币数量</div>
+            <div class="input">
+                <div class="aui-list-item-input">
+                    <input type="number" value=""  min="0.0" step="0.1" placeholder="请输入" set-lang="placeholder:please_enter" id="coin_number">
+                </div>
+            </div>
+
+        </div>
+        <div class="input-box-cell">
+            <div class="name" set-lang="text:wallet_service_charge">手续费</div>
+            <div class="input">
+                <div class="aui-list-item-input">
+                    <input type="text" value="0.00" id="service" readonly="">
+                </div>
+            </div>
+            <!-- <div class="handle"><a style="color: #999">NBY</a></div> -->
+        </div>
+        <div class="input-box-cell">
+            <div class="name" set-lang="text:wallet_coin_address">提币地址</div>
+            <div class="input">
+                <div class="aui-list-item-input">
+                    <input type="text" placeholder="请输入" set-lang="placeholder:please_enter" id="coin_address">
+                </div>
+            </div>
+        </div>
+        <!-- <div class="input-box-cell">
+            <div class="name" set-lang="text:wallet_tag">标签</div>
+            <div class="input">
+                <div class="aui-list-item-input">
+                    <input type="text" placeholder="请输入标签信息" set-lang="placeholder:please_enter_tag" id="tag">
+                </div>
+            </div>
+        </div> -->
+        <div class="input-box-cell">
+            <div class="name" set-lang="text:payment_password">支付密码</div>
+            <div class="input">
+                <div class="aui-list-item-input">
+                    <input type="password" placeholder="请输入" set-lang="placeholder:please_enter" id="pay_password">
+                </div>
+            </div>
+        </div>
+        <!-- <div class="input-box-cell">
+            <div class="name" set-lang="text:verify_code">验证码</div>
+            <div class="input">
+                <div class="aui-list-item-input">
+                    <input type="tel" placeholder="请输入" set-lang="placeholder:please_enter" value="" id="verify">
+                </div>
+            </div>
+            <div class="handle"><a style="color: #ffd68b" onclick="getSms(this)"  set-lang="text:get_verify_code">获取验证码</a></div>
+        </div> -->
+        <div class="btn-submit" tapmode onclick="clickSubmit()" set-lang="text:confirm">确认</div>
+    </div>
+    <script type="text/html" id="coin_list_html">
+        {{if data.length > 0}}
+            {{each data}}
+                <option value="{{$value.id}}" fee="{{$value.out_fee}}" amount="{{$value.amount}}">{{$value.cname}}</option>
+            {{/each}}
+        {{/if}}
+    </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/template.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    var coinId = '';
+    var isWaiting = false;
+    var smsCode = null;
+    var service = 0;
+    var coinData;
+    var balance;
+    apiready = function(){
+        api.parseTapmode();
+        getCoins();
+        inputEvent();
+    }
+    // function getSms(el){
+    //     // if ( !$api.regex.rgMobile.test(mobile) ) return $api.apitoast($api.getLang('msg_true_mobile'));
+    //     if (isWaiting) return;
+    //     var _el=el;
+    //     var telephone = {
+    //       uid: $api.getStorage('uid')
+    //     }
+    //     console.log(JSON.stringify(telephone))
+    //     $api.ajax('/v6/transfer/send_code', telephone, function(ret,err){
+    //         console.log(JSON.stringify(ret))
+    //         if (parseInt(ret.code) === 0) {
+    //             isWaiting = true;
+    //             remainTime(_el);
+    //             return $api.apitoast(ret.data);
+    //         }else{
+    //             return $api.apitoast(ret.data);
+    //         }
+    //         return $api.apitoast(ret.msg || $api.getLang('network_error'));
+    //     })
+    // }
+    // function remainTime(el){
+    //     var time = 60;
+    //     var interval = setInterval(function(){
+    //         $api.text(el,  (time--) +'s');
+    //         if ( time < 0 ) {
+    //             clearInterval(interval);
+    //             $api.text(el, $api.getLang('get_verify_code'));
+    //             isWaiting = false;
+    //         }
+    //     },1000)
+    // }
+    function getCoins(){
+        // var params = {
+        //     uid: $api.getStorage('uid')
+        // }
+        Pub.post('coin/index', {}, function(res){
+            if(res.code == 0){
+                var html = template('coin_list_html', res);
+                $api.byId('coin_list').innerHTML = html;
+                Pub.setLang();
+                coinId = $('#coin_list').find('option').eq(0).val();
+
+                //coinData = res.data;
+                getCoinInfo(coinId);
+                changeCoin();
+            }
+        })
+    }
+    function getCoinInfo(cid){
+        // var params = {
+        //     uid: $api.getStorage('uid'),
+        //     cid: id,
+        //     amount: amount
+        // }
+        // Pub.post('api/Transfer/getAddress', params, function(res){
+        //
+        //     if(res.code == 0){
+        //       service = res.data.transfer_fee;
+        //         $('#service').val(service + '%');
+        //     }
+        // })
+
+        var service = $('#coin_list').find('option:selected').attr("fee");
+        $('#service').val(service);
+        Pub.post('user/balance/balance', {}, function(res){
+            if(res.code == 0){
+              console.log(JSON.stringify(res.data));
+                $('#amount').val(res.data[0].balance);
+                balance = res.data[0].balance;
+            }
+        })
+        // var amount = $('#coin_list').find('option:selected').attr("amount");
+        // $('#amount').val(amount);
+    }
+    function changeCoin(){
+        console.log(coinId)
+        $('#coin_list').on('change', function(){
+            var thisVal = $(this).val();
+            $('#coin_number').val('');
+            $('#service').val('0.00');
+            coinId = thisVal;
+            getCoinInfo(coinId);
+        })
+    }
+    function inputEvent(){
+        $('#coin_number').on('keyup', function(){
+            var thisVal = $(this).val();
+            if(!thisVal){
+                $(this).val('');
+                //$('#service').val('0.000');
+            }
+            if(parseFloat(thisVal) > parseFloat(balance)){
+                $(this).val(balance);
+            }
+        });
+    }
+    function clickSubmit(){
+        var coinNumber = $('#coin_number').val(),
+            coinAddress = $('#coin_address').val(),
+            // tag = $('#tag').val(),
+            payPassword = $('#pay_password').val(),
+            code = $('#verify').val();
+        if(!coinNumber) return Pub.msg(Pub.getLang('msg_enter_coin_number'));
+        if(!coinAddress) return Pub.msg(Pub.getLang('msg_enter_coin_address'));
+        if(!payPassword) return Pub.msg(Pub.getLang('please_enter_deal_password'));
+        if(!Pub.regex.rgPayPassword.test(payPassword)) return Pub.msg(Pub.getLang('regex_pay_password'));
+        // if (!code) return $api.apitoast($api.getLang('please_enter_code'));
+        var params = {
+            //uid: $api.getStorage('uid'),
+            //cid: coinId,
+            // tag: tag,
+            card_id: coinAddress,
+            amount: coinNumber,
+            pay_pass: payPassword,
+            // code: code
+        }
+        Pub.post('user/withdraw', params, function(res){
+            if(res.code == 0){
+                Pub.msg(Pub.getLang('msg_submit_success_audite'));
+                api.sendEvent({
+                    name: 'refresh_balance'
+                });
+                setTimeout(function(){
+                    api.closeWin();
+                }, 2000);
+            } else {
+                Pub.msg(res.data);
+            }
+        })
+    }
+
+</script>
+</html>

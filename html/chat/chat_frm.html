@@ -1,0 +1,693 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+
+<body style="padding-bottom: -2px;">
+    <div class="main-search header-search">
+        <div class="input-box" onclick="Pub.openView('./chat_search_win',{pageParam: {isStatus: true}})">
+            <div class="input">
+                <i></i><span>搜索</span>
+            </div>
+        </div>
+    </div>
+    <div class="chat-container" id="app">
+        <template>
+      <ul id="list" ref="listCont">
+          <li class="open-view list-li" v-for="(item, index) in chatData" :key="index">
+            <a v-if="item.chat_type == 'group'"
+           @touchstart='touchStart(item)'
+           @touchmove='touchMove(item)'
+           @touchend='touchEnd(item)' :style="{'transform':(swipeItem.id==item.id)?deleteSlider:'translateX(0)'}">
+              <div class="avatar" v-if="item.img">
+                <img :src="getAvatarCache(item.img)" @click="toGroupChat(item.id, item.group_name)" :key="item.img" tapmode="" v-if="getAvatarCache(item.img)">
+                <img v-lazy="(item.img.indexOf('http') == -1)?(imgHost + item.img):item.img" @click="toGroupChat(item.id, item.group_name)" :key="item.img" tapmode="" @load="loadImg(item.img)" v-else>
+              </div>
+              <div class="avatar" v-else @click="toGroupChat(item.id, item.group_name)" tapmode="">
+                <img src="../../icon/logo.png">
+              </div>
+              <div class="info" @click="toGroupChat(item.id, item.group_name)" tapmode="">
+                  <div class="info-top">
+                      <div class="name">{{item.group_name}}</div>
+                      <p class="time">{{timeShow(item.last_msg.date)}}</p>
+                  </div>
+                  <div class="info-bottom">
+                      <div class="desc message">
+                          <span v-if="item.last_msg.type == 1" v-html="messageCont(item.last_msg.message)"></span>
+                          <span v-if="item.last_msg.type == 2">[群里收到一张图片]</span>
+                          <span v-if="item.last_msg.type == 8">[群里收到一个视频]</span>
+                          <span v-if="item.last_msg.type == 3">[群里收到一段语音]</span>
+                          <span v-if="item.last_msg.type == 40">[群里收到一个红包]</span>
+                          <span v-if="item.last_msg.type == 12">[群里收到一个红包]</span>
+                          <span v-if="item.last_msg.type == 101">[群里有人领取红包1]</span>
+                          <span v-if="item.last_msg.type == 30">[{{item.last_msg.message}}]</span>
+                          <span v-if="item.last_msg.type == 4">[群聊语音-通话失败]</span>
+                          <span v-if="item.last_msg.type == 5">[群聊语音-通话成功]</span>
+                          <span v-if="item.last_msg.type == 21">[群简介：{{item.last_msg.message}}]</span>
+                      </div>
+                      <div class="badge" v-if="item.unread > 0"><span>{{item.unread}}</span></div>
+                  </div>
+              </div>
+              <div class="btn delete" @touchstart="deleteEvent(item.chat_type, item.id)"><span>删除</span></div>
+            </a>
+            <a v-else
+           @touchstart='touchStart(item)'
+           @touchmove='touchMove(item)'
+           @touchend='touchEnd(item)' :style="{'transform':(swipeItem.id==item.id)?deleteSlider:'translateX(0)'}">
+              <div class="avatar" v-if="item.user_info.face">
+                <img :src="getAvatarCache(item.user_info.face)" :key="item.user_info.face"  @click="toPersonalChat(item.fid, item.user_info.uname)" tapmode="" v-if="getAvatarCache(item.user_info.face)">
+                <img v-lazy="(item.user_info.face.indexOf('http') == -1)?(imgHost + item.user_info.face):item.user_info.face" :key="item.user_info.face"  @click="toPersonalChat(item.fid, item.user_info.uname)" tapmode="" @load="loadImg(item.user_info.face)" v-else>
+              </div>
+              <div class="avatar" v-else  @click="toPersonalChat(item.fid, item.user_info.uname)" tapmode="">
+                <img src="../../icon/logo.png">
+              </div>
+              <div class="info"  @click="toPersonalChat(item.fid, item.user_info.uname)" tapmode="">
+                  <div class="info-top">
+                      <div class="name">{{item.user_info.uname}}</div>
+                      <p class="time">{{timeShow(item.last_msg.date)}}</p>
+                  </div>
+                  <div class="info-bottom">
+                      <div class="desc message">
+                        <span v-if="item.last_msg.type == 1" v-html="messageCont(item.last_msg.message)"></span>
+                        <span v-else-if="item.last_msg.type == 2">
+                          <em v-if="item.last_msg.sender == uid">[您给对方发了一张图片]</em>
+                          <em v-else>[您收到一张图片]</em>
+                        </span>
+                        <span v-else-if="item.last_msg.type == 8">
+                          <em v-if="item.last_msg.sender == uid">[您给对方发了一个视频]</em>
+                          <em v-else>[您收到一个视频]</em>
+                        </span>
+                        <span v-else-if="item.last_msg.type == 3">
+                          <em v-if="item.last_msg.sender == uid">[您给对方发了一段语音]</em>
+                          <em v-else>[您收到一段语音]</em>
+                        </span>
+                        <span v-else-if="item.last_msg.type == 4">
+                          <em>[语音聊天失败]</em>
+                        </span>
+                        <span v-else-if="item.last_msg.type == 5">
+                          <em>[语音聊天成功]</em>
+                        </span>
+                        <span v-else-if="item.last_msg.type == 50">
+                          <em>[视频通话失败]</em>
+                        </span>
+                        <span v-else-if="item.last_msg.type == 51">
+                          <em>[视频通话成功]</em>
+                        </span>
+                        <span v-else-if="item.last_msg.type == 40">
+                          <em v-if="item.last_msg.sender == uid">[你给对方发了一个红包]</em>
+                          <em v-else>[您收到一个红包]</em>
+                        </span>
+                        <span v-else-if="item.last_msg.type == 101">
+                          <em v-if="item.last_msg.sender == uid">[您领取了对方的红包]</em>
+                          <em v-else>[对方领取了您的红包]</em>
+                        </span>
+                        <span v-else-if="item.last_msg.type == 32">
+                          <em v-if="item.last_msg.sender == uid">[信息已发出，但被对方拒收了]</em>
+                        </span>
+                        <span v-if="item.last_msg.type == 30">[{{item.last_msg.message}}]</span>
+                      </div>
+                      <div class="badge" v-if="item.unread > 0"><span>{{item.unread}}</span></div>
+                  </div>
+              </div>
+              <div class="btn delete" @touchstart="deleteEvent(item.chat_type, item.chat_id)"><span>删除</span></div>
+            </a>
+          </li>
+      </ul>
+      <img src="../../skin/default/images/home/no_chat.png" class="nothing-img" v-show="isShowImg">
+    </template>
+
+    </div>
+
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script src="../../script/hammer.min.js"></script>
+<script src="../../script/vue.js"></script>
+<script src="../../script/vue-lazyload.js"></script>
+<script type="text/javascript">
+    var timer = {};
+    apiready = function() {
+        api.parseTapmode();
+        initEventSocket();
+        Pub.eventListen("update_groupinfo", function() {
+            window.location.reload();
+        })
+    }
+
+    function initEventSocket() {
+        Vue.use(VueLazyload, {
+            error: '../../icon/error.png',
+            loading: '../../icon/loading.gif'
+        });
+        var app = new Vue({
+            el: '#app',
+            data: {
+                imgHost: Pub.imgHost,
+                uid: $api.getStorage('uid'),
+                chatData: [],
+                chatDataInit: '',
+                deleteSlider: '',
+                swipeItem: {},
+                sourcePath: 'widget://expression/emotion',
+                emotionData: {},
+                isShowImg: false,
+                websocket: {},
+                socketParams: {},
+                chatId: '',
+                avatarCache: {},
+                fs: api.require('fs'),
+            },
+            mounted: function() {
+                var _this = this;
+                console.log(this.uid);
+                this.avatarCache = $api.getStorage('avatar_cache') || {};
+                if (this.avatarCache && Object.keys(this.avatarCache).length > 0) {
+                    for (var i in this.avatarCache) {
+                        if (this.avatarCache.hasOwnProperty(i)) {
+                            _this.isExist(i, this.avatarCache[i]);
+                        }
+                    }
+                }
+                this.getChatInit();
+                _this.initWebsocket();
+                this.getImgsPaths(this.sourcePath, function(emotion) {
+                    _this.emotionData = emotion;
+                });
+                // timer = setInterval(function(){
+                //     _this.getChat()
+                // }, 2000);
+                Pub.eventListen('chat_list_load', function() {
+                    // _this.getChatInit();
+                    // clearInterval(timer);
+                    // timer = setInterval(function(){
+                    //     _this.getChat()
+                    // }, 2000);
+                });
+                Pub.eventListen('chat_list_end', function() {
+                    // clearInterval(timer);
+                });
+                Pub.eventListen('login', function() {
+                    _this.uid = $api.getStorage('uid');
+                    _this.getChatInit();
+                    _this.initWebsocket();
+                    // clearInterval(timer);
+                    // timer = setInterval(function(){
+                    //     _this.getChat()
+                    // }, 2000);
+                });
+            },
+            methods: {
+                loadImg: function(img) {
+                    var _this = this;
+                    var imgUrl = img.indexOf('http') == -1 ? (Pub.imgHost + img) : img;
+                    if (!this.avatarCache) {
+                        this.avatarCache = {};
+                    }
+                    api.imageCache({
+                        url: imgUrl
+                    }, function(ret, err) {
+                        var url = ret.url;
+                        if (JSON.stringify(_this.avatarCache).indexOf(window.encodeURI(img)) == -1 || !_this.avatarCache[window.encodeURI(img)]) {
+                            _this.avatarCache[window.encodeURI(img)] = url;
+                            console.log('缓存' + _this.avatarCache[window.encodeURI(img)]);
+                            $api.setStorage('avatar_cache', _this.avatarCache);
+                        }
+                    });
+
+                },
+                getAvatarCache: function(img) {
+                    var _this = this;
+                    var imgName = window.encodeURI(img);
+                    if (this.avatarCache.hasOwnProperty(imgName)) {
+                        return _this.avatarCache[imgName];
+                    } else {
+                        return false;
+                    }
+                },
+                isExist: function(i, img) {
+                    var _this = this;
+                    this.fs.exist({
+                        path: img
+                    }, function(ret, err) {
+                        if (!ret.exist) {
+                            _this.avatarCache[i] = '';
+                        }
+                    })
+                },
+                initWebsocket: function() {
+                    this.history_data();
+                    var _this = this;
+                    Pub.eventListen('home_socket', function(ret) {
+                        if (ret) {
+                            var data = ret.value.data;
+                            $api.setStorage('home_socket', data);
+                            _this.chatData = data;
+                            _this.chatDataInit = data;
+                            if (_this.chatData.length > 0) {
+                                _this.isShowImg = false;
+                            } else {
+                                _this.isShowImg = true;
+                            }
+                        }
+                    });
+                },
+                // getChatInit: function() {
+                //   this.history_data();
+                //     var _this = this;
+                //     Pub.post(Pub.apiChat + 'message/message/list', {}, function(res) {
+                //         console.log('聊天列表:' + JSON.stringify(res));
+                //         if (res.code == 0) {
+                //             $api.setStorage('message/msg_list', res.data);
+                //             _this.chatData = res.data;
+                //             _this.chatDataInit = JSON.stringify(res.data);
+                //             if (_this.chatData.length > 0) {
+                //                 _this.isShowImg = false;
+                //             } else {
+                //                 _this.isShowImg = true;
+                //             }
+                //         }
+                //     }, true)
+                // },
+                history_data() {
+                    var _this = this;
+                    var ret = $api.getStorage('home_socket');
+                    if (ret) {
+                        _this.chatData = ret;
+                        _this.chatDataInit = ret;
+                        if (_this.chatData.length > 0) {
+                            _this.isShowImg = false;
+                        } else {
+                            _this.isShowImg = true;
+                        }
+                    }
+                },
+                getChat: function() {
+                    var _this = this;
+                    Pub.post(Pub.apiChat + 'message/message/list', {}, function(res) {
+                        if (res.code == 0) {
+                            if (JSON.stringify(res.data) != _this.chatDataInit) {
+                                $api.setStorage('message/msg_list', res.data);
+                                _this.chatData = res.data;
+                                _this.chatDataInit = JSON.stringify(res.data);
+                                if (_this.chatData.length > 0) {
+                                    _this.isShowImg = false;
+                                } else {
+                                    _this.isShowImg = true;
+                                }
+                            }
+                        }
+                    }, true)
+                },
+                timeShow: function(text) {
+                    return Pub.timestampFormat(text);
+                },
+                toPersonalChat: function(id, name) {
+                    Pub.eventSend('chat_list_end');
+                    Pub.eventSend('chat_window_load');
+                    console.log(id);
+                    Pub.openView('../chat/chat_personal_win', {
+                        pageParam: {
+                            fid: id,
+                            name: name
+                        }
+                    });
+                },
+                toGroupChat: function(id, name) {
+                    Pub.eventSend('chat_list_end');
+                    Pub.eventSend('group_window_load');
+                    Pub.openView('../chat/chat_group_win', {
+                        pageParam: {
+                            id: id,
+                            name: name
+                        }
+                    });
+                },
+                getImgsPaths(sourcePathOfChatBox, callback) {
+                    var jsonPath = "widget://expression/emotion/emotion.json"; //表情的JSON数组
+                    api.readFile({
+                        path: jsonPath
+                    }, function(ret, err) {
+                        if (ret.status) {
+                            var emotionArray = JSON.parse(ret.data);
+                            var emotion = {};
+                            for (var i = 0; i < emotionArray.length; i++) {
+                                emotion[emotionArray[i]['text']] = '<img src="../../expression/emotion/' + emotionArray[i]['name'] + '.png' + '" width="25" height="25">';
+                            }
+                            /*把emotion对象 回调出去*/
+                            if ("function" === typeof(callback)) {
+                                callback(emotion);
+                            }
+                        }
+                    });
+                },
+                messageCont(msg) {
+                    var _this = this;
+                    var htmlMsg = msg.replace(Pub.regex.rgEmotion, function(a, b) {
+                        if (_this.emotionData[a] && _this.emotionData[a] != 'undefined') {
+                            return _this.emotionData[a];
+                        } else {
+                            return a
+                        }
+                    });
+                    return htmlMsg
+                },
+                deleteEvent: function(type, id) {
+                    Pub.confirm('提示', '您确定要删除该会话吗？', function() {
+                        if (type == 'group') {
+                            var paramsGroup = {
+                                gid: id
+                            }
+                            Pub.post(Pub.apiChat + 'message/msg_group_delete', paramsGroup, function(res) {
+                                if (res.code == 0) {
+                                    Pub.eventSend('chat_list_load');
+                                }
+                            });
+                        } else {
+                            var params = {
+                                chat_id: id
+                            }
+                            Pub.post(Pub.apiChat + 'message/msg_delete', params, function(res) {
+                                if (res.code == 0) {
+                                    Pub.eventSend('chat_list_load');
+                                }
+                            });
+                        }
+                    });
+                },
+                touchStart(item) {
+                    if (event.touches.length == 1) {
+                        this.startX = event.touches[0].clientX;
+                    }
+                },
+                touchMove(item) {
+                    let wd = 80;
+                    if (event.touches.length == 1) {
+                        this.moveX = event.touches[0].clientX
+                        this.disX = this.startX - this.moveX;
+                        if (this.disX < 0 || this.disX == 0 || this.disx < 40) {
+                            this.deleteSlider = "translateX(0px)";
+                            Pub.eventSend('chat_list_load');
+                        } else if (this.disX > 0) {
+                            this.deleteSlider = "translateX(-" + this.disX * 5 + "px)";
+                            if (this.disX * 5 >= wd) {
+                                this.deleteSlider = "translateX(-" + wd + "px)";
+                                this.swipeItem = item;
+                                Pub.eventSend('chat_list_end');
+                            }
+                        }
+                    }
+                },
+                touchEnd(item) {
+                    let wd = 80;
+                    if (event.changedTouches.length == 1) {
+                        let endX = event.changedTouches[0].clientX;
+                        this.disX = this.startX - endX;
+                        if ((this.disX) < (wd / 2)) {
+                            this.deleteSlider = "translateX(0px)";
+                            Pub.eventSend('chat_list_load');
+                        } else {
+                            this.deleteSlider = "translateX(-" + wd + "px)";
+                            this.swipeItem = item;
+                            Pub.eventSend('chat_list_end');
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+    function initEvent() {
+        Vue.use(VueLazyload, {
+            error: '../../icon/error.png',
+            loading: '../../icon/loading.gif'
+        });
+        var app = new Vue({
+            el: '#app',
+            data: {
+                imgHost: Pub.imgHost,
+                uid: $api.getStorage('uid'),
+                chatData: [],
+                chatDataInit: '',
+                deleteSlider: '',
+                swipeItem: {},
+                sourcePath: 'widget://expression/emotion',
+                emotionData: {},
+                isShowImg: false
+            },
+            mounted: function() {
+                var _this = this;
+                console.log(this.uid);
+                // this.getChatInit();
+                this.getImgsPaths(this.sourcePath, function(emotion) {
+                    _this.emotionData = emotion;
+                });
+                // timer = setInterval(function(){
+                //     _this.getChat()
+                // }, 2000);
+                Pub.eventListen('chat_list_load', function() {
+                    // _this.getChatInit();
+                    // clearInterval(timer);
+                    // timer = setInterval(function(){
+                    //     _this.getChat()
+                    // }, 2000);
+                });
+                Pub.eventListen('chat_list_end', function() {
+                    // clearInterval(timer);
+                });
+                Pub.eventListen('login', function() {
+                    _this.uid = $api.getStorage('uid');
+                    // _this.getChatInit();
+                    // clearInterval(timer);
+                    // timer = setInterval(function(){
+                    //     _this.getChat()
+                    // }, 2000);
+                });
+            },
+            methods: {
+                getChatInit: function() {
+                    this.history_data();
+                    var _this = this;
+                    Pub.post(Pub.apiChat + 'message/message/list', {}, function(res) {
+                        console.log('聊天列表:' + JSON.stringify(res));
+                        if (res.code == 0) {
+                            $api.setStorage('message/msg_list', res.data);
+                            _this.chatData = res.data;
+                            _this.chatDataInit = JSON.stringify(res.data);
+                            if (_this.chatData.length > 0) {
+                                _this.isShowImg = false;
+                            } else {
+                                _this.isShowImg = true;
+                            }
+                        }
+                    }, true)
+                },
+                history_data() {
+                    var _this = this;
+                    var ret = $api.getStorage('message/msg_list');
+                    if (ret) {
+                        var ret = $api.getStorage('message/msg_list');
+                        _this.chatData = ret;
+                        _this.chatDataInit = JSON.stringify(ret);;
+                        if (_this.chatData.length > 0) {
+                            _this.isShowImg = false;
+                        } else {
+                            _this.isShowImg = true;
+                        }
+                    }
+                },
+                getChat: function() {
+                    var _this = this;
+                    Pub.post(Pub.apiChat + 'message/message/list', {}, function(res) {
+                        if (res.code == 0) {
+                            if (JSON.stringify(res.data) != _this.chatDataInit) {
+                                $api.setStorage('message/msg_list', res.data);
+                                _this.chatData = res.data;
+                                _this.chatDataInit = JSON.stringify(res.data);
+                                if (_this.chatData.length > 0) {
+                                    _this.isShowImg = false;
+                                } else {
+                                    _this.isShowImg = true;
+                                }
+                            }
+                        }
+                    }, true)
+                },
+                timeShow: function(text) {
+                    return Pub.timestampFormat(text);
+                },
+                toPersonalChat: function(id, name) {
+                    Pub.eventSend('chat_list_end');
+                    Pub.eventSend('chat_window_load');
+                    console.log(id);
+                    Pub.openView('../chat/chat_personal_win', {
+                        pageParam: {
+                            fid: id,
+                            name: name
+                        }
+                    });
+                },
+                toGroupChat: function(id, name) {
+                    Pub.eventSend('chat_list_end');
+                    Pub.eventSend('group_window_load');
+                    Pub.openView('../chat/chat_group_win', {
+                        pageParam: {
+                            id: id,
+                            name: name
+                        }
+                    });
+                },
+                getImgsPaths(sourcePathOfChatBox, callback) {
+                    var jsonPath = "widget://expression/emotion/emotion.json"; //表情的JSON数组
+                    api.readFile({
+                        path: jsonPath
+                    }, function(ret, err) {
+                        if (ret.status) {
+                            var emotionArray = JSON.parse(ret.data);
+                            var emotion = {};
+                            for (var i = 0; i < emotionArray.length; i++) {
+                                emotion[emotionArray[i]['text']] = '<img src="../../expression/emotion/' + emotionArray[i]['name'] + '.png' + '" width="25" height="25">';
+                            }
+                            /*把emotion对象 回调出去*/
+                            if ("function" === typeof(callback)) {
+                                callback(emotion);
+                            }
+                        }
+                    });
+                },
+                messageCont(msg) {
+                    var _this = this;
+                    var htmlMsg = msg.replace(Pub.regex.rgEmotion, function(a, b) {
+                        if (_this.emotionData[a] && _this.emotionData[a] != 'undefined') {
+                            return _this.emotionData[a];
+                        } else {
+                            return a
+                        }
+                    });
+                    return htmlMsg
+                },
+                deleteEvent: function(type, id) {
+                    Pub.confirm('提示', '您确定要删除该会话吗？', function() {
+                        if (type == 'group') {
+                            var paramsGroup = {
+                                gid: id
+                            }
+                            Pub.post(Pub.apiChat + 'message/msg_group_delete', paramsGroup, function(res) {
+                                if (res.code == 0) {
+                                    Pub.eventSend('chat_list_load');
+                                }
+                            });
+                        } else {
+                            var params = {
+                                chat_id: id
+                            }
+                            Pub.post(Pub.apiChat + 'message/msg_delete', params, function(res) {
+                                if (res.code == 0) {
+                                    Pub.eventSend('chat_list_load');
+                                }
+                            });
+                        }
+                    });
+                },
+                touchStart(item) {
+                    if (event.touches.length == 1) {
+                        this.startX = event.touches[0].clientX;
+                    }
+                },
+                touchMove(item) {
+                    let wd = 80;
+                    if (event.touches.length == 1) {
+                        this.moveX = event.touches[0].clientX
+                        this.disX = this.startX - this.moveX;
+                        if (this.disX < 0 || this.disX == 0 || this.disx < 40) {
+                            this.deleteSlider = "translateX(0px)";
+                            Pub.eventSend('chat_list_load');
+                        } else if (this.disX > 0) {
+                            this.deleteSlider = "translateX(-" + this.disX * 5 + "px)";
+                            if (this.disX * 5 >= wd) {
+                                this.deleteSlider = "translateX(-" + wd + "px)";
+                                this.swipeItem = item;
+                                Pub.eventSend('chat_list_end');
+                            }
+                        }
+                    }
+                },
+                touchEnd(item) {
+                    let wd = 80;
+                    if (event.changedTouches.length == 1) {
+                        let endX = event.changedTouches[0].clientX;
+                        this.disX = this.startX - endX;
+                        if ((this.disX) < (wd / 2)) {
+                            this.deleteSlider = "translateX(0px)";
+                            Pub.eventSend('chat_list_load');
+                        } else {
+                            this.deleteSlider = "translateX(-" + wd + "px)";
+                            this.swipeItem = item;
+                            Pub.eventSend('chat_list_end');
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+    function swipeLeft() {
+        document.querySelectorAll('.list-li').forEach(function(el) {
+            var hammertime = new Hammer(el);
+            hammertime.on('pan', function(ev) {
+                var elX = (el.style.WebkitTransform.replace(/translateX\(/g, "").replace(/px\)/g, "")) * 1;
+                var xAxis = ev.deltaX;
+                if (elX == 0) {
+                    if (xAxis < 0) {
+                        if (xAxis > -40) {
+                            el.style.WebkitTransform = 'translateX(-80px)';
+                            elX = -80;
+                            Pub.eventSend('chat_list_end');
+                        } else {
+                            el.style.WebkitTransform = 'translateX(0)';
+                            elx = 0;
+                            Pub.eventSend('chat_list_load');
+                        }
+                    }
+                } else {
+                    if (xAxis > 0) {
+                        if (Math.abs(xAxis) > 40) {
+                            el.style.WebkitTransform = 'translateX(0)';
+                            elx = 0;
+                            Pub.eventSend('chat_list_load');
+                        } else {
+                            el.style.WebkitTransform = 'translateX(-80px)';
+                            elX = -80;
+                            Pub.eventSend('chat_list_end');
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    function pullDown() {
+        Pub.pullDown(function() {
+            setTimeout(function() {
+                Pub.pullDownDone();
+            }, 1000);
+        }, 'up');
+    }
+
+    function pullDown() {
+        Pub.pullDown(function() {
+            getData(function() {
+                Pub.pullDownDone();
+            });
+        });
+    }
+</script>
+
+</html>

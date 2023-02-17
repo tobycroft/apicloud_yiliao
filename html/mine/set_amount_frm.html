@@ -1,0 +1,94 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="" class="bgc-white">
+  <div class="chat-transfer-container">
+    <div class="top">
+      <div class="icon"><img src="../../skin/default/images/chat/icon_transfer.png" alt="" id="avatar"></div>
+      <div class="name" id="name"></div>
+      <div class="coin-type">
+        <select class="unit" name="" id="unit"></select>
+        <!-- <div class="icon"><img src="../../skin/default/images/icon/icon_arrow_down_gray.png" alt=""></div> -->
+      </div>
+    </div>
+    <div class="content">
+      <div class="name">收款金额</div>
+      <div class="input">
+        <!-- <div class="unit">￥</div> -->
+        <input type="number" name="" value="" id="amount">
+      </div>
+      <!-- <div class="tip" onclick="tip()"><span id="tip">添加转账说明</span> <span id="edit" class="hide">修改</span></div> -->
+      <div class="btn-group">
+        <a class="primary" onclick="clickSubmit()" set-lang="text:">确定</a>
+      </div>
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+var type;
+    apiready = function() {
+        api.parseTapmode();
+        type = api.pageParam.type;
+        console.log("zzzzzz");
+        console.log(type);
+        getCoinType();
+    }
+    function clickSubmit(){
+      var amount = $("#amount").val();
+      if(!amount || Number(amount)==0) return Pub.msg("请输入收款金额！");
+      console.log(type);
+      if(type=="receive"){
+        Pub.eventSend("set_receive_qr_amount",{
+          amount: amount
+        })
+        Pub.msg("设置金额成功！")
+        setTimeout(function(){
+          api.closeWin();
+        },1000)
+      }else{
+        api.openFrame({
+            name: 'pop_password_frm',
+            url: './pop_password_frm.html',
+            rect: {
+                x: 0,
+                y: 0,
+                w: 'auto',
+                h: 'auto'
+            },
+            pageParam: {
+              amount: amount,
+              phone: api.pageParam.phone,
+              amount: amount
+            },
+            bounces: false,
+            progress: {type: ''},
+            bgColor: 'rgba(0,0,0,0)',
+            vScrollBarEnabled: true,
+            hScrollBarEnabled: true
+        });
+      }
+    }
+    function getCoinList(){
+      if($api.getStorage("total_coin_info")){
+        var data = $api.getStorage("total_coin_info");
+        var html = "";
+        for(var i = 0;i<data.length;i++){
+          html += "<option value='"+data[i].id+"'>"+data[i].name+"</option>"
+        }
+        $("#unit").html(html);
+      }
+    }
+</script>
+
+</html>

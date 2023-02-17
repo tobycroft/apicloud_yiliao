@@ -1,0 +1,378 @@
+<!doctype html>
+<html class="bgc-gradual-gray">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+<body class="bgc-gradual-gray">
+  <div class="chat-video-user" style="visibility: hidden;">
+    <div class="user-box">
+      <div class="avatar"><img :src="avatar" alt=""></div>
+      <div class="info">
+        <div class="name">{{data.uname}}</div>
+        <div class="desc">等待对方接受邀请</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="visibility: hidden;">
+    <div class="chat-video-status" style="visibility: hidden;">
+      <p>&nbsp;</p>
+    </div>
+    <div class="chat-video-handle">
+      <a v-if="connected==1"><p><i :class="['speek-no', {'active': muteLocalAudio}]" @click="swichSpeek()"></i></p><p>静音</p></a>
+      <a ><p @click="send_end()"><i class="hangup"></i></p><p>挂断</p></a>
+      <a v-if="connected==0 && voiceType=='getVideo'"><p @click="connentVoice()"><i class="connent"></i></p><p>接听</p></a>
+    </div>
+  </div>
+  <audio id="myaudio" controls="controls" hidden="true" loop="loop">
+    <source src="../../res/voice_call.wav"  type="audio/mpeg">
+      您的浏览器不支持 audio 元素。
+  </audio>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    var maplertc = {},
+        channel = '',
+        type = '',
+        id = '',
+        isSender = false,
+        msgId = '',
+        channelId = '',
+        timeLong = 0,
+        connentTimer = {};
+    var audio = {};
+    var timer = {};
+    var joinTimes = 0;
+
+    apiready = function() {
+        api.requestPermission({
+            list: ["camera", "photos", "microphone", "storage"],
+        }, function(res) {
+
+        });
+        api.parseTapmode();
+        var header = $api.byId('header');
+        $api.fixStatusBar(header);
+        audio = document.getElementById('myaudio');
+        console.log(audio);
+        setTimeout(function() {
+            audio.play();
+        }, 1000)
+        $api.setStorage('isVoiceConnected', '1');
+        initEvent();
+    }
+
+    function initEvent() {
+        var outtime;
+        var tencentTRTC = api.require('tencentTRTC');
+        tencentTRTC.exitRoom({});
+        var app = new Vue({
+            el: "#app",
+            data: {
+                uid: $api.getStorage('uid'),
+                id: api.pageParam.fid,
+                fid: api.pageParam.fid,
+                roomId: api.pageParam.roomId,
+                voiceType: api.pageParam.type,
+                userSig: "",
+                data: {},
+                avatar: '',
+                connected: 0, //-1 handoverm 0 stabdby for connect,1connected
+                time_int: 0,
+                time: "00:00",
+                status_str: "接通中……",
+                speaker: true,
+                mute: false,
+                start_int: 0,
+                end_int: 0,
+                muteLocalAudio: false,
+            },
+            mounted: function() {
+                var _this = this;
+                _this.getUserSig();
+                _this.setListener();
+                _this.getUserInfo();
+                _this.chatInit();
+                Pub.eventListen("voice_end", function() {
+                    _this.end_chat();
+                })
+            },
+            methods: {
+                getUserSig: function() {
+                    var _this = this;
+
+                },
+                setListener: function() {
+                    var _this = this;
+                    tencentTRTC.setTRTCListener({}, function(ret, err) {
+                        console.log($api.getStorage("uid") + ":" + JSON.stringify(ret));
+                        console.log(JSON.stringify(err));
+                        switch (ret.action) {
+                            case "enterRoom":
+                                if (_this.voiceType == "sendVoice") {
+                                    _this.voiceStart();
+                                }
+                                break;
+
+                            case "exitRoom":
+                                break;
+
+                            case "remoteUserEnterRoom":
+                                console.log(ret.remoteUserEnterRoom.userId);
+                                console.log(_this.connected);
+                                if (_this.connected == 0 && ret.remoteUserEnterRoom.userId == _this.fid) {
+                                    _this.start_audio();
+                                    _this.connected = 1;
+                                    console.log(_this.connected);
+                                }
+                                app.clear_end();
+                                break;
+
+                            case "remoteUserLeaveRoom":
+                                app.end_chat();
+                                break;
+
+                            case "firstVideoFrame":
+                                app.clear_end();
+                                audio.pause();
+                                app.status_str = "已接通";
+                                app.connected = 1;
+                                app.start_timing();
+                                break;
+                                break;
+
+                            case "firstAudioFrame": //开始播放远程用户的首帧音频（本地声音暂不通知）
+                                app.clear_end();
+                                app.status_str = "已接通";
+                                audio.pause();
+                                app.connected = 1;
+                                app.start_timing();
+                                clearTimeout(outtime);
+                                break;
+
+                            case "sendFirstLocalVideoFrame":
+                                break;
+
+                            case "sendFirstLocalAudioFrame":
+                                break;
+
+                            case "connectionLost":
+                                app.status_str = "网络丢失";
+                                break;
+
+                            case "tryToReconnect":
+                                app.status_str = "网络状态不是太好……重连中……";
+                                break;
+
+                            case "connectionRecovery":
+                                app.status_str = "网络已恢复……";
+                                break;
+                            default:
+                                break;
+                        }
+                        // if (ret.status) {
+                        //     alert('成功');
+                        // }
+                    });
+                },
+                start_audio: function() {
+                    var _this = this;
+                    tencentTRTC.startLocalAudio({});
+                },
+                voiceStart() {
+                    var _this = this;
+                    Pub.post("chat/single/voice_start", {
+                        fid: _this.fid,
+                        extra: _this.roomId
+                    }, function(res) {
+                        if (res.code == 0) {
+                            //alert("cvvvvvvvvvvvvv")
+                        }
+                    })
+                },
+                clear_end() {
+                    console.log(timer_tag);
+                    clearTimeout(timer_tag);
+                },
+                set_endint() {
+                    //this.end_int = Date.parse(new Date()) / 1000;
+                },
+                start_timing() {
+                    var _this = this;
+                    setInterval(function() {
+                        ++app.time_int;
+                        app.time = _this.formatSeconds(app.time_int);
+                    }, 1000);
+                },
+                formatSeconds(s) {
+                    var t;
+                    if (s > -1) {
+                        var hour = Math.floor(s / 3600);
+                        var min = Math.floor(s / 60) % 60;
+                        var sec = s % 60;
+                        if (hour < 10) {
+                            t = '0' + hour + ":";
+                        } else {
+                            t = hour + ":";
+                        }
+                        if (min < 10) {
+                            t += "0";
+                        }
+                        t += min + ":";
+                        if (sec < 10) {
+                            t += "0";
+                        }
+                        t += sec;
+                    }
+                    return t;
+                },
+                timeout() {
+                    this.status_str = "未连通";
+                    api.toast({
+                        msg: '未连通',
+                        duration: 5000,
+                        global: true,
+                        location: 'bottom'
+                    });
+                    this.end_chat();
+                },
+                end_chat() {
+                    Pub.eventSend("chat_personal_init");
+                    tencentTRTC.stopLocalAudio({});
+                    tencentTRTC.exitRoom({});
+                    $api.setStorage('isVoiceConnected', '0');
+                    api.closeWin({});
+                },
+                send_end() {
+                    var _this = this;
+                    var params = {
+                        fid: _this.fid,
+                        msg: "通话已结束",
+                        extra: _this.time,
+                    }
+                    Pub.post(Pub.apiChat + 'chat/single/voice_comment', params, function(res) {
+                        console.log(JSON.stringify(res));
+                        if (res.code == 0) {
+                            app.end_chat();
+                            // _this.getMsg();
+                        } else if (res.code == 407) {
+                            Pub.confirm("提示", "对方还不是你的好友，请先向对方发送好友申请", function() {
+                                Pub.openView("personal_add_verify_win", {
+                                    pageParam: {
+                                        fid: _this.fid,
+                                    }
+                                })
+                            })
+                        }
+                    }, true);
+                },
+                getUserInfo: function() {
+                    var _this = this;
+                    if (_this.id) {
+                        var params = {
+                            fid: _this.id
+                        }
+                        Pub.post(Pub.apiChat + 'friend/info/userinfo', params, function(res) {
+                            console.log('好友信息:' + JSON.stringify(res));
+                            if (res.code == 0) {
+                                _this.data = res.data;
+                                if (res.data.face) {
+                                    if (res.data.face.indexOf('http') == -1) {
+                                        _this.avatar = Pub.imgHost + res.data.face;
+                                    } else {
+                                        _this.avatar = res.data.face;
+                                    }
+                                } else {
+                                    _this.avatar = "../../icon/logo.png"
+                                }
+                            }
+                        });
+                    }
+                },
+                mute_local() {
+                    var tencentTRTC = api.require('tencentTRTC');
+                    tencentTRTC.muteLocalAudio({});
+                },
+                mute_remote(fid) {
+                    var tencentTRTC = api.require('tencentTRTC');
+                    tencentTRTC.muteRemoteAudio({
+                        remoteUid: fid,
+                    });
+                },
+                chatInit: function() {
+                    var _this = this;
+                    if (_this.voiceType == "sendVoice") {
+                        var tencentTRTC = api.require('tencentTRTC');
+                        var params = {
+                            fid: _this.uid
+                        }
+                        Pub.post(Pub.apiChat + 'chat/rtc/getsig', params, function(res) {
+                            if (res.code == 0) {
+                                _this.userSig = res.data;
+                                tencentTRTC.enterRoom({
+                                    appId: "1400433065",
+                                    userId: _this.uid,
+                                    roomId: _this.roomId,
+                                    userSig: _this.userSig,
+                                    scene: 2,
+                                }, function(ret, err) {
+                                    // alert(JSON,stringify(ret));
+                                    // alert(JSON,stringify(err));
+                                });
+
+                            }
+                        });
+                    }
+                },
+                connentVoice: function() {
+                    var _this = this;
+                    var tencentTRTC = api.require('tencentTRTC');
+                    var params = {
+                        fid: _this.uid
+                    }
+                    Pub.post(Pub.apiChat + 'chat/rtc/getsig', params, function(res) {
+                        if (res.code == 0) {
+                            _this.userSig = res.data;
+                            tencentTRTC.enterRoom({
+                                appId: "1400433065",
+                                userId: _this.uid,
+                                roomId: _this.roomId,
+                                userSig: _this.userSig,
+                                scene: 2,
+                            }, function(ret, err) {
+                                // alert(JSON,stringify(ret));
+                                // alert(JSON,stringify(err));
+                            });
+
+                        }
+                    });
+                    outtime = setTimeout(function() {
+                        if (_this.connected == 0) {
+                            _this.end_chat();
+                        }
+                    },3000);
+                },
+                swichSound: function() {},
+                swichSpeek: function() {
+                    var _this = this;
+                    tencentTRTC.muteLocalAudio({
+                        mute: !_this.muteLocalAudio
+                    });
+                    _this.muteLocalAudio = !_this.muteLocalAudio;
+                }
+            }
+        })
+        var timer_tag = setTimeout(function() {
+            app.timeout();
+        }, 30 * 1000)
+    }
+</script>
+
+</html>

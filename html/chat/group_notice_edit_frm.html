@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <div class="group-name-edit">
+    <div class="title" set-lang="text:group_notice">群聊公告</div>
+    <div class="textarea">
+      <textarea placeholder="请设置群公告" set-lang="placeholder:please_fill_in_group_notice" id="notice"></textarea>
+      <div class="close" onclick="clearName()" set-lang="text:reset">重置</div>
+      <!-- <div class="font-num"><span id="font_num">0</span>/50</div> -->
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var gid = '';
+    apiready = function() {
+        api.parseTapmode();
+        if(api.pageParam.gid){
+          gid = api.pageParam.gid
+        }
+        if(api.pageParam.cont && api.pageParam.cont != Pub.getLang('set_not') && api.pageParam.cont != Pub.getLang('set_yet')){
+          $('#notice').val(api.pageParam.cont);
+          $('#font_num').text(api.pageParam.cont.length);
+        }
+        //inputEvent();
+        Pub.eventListen('group_notice_edit', function(){
+          var cont = $('#notice').val();
+          if(!cont) return Pub.msg(Pub.getLang('please_fill_in_group_notice'));
+          var params = {
+            gid: gid,
+            announcement: cont
+          }
+          Pub.post(Pub.apiChat +'group/admin/announcement_set', params, function(res){
+            if(res.code == 0){
+              Pub.eventSend('group_info');
+              setTimeout(function(){
+                api.closeWin();
+              }, 1000);
+            }
+          });
+        });
+
+    }
+    function inputEvent () {
+      $('#font_num').text($('#font_num').val().length);
+      $('#notice').on('input prototype', function(){
+        var thisVal = $(this).val();
+        $('#font_num').text(thisVal.length);
+        if(thisVal.length >= 50){
+          $('#font_num').text('50');
+          $('#notice').val(thisVal.substring(0, 50));
+        }
+      });
+    }
+    function clearName(){
+      $('#notice').val('');
+    }
+</script>
+
+</html>

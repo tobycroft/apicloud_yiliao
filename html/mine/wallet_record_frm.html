@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="">
+  <div id="app">
+    <template>
+      <div class="record-common">
+        <div class="item" v-for="(item,index) in listData" :index="item.id" :track-id="item.id">
+          <div class="item-left">
+            <p>交易号：<em style="-webkit-user-select: all">{{item.order_id}}</em></p>
+            <p>时间：{{item.date}}</p>
+            <p>备注：{{item.remark}}</p>
+          </div>
+          <div class="item-right">
+            <p><strong>¥ {{item.balance}}</strong></p>
+            <p><span>{{item.type}}</span></p>
+          </div>
+        </div>
+      </div>
+      <div class="nothing" v-show="isNomore">没有更多数据了</div>
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      var app = new Vue({
+        el: '#app',
+        data: {
+          listData: [],
+          isNomore: false,
+        },
+        mounted: function(){
+          this.getData();
+          this.pullDown();
+        },
+        methods: {
+          getData: function(callback){
+            var _this = this;
+            Pub.post('user/balance/balance_record', {}, function(res){
+              if(res.code == 0){
+                _this.listData = res.data;
+                if(_this.listData.length > 0){
+                  _this.isNomore = false;
+                }else{
+                  _this.isNomore = true;
+                }
+              }
+              if(callback && typeof callback == 'function'){
+                callback()
+              }
+            });
+          },
+          pullDown: function(){
+            var _this = this;
+            Pub.pullDown(function(){
+              _this.getData(function(){
+                Pub.pullDownDone();
+              });
+            });
+          },
+
+        }
+      })
+    }
+</script>
+
+</html>

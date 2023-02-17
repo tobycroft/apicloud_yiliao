@@ -1,0 +1,266 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+          content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,initial-scale=1.0,width=device-width"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title set-lang="text:transfer">转帐</title>
+    <!-- <link rel="stylesheet" type="text/css" href="../../css/aui.css"/> -->
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin">
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+    <div class="transfer-container">
+        <div class="input-box">
+            <div class="input">
+                <div class="aui-list-item-input">
+                    <input type="text" placeholder="收款人钱包地址" set-lang="placeholder:wallet_receipt_address_please" id="wallet_address">
+                </div>
+            </div>
+            <div class="input-right">
+                <i class="avatar"></i>
+            </div>
+        </div>
+        <div class="input-box">
+            <div class="input">
+                <div class="aui-list-item-input">
+                    <input type="number" placeholder="转账金额" set-lang="placeholder:wallet_transfer_money" id="amount">
+                </div>
+            </div>
+            <div class="input-right">
+                <font set-lang="text:wallet_cur_balance">当前余额</font>：<span id="balance">0.00</span>
+            </div>
+        </div>
+        <div class="select-box">
+            <div class="aui-list-item-input">
+                <select id="coin_list">
+                </select>
+            </div>
+        </div>
+        <div class="input-box">
+            <div class="input" set-lang="text:wallet_service_charge">
+                手续费
+            </div>
+            <div class="input-right">
+                <span id="service">0</span>
+            </div>
+        </div>
+        <!-- <div class="input-box bd-none">
+            <div class="input" set-lang="text:wallet_miner_cost">
+                矿工费用
+            </div>
+            <div class="input-right">
+                <i class="question"></i>
+            </div>
+        </div>
+        <div id="lineDiv" class="lineDiv">
+            <div id="minDiv" class="minDiv">
+                <div id="vals" class="vals">0</div>
+            </div>
+        </div>
+        <div class="line-show">
+            <div class="show-left" set-lang="text:wallet_slow">慢</div>
+            <div class="show-value"><span id="line_value">0.0000</span><span id="coin_name"></span></div>
+            <div class="show-right" set-lang="text:wallet_fast">快</div>
+        </div> -->
+        <!-- <div class="input-box">
+            <div class="input">
+                <div class="aui-list-item-input">
+                    <input type="number" placeholder="验证码" set-lang="placeholder:text:verify_code" id="verify">
+                </div>
+            </div>
+            <div class="input-right">
+                <font onclick="getSms(this)" set-lang="text:get_verify_code">获取验证码</font>
+            </div>
+        </div> -->
+        <br/>
+        <div class="btn-submit" onclick="clickSubmit()" set-lang="text:confirm">确定</div>
+    </div>
+    <script type="text/html" id="coin_list_html">
+        {{if data.length > 0}}
+            {{each data}}
+                <option value="{{$value.id}}" fee="{{$value.fee}}">{{$value.cname}}</option>
+            {{/each}}
+        {{/if}}
+    </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script type="text/javascript" src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var coinId = '', content={}, rate = '';
+    var isWaiting = false;
+    var smsCode = null;
+    var fee = "";
+    apiready = function(){
+        api.parseTapmode();
+        // if(!coinId && api.pageParam.coinId){
+        //     coinId = api.pageParam.coinId;
+        // }
+        // if(api.pageParam.address){
+        //   $('#wallet_address').val(api.pageParam.address);
+        // }
+        //getCont();
+        getCoins();
+        inputEvent();
+    }
+    // function getSms(el){
+    //     // if ( !$api.regex.rgMobile.test(mobile) ) return $api.apitoast($api.getLang('msg_true_mobile'));
+    //     if (isWaiting) return;
+    //     var _el=el;
+    //     var telephone = {
+    //       uid: $api.getStorage('uid')
+    //     }
+    //     console.log(JSON.stringify(telephone))
+    //     Pub.post('/v6/transfer/send_code', telephone, function(ret,err){
+    //         console.log(JSON.stringify(ret))
+    //         if (parseInt(ret.code) === 0) {
+    //             isWaiting = true;
+    //             remainTime(_el);
+    //             return $api.apitoast(ret.data);
+    //         }else{
+    //             return $api.apitoast(ret.data);
+    //         }
+    //         return $api.apitoast(ret.msg || $api.getLang('network_error'));
+    //     })
+    // }
+    // function remainTime(el){
+    //     var time = 60;
+    //     var interval = setInterval(function(){
+    //         $api.text(el,  (time--) +'s');
+    //         if ( time < 0 ) {
+    //             clearInterval(interval);
+    //             $api.text(el, $api.getLang('get_verify_code'));
+    //             isWaiting = false;
+    //         }
+    //     },1000)
+    // }
+    // function getCont(){
+    //     console.log(api.pageParam.content);
+    //     if(api.pageParam.content){
+    //         content = JSON.parse(api.pageParam.content);
+    //         $('#wallet_address').val(content.address);
+    //         $('#amount').val(content.amount);
+    //         coinId = content.coinId;
+    //     }
+    // }
+    function getCoins(){
+        // var params = {
+        //     uid: $api.getStorage('uid')
+        // }
+        Pub.post('coin/index', {}, function(res){
+            if(res.code == 0){
+                var html = template('coin_list_html', res);
+                $api.byId('coin_list').innerHTML = html;
+                Pub.setLang();
+                console.log(coinId);
+                // if(coinId){
+                //     $('#coin_list').find('option').each(function(){
+                //         var thisVal = $(this).val();
+                //         if(thisVal == coinId){
+                //             $(this).prop('selected', true);
+                //         }
+                //     })
+                // } else {
+                //     coinId = $('#coin_list').find('option').eq(0).val();
+                //     fee = $('#coin_list').find('option').eq(0).attr("fee");
+                // }
+                coinId = $('#coin_list').find('option').eq(0).val();
+                fee = $('#coin_list').find('option').eq(0).attr("fee");
+                console.log(coinId);
+                console.log(fee);
+                getCoinInfo(coinId);
+                changeCoin();
+            }
+        })
+    }
+    function getCoinInfo(id){
+      console.log(id);
+        var params = {
+            uid: $api.getStorage('uid'),
+            cid: id
+        }
+        Pub.post('user/balance/balance', params, function(res){
+            if(res.code == 0){
+              console.log(JSON.stringify(res.data));
+                $('#balance').text(res.data[0].balance);
+            }
+        })
+    }
+    function changeCoin(){
+        $('#coin_list').on('change', function(){
+            var thisVal = $(this).val();
+            $('#service').text('0');
+            $('#amount').val(' ');
+            coinId = thisVal;
+            getCoinInfo(coinId);
+        })
+    }
+    function inputEvent(){
+        $('#amount').on('input prototype', function(){
+            var thisVal = $(this).val();
+            if(!thisVal){
+              $('#service').text('0');
+              setTimeout(function(){
+                $('#amount').val(' ');
+              }, 100);
+            }else{
+              $('#service').text((parseFloat(thisVal) * parseFloat(fee)).toFixed(4));
+              console.log($('#service').text());
+            }
+            if(parseFloat(thisVal) > parseFloat($('#balance').text())){
+                Pub.msg(Pub.getLang('money_no_greater'));
+                $(this).val('');
+            }
+        });
+    }
+    function clickSubmit(){
+        var address = $('#wallet_address').val(),
+            amount = $('#amount').val(),
+            // free = $('#service').text(),
+            code = $('#verify').val();
+        if(!address) return Pub.msg(Pub.getLang('msg_receipt_wallet_address'));
+        if(!amount) return Pub.msg(Pub.getLang('msg_enter_transfer_money'));
+        // if (!code) return $api.apitoast($api.getLang('please_enter_code'));
+        api.prompt({
+            title: Pub.getLang('confirm_enter_wallet_password'),
+            msg: '',
+            type: 'password',
+            buttons: [Pub.getLang('confirm'), Pub.getLang('cancel')]
+        }, function(ret, err) {
+            var index = ret.buttonIndex;
+            console.log(index);
+            var text = ret.text;
+            console.log(text);
+            if(index == 1){
+                if(text){
+                    var params = {
+                        to: address,
+                        amount: amount,
+                        pay_pass: text,
+                        // code: code
+                    }
+                    Pub.post('user/balance/transfer', params, function(res){
+                        Pub.msg(res.data);
+                        if(res.code == 0){
+                            api.sendEvent({
+                                name: 'refresh_balance'
+                            });
+                            setTimeout(function(){
+                                api.closeWin();
+                            }, 2000);
+                        }
+                    })
+                } else {
+                    Pub.msg(Pub.getLang('please_enter_pay_password'));
+                }
+            }
+
+        });
+
+    }
+
+</script>
+</html>

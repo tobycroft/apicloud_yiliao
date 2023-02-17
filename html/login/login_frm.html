@@ -1,0 +1,306 @@
+<!doctype html>
+<html class="bg-transparent">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="" class="bg-transparent">
+  <div id="app">
+    <template>
+      <div class="login-form">
+        <div class="form-logo"><img src="../../skin/default/images/icon/icon_login.png"></div>
+        <div class="form-box">
+          <div class="item">
+            <!-- <div class="input"><input type="tel" placeholder="请输入手机号码" id="mobile" v-model="mobile" @input="mobileInput"></div> -->
+            <div class="input"><input type="tel" v-model="mobile" @input="mobileInput" :placeholder="lang.please_enter_mobile_number"></div>
+          </div>
+          <div class="item">
+            <div class="input">
+              <input type="password" v-model="password" :placeholder="lang.please_enter_login_password">
+            </div>
+          </div>
+          <!-- <div class="item">
+            <div class="input"><input type="tel" placeholder="验证码" v-model="code"></div>
+            <div :class="['handle',{'disabled': isDisabled}]"><a @click="getCode" tapmode>{{verifyTxt}}</a></div>
+          </div> -->
+          <div class="agreement">
+            <img src="../../skin/default/images/icon/icon_check.png" alt="" v-if="!isRead" @click = "isReadClick()">
+            <img src="../../skin/default/images/icon/icon_check_active.png" alt="" v-if="isRead" @click = "isReadClick()">
+            <span @click = "toAgreement()">易聊用户隐私保护政策</span>
+          </div>
+          <div class="link">
+            <a @click="toRegistr">{{lang.register_new_userk}}</a>
+            <a @click="toForget">{{lang.retrieve_password}}</a>
+          </div>
+          <div :class="['btn',{'disabled': registerDisabled}]" tapmode @click="login">{{lang.sign_in}}</div>
+        </div>
+        <!-- <div class="wechat">
+          <p>-----{{lang.wechat_sign_in}}-----</p>
+          <div class="icon-wechat">
+            <img src="../../skin/default/images/icon/icon_wechat2.png" alt="" onclick="wx_login()">
+          </div>
+        </div> -->
+      </div>
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script src="../../script/intlTelInput.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      var app = new Vue({
+        el: '#app',
+        data: {
+          mobile: '',
+          verifyTxt: '获取验证码',
+          isDisabled: false,
+          registerDisabled: false,
+          code: '',
+          timer: null,
+          count: '',
+          countNum: 60,
+          countryCode: '86',
+          password: '',
+          isRead: false,
+          lang: {
+            please_enter_mobile_number: Pub.getLang('please_enter_mobile_number'),
+            please_enter_login_password: Pub.getLang('please_enter_login_password'),
+            please_enter_image_verify: Pub.getLang('please_enter_image_verify'),
+            sign_in: Pub.getLang('sign_in'),
+            register_new_userk: Pub.getLang('register_new_user'),
+            retrieve_password: Pub.getLang('retrieve_password'),
+            wechat_sign_in: Pub.getLang('wechat_sign_in'),
+          }
+        },
+        mounted: function(){
+          // this.mobileInit();
+          var _this = this;
+          Pub.eventSend('book_end');
+          Pub.eventSend('socket_end');
+          this.count = $api.getStorage('login_count');
+          if(this.count){
+            this.countDown();
+          }
+          Pub.eventListen('language', function(){
+            _this.lang = {
+              please_enter_mobile_number: Pub.getLang('please_enter_mobile_number'),
+              please_enter_login_password: Pub.getLang('please_enter_login_password'),
+              please_enter_image_verify: Pub.getLang('please_enter_image_verify'),
+              sign_in: Pub.getLang('sign_in'),
+              register_new_userk: Pub.getLang('register_new_user'),
+              retrieve_password: Pub.getLang('retrieve_password'),
+              wechat_sign_in: Pub.getLang('wechat_sign_in'),
+            }
+          });
+        },
+        methods: {
+          toRegistr: function(){
+            Pub.openView('./register_win');
+          },
+          mobileInit: function(){
+            var _this = this;
+            $("#mobile").intlTelInput({
+                preferredCountries: ['cn'],
+              // allowDropdown: false,
+              // autoHideDialCode: false,
+              // autoPlaceholder: "off",
+              // dropdownContainer: "body",
+              // excludeCountries: ["us"],
+              // formatOnDisplay: false,
+               geoIpLookup: function(callback) {
+               },
+              // initialCountry: "auto",
+              // nationalMode: false,
+              // onlyCountries: ['us', 'gb', 'ch', 'ca', 'do'],
+              // placeholderNumberType: "MOBILE",
+              // preferredCountries: ['cn', 'jp'],
+              // separateDialCode: true,
+              utilsScript: ""
+            });
+            $("#mobile").on("countrychange", function(e, countryData) {
+              console.log(JSON.stringify(countryData))
+              _this.countryCode = countryData.dialCode;
+              // do something with countryData
+            });
+          },
+          toRegistr: function(){
+            Pub.openView('./register_win');
+          },
+          toForget: function(){
+            Pub.openView('./forget_win');
+          },
+          mobileInput: function(){
+            var _this = this;
+            setTimeout(function(){
+              _this.mobile = Pub.strSpace(_this.mobile.replace(/\D/g, ''), [3, 7, 11, 15], ' ');
+            },100);
+          },
+          getCode: function(){
+            var _this = this;
+            if(!this.mobile) return Pub.msg('请输入手机号码');
+            if(!this.isDisabled){
+              var params = {
+                area_code: this.countryCode,
+                phone: $api.trimAll(this.mobile)
+              }
+              Pub.socketPost('/Login/smsCodeForLogin', params, function(res){
+                  if(res.code == 200){
+                    Pub.msg('短信已发送，请注意查收');
+                    $api.setStorage('login_count', 60);
+                    _this.countDown();
+                  }else{
+                    this.isDisabled = false;
+                    Pub.msg('发送失败');
+                  }
+              }, true)
+            }
+          },
+          countDown(){
+            var _this = this;
+            if(!this.timer){
+              this.count = $api.getStorage('login_count') || this.countNum;
+              console.log(this.count);
+              Pub.eventSend('login_time', {
+                time: _this.count*1000
+              });
+              this.timer = setInterval(function(){
+                if(_this.count > 0 && _this.count <= _this.countNum){
+                  _this.count--;
+                  $api.setStorage('login_count', _this.count);
+                  if(_this.count !== 0){
+                    _this.isDisabled = true;
+                    _this.verifyTxt = '' + _this.count +'S';
+                  }else{
+                    clearInterval(_this.timer);
+                    _this.verifyTxt = '获取验证码';
+                    _this.timer = null;
+                    _this.isDisabled = false;
+                    $api.setStorage('login_count', '');
+                  }
+                }
+              }, 1000);
+            }
+         },
+         isReadClick: function(){
+           var _this = this;
+           _this.isRead = !_this.isRead;
+         },
+         toAgreement:function(){
+           var _this = this;
+          Pub.openView('./agreement_win');
+         },
+          login: function(){
+            var _this = this;
+            if(!this.mobile) return Pub.msg(Pub.getLang('please_enter_mobile_number'));
+            // if(!this.code) return Pub.msg('请输入验证码');
+            if(!this.password) return Pub.msg(Pub.getLang('please_enter_login_password'));
+            if(!this.isRead) return Pub.msg("请确认是否同意《易聊用户隐私保护政策》");
+            var params = {
+              // area_code: this.countryCode,
+              username: $api.trimAll(this.mobile),
+              password: this.password,
+              // sms_code: this.code,
+            }
+            Pub.post('index/login/login', params, function(res){
+                _this.registerDisabled = false;
+                if(res.code == 0){
+                  var data = res.data;
+                  Pub.eventSend('login');
+                  $api.setStorage('uid', data.uid);
+                  $api.setStorage('token', data.token);
+                  api.closeToWin({
+                      name: 'root'
+                  });
+                }else{
+                  Pub.msg(res.echo);
+                }
+            });
+          }
+        }
+      })
+    }
+    function wx_login(){
+      //var isBind=true;
+        var wx = api.require('wx');
+       wx.isInstalled(function(ret, err) {
+          if (ret.installed) {
+            //alert(ret.installed);
+            wx.auth({
+            }, function(ret, err) {
+              console.log(JSON.stringify(ret));
+              if (ret.status) {
+                  //toast.loading({title:'登录中.....'})
+                  //alert(ret.code);
+                  console.log(JSON.stringify(ret.code));
+                  wx.getToken({
+                      apiKey: '',
+                      apiSecret: '',
+                      code: ret.code,
+                  }, function(ret, err) {
+                      if (ret.status) {
+                          //alert(JSON.stringify(ret));
+                          console.log(ret.openId);
+                          Pub.post('index/login/wxlogin',{open_id:ret.openId},function(res){
+                            if(res.code==0){
+                              Pub.eventSend('login');
+                              $api.setStorage('uid', res.data.uid);
+                              $api.setStorage('token', res.data.token);
+                              api.closeToWin({
+                                  name: 'root'
+                              });
+                            }else if(res.code==404){
+                              console.log(JSON.stringify(res));
+                              var openId = ret.openId;
+                              wx.getUserInfo({
+                                  openId: ret.openId,
+                                  accessToken: ret.accessToken
+                              }, function(ret, err) {
+                                console.log(JSON.stringify(ret));
+                                  if (ret.status) {
+                                    setTimeout(function(){
+                                      console.log(ret.nickname);
+                                      Pub.openView("./bind_phone_win",{
+                                          pageParam: {
+                                              openId: openId,
+                                              nickname: ret.nickname,
+                                              headimgurl: ret.headimgurl,
+                                          }
+                                      });
+                                    }, 1000);
+                                  } else {
+                                    alert(err.code);
+                                  }
+                              });
+
+                            }else{
+                              Pub.msg(res.echo,'middle')
+                            }
+                          })
+                      } else {
+                          //alert(err.code);
+                      }
+                  });
+
+                } else {
+                  console.log(err.code);
+                }
+            });
+          } else {
+              alert('当前设备未安装微信客户端');
+          }
+      });
+    }
+</script>
+
+</html>

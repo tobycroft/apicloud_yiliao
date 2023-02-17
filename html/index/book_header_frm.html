@@ -1,0 +1,66 @@
+<!DOCTYPE HTML>
+<html class="bgc-green">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0, minimum-scale=1.0, user-scalable=0, initial-scale=1.0, width=device-width" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body ontouchstart="" class="bgc-green">
+  <div class="index-header" id="header">
+    <div class="header">
+      <div class="header-left">
+        <img src="../../skin/default/images/icon/icon_logo_white.png" alt="">
+        <span set-lang="text:mail_list">通讯录</span>
+      </div>
+      <div class="header-middle"></div>
+      <div class="header-right">
+        <a onclick="toSearch()" tapmode><img src="../../skin/default/images/chat/icon_search_white.png"></a>
+        <a onclick="openPopup()" tapmode><img src="../../skin/default/images/icon/icon_plus_white.png"></a>
+      </div>
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script>
+  apiready = function(){
+    api.parseTapmode();
+    Pub.setStatusBar();
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    Pub.eventListen('language', function(){
+      Pub.setLang();
+    })
+  }
+  function openPopup(){
+    api.openFrame({
+        name: 'index_popup_frm',
+        url: './index_popup_frm.html',
+        rect: {
+            x: 0,
+            y: 0,
+            w: 'auto',
+            h: 'auto'
+        },
+        pageParam: {
+        },
+        bounces: false,
+        bgColor: 'rgba(0,0,0,0)',
+        vScrollBarEnabled: true,
+        hScrollBarEnabled: true
+    });
+  }
+  function toSearch(){
+    Pub.openView('../chat/chat_search_win');
+  };
+</script>
+
+
+</html>

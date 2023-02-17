@@ -1,0 +1,199 @@
+<!doctype html>
+<html class="bgc-white">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+  <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+  <title></title>
+  <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+  <script src="../../script/language.js"></script>
+</head>
+
+<body ontouchstart="" class="bgc-white">
+  <div id="app">
+    <template>
+      <div class="chat-container" id="footer_safe">
+        <ul>
+          <li v-for="(item,index) in listData.admin" :key="item.id">
+            <a @click="toInfo(item.id)" tapmode>
+              <div class="avatar">
+                <div class="avatar-box">
+                  <!-- <div class="avatar-group" v-if="item.group.member_avatar.length > 0">
+                              <span v-for="(memberItem,memberIndex) in item.group.member_avatar" v-if="memberIndex<9">
+                                  <img :src="memberItem.avatar" v-if="memberItem.avatar">
+                                  <div class="avatar-font" v-else><em v-if="memberItem.nickname">{{memberItem.nickname.substring(0,1).toUpperCase()}}</em></div>
+                              </span>
+                          </div> -->
+                  <img :src="item.img" v-if="item.img">
+                  <div class="avatar-font" v-else>群</div>
+                </div>
+              </div>
+              <div class="info">
+                <div class="info-top">
+                  <div class="name">{{item.group_name}}</div>
+                </div>
+                <div class="info-bottom">
+                  <div class="desc">{{item.introduction || ''}}</div>
+                </div>
+              </div>
+            </a>
+          </li>
+          <li v-for="(item,index) in listData.member" :key="item.id">
+            <a @click="toInfo(item.id)" tapmode>
+              <div class="avatar">
+                <div class="avatar-box">
+                  <!-- <div class="avatar-group" v-if="item.group.member_avatar.length > 0">
+                              <span v-for="(memberItem,memberIndex) in item.group.member_avatar" v-if="memberIndex<9">
+                                  <img :src="memberItem.avatar" v-if="memberItem.avatar">
+                                  <div class="avatar-font" v-else><em v-if="memberItem.nickname">{{memberItem.nickname.substring(0,1).toUpperCase()}}</em></div>
+                              </span>
+                          </div> -->
+                  <img :src="item.img" v-if="item.img">
+                  <div class="avatar-font" v-else>群</div>
+                </div>
+              </div>
+              <div class="info">
+                <div class="info-top">
+                  <div class="name">{{item.group_name}}</div>
+                </div>
+                <div class="info-bottom">
+                  <div class="desc">{{item.introduction || ''}}</div>
+                </div>
+              </div>
+            </a>
+          </li>
+          <li v-for="(item,index) in listData.other" :key="item.id">
+            <a @click="toInfo(item.id)" tapmode>
+              <div class="avatar">
+                <div class="avatar-box">
+                  <!-- <div class="avatar-group" v-if="item.group.member_avatar.length > 0">
+                              <span v-for="(memberItem,memberIndex) in item.group.member_avatar" v-if="memberIndex<9">
+                                  <img :src="memberItem.avatar" v-if="memberItem.avatar">
+                                  <div class="avatar-font" v-else><em v-if="memberItem.nickname">{{memberItem.nickname.substring(0,1).toUpperCase()}}</em></div>
+                              </span>
+                          </div> -->
+                  <img :src="item.img" v-if="item.img">
+                  <div class="avatar-font" v-else>群</div>
+                </div>
+              </div>
+              <div class="info">
+                <div class="info-top">
+                  <div class="name">{{item.group_name}}</div>
+                </div>
+                <div class="info-bottom">
+                  <div class="desc">{{item.introduction || ''}}</div>
+                </div>
+              </div>
+            </a>
+          </li>
+          <li v-for="(item,index) in listData.owner" :key="item.id">
+            <a @click="toInfo(item.id)" tapmode>
+              <div class="avatar">
+                <div class="avatar-box">
+                  <!-- <div class="avatar-group" v-if="item.group.member_avatar.length > 0">
+                              <span v-for="(memberItem,memberIndex) in item.group.member_avatar" v-if="memberIndex<9">
+                                  <img :src="memberItem.avatar" v-if="memberItem.avatar">
+                                  <div class="avatar-font" v-else><em v-if="memberItem.nickname">{{memberItem.nickname.substring(0,1).toUpperCase()}}</em></div>
+                              </span>
+                          </div> -->
+                  <img :src="item.img" v-if="item.img">
+                  <div class="avatar-font" v-else>群</div>
+                </div>
+              </div>
+              <div class="info">
+                <div class="info-top">
+                  <div class="name">{{item.group_name}}</div>
+                </div>
+                <div class="info-bottom">
+                  <div class="desc">{{item.introduction || ''}}</div>
+                </div>
+              </div>
+            </a>
+          </li>
+        </ul>
+        <div class="nothing" v-show="isNomore">{{lang.no_more}}</div>
+      </div>
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+  apiready = function() {
+    api.parseTapmode();
+    initEvent();
+    Pub.eventListen("update_groupinfo",function(){
+      window.location.reload();
+    })
+  }
+
+  function initEvent() {
+    var app = new Vue({
+      el: '#app',
+      data: {
+        uid: $api.getStorage('uid'),
+        listData: [],
+        isNomore: false,
+        lang:{
+          group: Pub.getLang("group"),
+          no_more: Pub.getLang("no_more"),
+        }
+      },
+      mounted: function() {
+        this.getData();
+        this.pullDown();
+        Pub.eventListen('book_count', function(ret){
+          _this.getData();
+        });
+      },
+      methods: {
+        footerSafe: function() {
+          var footer = $api.byId('footer_safe');
+          $api.fixTabBar(footer);
+
+        },
+        getData: function(callback) {
+          var _this = this;
+          console.log($api.getStorage(_this.uid+"_groupMemberList"));
+          if($api.getStorage(_this.uid+"_groupList")){
+            _this.listData = $api.getStorage(_this.uid+"_groupList");
+          }
+          Pub.post('group/info/list2', {}, function(res) {
+            if (res.code == 0) {
+              _this.listData = res.data;
+              $api.setStorage(_this.uid+"_groupList", res.data);
+              if (_this.listData.admin.length == 0 && _this.listData.member.length == 0 && _this.listData.other.length == 0 && _this.listData.owner.length == 0) {
+                _this.isNomore = true;
+              } else {
+                _this.isNomore = false;
+              }
+              if (callback && typeof callback == 'function') {
+                callback();
+              }
+            }
+          });
+        },
+        pullDown: function() {
+          var _this = this;
+          Pub.pullDown(function() {
+            _this.getData(function() {
+              Pub.pullDownDone();
+            });
+          });
+        },
+        toInfo: function(id) {
+          Pub.openView('./group_info_win', {
+            pageParam: {
+              id: id
+            }
+          });
+        },
+      }
+    })
+  }
+</script>
+
+</html>

@@ -1,0 +1,172 @@
+<!doctype html>
+<html class="bgc-base">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body ontouchstart="" class="bgc-base">
+    <div id="app">
+      <template>
+        <!-- <div class="wallet-container">
+          <div class="wallet-amount">
+            <h3>{{lang.balance}}</h3>
+            <p>{{balance}}</p>
+          </div>
+          <div class="btns">
+            <div>
+              <p class="primary" @click="toRecharge">{{lang.recharge}}</p>
+            </div>
+            <div>
+              <p class="primary-dark" @click="toWithdraw">{{lang.withdraw}}</p>
+            </div>
+            <div >
+              <p class="primary-light" @click="toTransfer">{{lang.transfer}}</p>
+            </div>
+          </div>
+        </div> -->
+        <div class="wallet-container">
+          <div class="wallet">
+            <!-- <div class="item" @click="toPage('./receive_qr_code_win')"> -->
+            <div class="item" @click="Pub.msg('暂未开放！')">
+              <div class="icon"><img src="../../skin/default/images/icon/icon_receive_qr.png" alt=""></div>
+              <div class="content">
+                <p>收款码</p>
+              </div>
+            </div>
+            <div class="item" @click="showBalance()" >
+              <div class="icon"><img src="../../skin/default/images/icon/icon_wallet_white.png" alt=""></div>
+              <div class="content">
+                <p>￥{{balanceShow}}</p>
+              </div>
+            </div>
+          </div>
+          <div class="bottom">
+            <div class="top">
+              <img src="../../skin/default/images/icon/icon_logo_green.png" alt="">
+              <span>易聊</span>
+            </div>
+            <div class="items">
+              <div class="item" @click="toWithdraw()">
+                <img src="../../skin/default/images/icon/icon_withdraw.png" alt="">
+                <p>提现</p>
+              </div>
+              <!-- <div class="item" @click="toPage('./receipt_win')" > -->
+              <div class="item" @click="Pub.msg('暂未开放！')" >
+                <img src="../../skin/default/images/icon/icon_recharge.png" alt="">
+                <p>充值</p>
+              </div>
+              <div class="item" @click="toPage('./trading_record_win')">
+                <img src="../../skin/default/images/icon/icon_record.png" alt="">
+                <p>账单</p>
+              </div>
+              <div class="item" @click="toPage('./bank_card_win')">
+                <img src="../../skin/default/images/icon/icon_bank.png" alt="">
+                <p>银行卡</p>
+              </div>
+              <div class="item" @click="toPage('./identity_card_win')">
+                <img src="../../skin/default/images/icon/icon_real_name.png" alt="">
+                <p>实名认证</p>
+              </div>
+              <div class="item" @click="toPage('../redpacket/redpacket_record_win')">
+                <img src="../../skin/default/images/icon/icon_redpacket_record.png" alt="">
+                <p>红包记录</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+        Pub.eventListen("refresh_balance",function(){
+          window.location.reload();
+        })
+    }
+
+    function initEvent() {
+        var app = new Vue({
+            el: '#app',
+            data: {
+              balance: '0.00',
+              isShowBalance: 0,
+              balanceShow: '****',
+              lang: {
+                balance: Pub.getLang("balance"),
+                recharge: Pub.getLang("recharge"),
+                withdraw: Pub.getLang("withdraw"),
+                transfer: Pub.getLang("transfer"),
+              }
+            },
+            mounted: function() {
+              this.getBalance();
+              this.pullDown();
+            },
+            methods: {
+                toPage: function(url) {
+                    Pub.openView(url);
+                },
+                getBalance: function(){
+                  var _this = this;
+                  Pub.post('user/balance/balance', {}, function(res){
+                    if(res.code == 0){
+                      _this.balance = res.data.balance
+                    }else{
+                      Pub.msg(res.echo);
+                    }
+                  })
+
+                },
+                toPage: function(url){
+                  Pub.openView(url)
+                },
+                toWithdraw: function(){
+                  Pub.post("user/card/list",{},function(res){
+                    if(res.code==0){
+                      if(res.data.length>0){
+                        Pub.openView("./withdraw_win");
+                      }else{
+                        Pub.msg("绑定银行卡后才可提现！")
+                      }
+                    }
+                  })
+                },
+                pullDown: function(){
+                  var _this = this;
+                  Pub.pullDown(function(){
+                    _this.getBalance();
+                    // _this.getCircleCount();
+                    Pub.timeoutDo(function(){
+                      Pub.pullDownDone();
+                    }, 1000);
+                  });
+                },
+                showBalance: function(){
+                  var _this = this;
+                  if(_this.isShowBalance==0){
+                    _this.isShowBalance = 1;
+                    _this.balanceShow = _this.balance;
+                  }else{
+                    _this.isShowBalance = 0;
+                    _this.balanceShow = '****';
+                  }
+                }
+            }
+        })
+    }
+</script>
+
+</html>

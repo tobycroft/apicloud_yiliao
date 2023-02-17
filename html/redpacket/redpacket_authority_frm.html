@@ -1,0 +1,187 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <div class="group-cell-icon">
+    <ul id="member_list">
+    </ul>
+  </div>
+  <script type="text/html" id="member_list_html">
+    {{if data.length > 0}}
+      {{each data}}
+        <li data-fid="{{$value.user_info.uid}}" data-name="{{$value.user_info.uname}}" data-pack="{{$value.pack_allow}}">
+          <div class="icon"><img src="{{$value.user_info.face}}" class="img_url"></div>
+          <div class="name">{{$value.user_info.uname}}</div>
+          <div class="handle"><i class="check" data-fid="{{$value.user_info.uid}}" data-name="{{$value.user_info.uname}}" data-pack="{{$value.pack_allow}}"></i></div>
+        </li>
+      {{/each}}
+    {{/if}}
+  </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var memberData = {}, searchData = {}, selectArr = [];
+    var gid = '';
+    apiready = function() {
+        api.parseTapmode();
+        gid = api.pageParam.id;
+        getMember();
+        Pub.eventListen('member_remove_search', function(ret){
+            search(ret.value.words)
+        });
+        Pub.eventListen('redpacket_authority',function(){
+          //if(selectArr.length == 0) return Pub.msg(Pub.getLang('please_select_member'));
+          var params = {
+            gid: gid,
+            uids: JSON.stringify(selectArr)
+          }
+          Pub.post(Pub.apiChat +'group/pack_authority_set', params, function(res){
+            console.log('移除成员:' + JSON.stringify(res));
+            if(res.code == 0){
+              Pub.msg(res.data);
+              Pub.eventSend('group_info');
+              setTimeout(function(){
+                  api.closeWin();
+                  Pub.setStatusBar();
+              }, 1000);
+            }
+          });
+        })
+    }
+    function getMember(){
+        if($api.getStorage('member_data')){
+            memberData = $api.getStorage('member_data');
+            console.log(JSON.stringify(memberData));
+            var html = template('member_list_html', memberData);
+            $('#member_list').html(html);
+            Pub.setLang();
+            $('.img_url').each(function(){
+                var thisSrc = $(this).attr('src');
+                if(thisSrc){
+                    if(thisSrc.indexOf('http') == -1){
+                        $(this).attr('src', Pub.imgHost + thisSrc);
+                    }
+                }else{
+                    $(this).attr('src', '../../skin/default/images/chat/default_avatar.png');
+                }
+            });
+            $('.check').each(function(){
+                var thisPack = $(this).attr('data-pack');
+                var thisFid = $(this).attr('data-fid');
+                console.log(thisPack);
+                if(thisPack=="true"){
+                    $(this).addClass('active');
+                    selectArr = selectArr.concat(thisFid);
+                }else{
+                    $(this).removeClass('active');
+                    selectArr = Pub.deleteByValue(selectArr, thisFid);
+                }
+            });
+            $('#member_list').find('.item').on('click', function(){
+                var thisFid = $(this).attr('data-fid'),
+                    thisName = $(this).attr('data-name');
+                Pub.openView('./personal_info_win', {
+                    pageParam:{
+                        fid: thisFid,
+                        name: thisName,
+                        isStatus: true
+                    }
+                });
+            });
+            checkEvent();
+        }
+    }
+    function search(words){
+        console.log(words);
+        var memberArr = memberData.data;
+        var searchArr = [];
+        if(words){
+            for(var i = 0; i<memberArr.length; i++){
+                if(memberArr[i].user_info.uname.indexOf(words) > -1){
+                    searchArr.push(memberArr[i]);
+                }
+            }
+            if(searchArr.length == 0) return Pub.msg(Pub.getLang('search_nothing'));
+            searchData.data = searchArr;
+        }else{
+            searchData = memberData;
+        }
+        var html = template('member_list_html', searchData);
+        $('#member_list').html(html);
+        Pub.setLang();
+        $('.img_url').each(function(){
+            var thisSrc = $(this).attr('src');
+            if(thisSrc){
+                if(thisSrc.indexOf('http') == -1){
+                    $(this).attr('src', Pub.imgHost + thisSrc);
+                }
+            }else{
+                $(this).attr('src', '../../skin/default/images/chat/default_avatar.png');
+            }
+        });
+        $('.check').each(function(){
+          var thisFid = $(this).attr('data-fid');
+            var thisPack = $(this).attr('data-pack');
+            if(thisPack=="true"){
+                $(this).addClass('active');
+                selectArr = selectArr.concat(thisFid);
+            }else{
+                $(this).removeClass('active');
+                selectArr = Pub.deleteByValue(selectArr, thisFid);
+            }
+        });
+        $('#member_list').find('.item').on('click', function(){
+            var thisFid = $(this).attr('data-fid'),
+                thisName = $(this).attr('data-name');
+              Pub.openView('./personal_info_win', {
+                  pageParam:{
+                      fid: thisFid,
+                      name: thisName,
+                      isStatus: true
+                  }
+              });
+        });
+        checkEvent();
+    }
+    function checkEvent(){
+      $('.check').on('click', function(e){
+          e.stopPropagation();
+          var thisFid = $(this).attr('data-fid');
+          if($(this).hasClass('active')){
+              $(this).removeClass('active');
+              selectArr = Pub.deleteByValue(selectArr, thisFid);
+          }else{
+              $(this).addClass('active');
+              selectArr = selectArr.concat(thisFid);
+          }
+      });
+    }
+    function isFriend(fid, callback){
+        var params = {
+            fid: fid
+        }
+        Pub.post(Pub.apiChat +'friend/friend/is_friend', params, function(res){
+            console.log('是否好友:' + JSON.stringify(res));
+            if(res.code == 0){
+                if(callback && typeof callback == 'function'){
+                    callback(res);
+                }
+            }
+        });
+    }
+    function groupInvite(){
+        Pub.openView('./group_invite_win');
+    }
+</script>
+
+</html>

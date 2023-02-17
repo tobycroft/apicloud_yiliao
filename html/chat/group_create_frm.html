@@ -1,0 +1,234 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-white">
+  <div class="mine-edit-container">
+    <div class="input-box bd-primary">
+      <div class="name" set-lang="text:group_chat_name">群聊名称</div>
+      <div class="input">
+        <input type="text" placeholder="请填写群聊名称"  set-lang="placeholder:" id="name" maxlength="15">
+      </div>
+    </div>
+    <div class="radio-box">
+      <div class="info">
+        <h3 set-lang="text:">请选择群成员</h3>
+      </div>
+  </div>
+
+  <div class="group-cell-icon">
+    <ul id="member_list">
+    </ul>
+  </div>
+  <script type="text/html" id="friend_html">
+    {{if data.length > 0}}
+      {{each data}}
+      <li class="to_click" data-id="{{$value.id}}" data-fid="{{$value.fid}}" data-name="{{$value.uname}}">
+          <div class="icon"><img src="{{$value.face}}" class="img_url"></div>
+          <div class="name">{{$value.uname}}</div>
+          <div class="handle"><i class="check" data-fid="{{$value.fid}}" data-img="{{$value.face}}"></i></div>
+      </li>
+      {{/each}}
+    {{/if}}
+  </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/pinyin.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var memberData = {}, checkArr = [], checkArrImg = [];
+    var gid = '';
+    apiready = function() {
+        api.parseTapmode();
+        Pub.openHref();
+        getData();
+        Pub.eventListen("create_group",function(){
+          clickSubmit()
+        })
+        Pub.eventListen('group_member_search', function(ret){
+            search(ret.value.words)
+        });
+        // Pub.eventListen('redpacket_authority',function(){
+        //   //if(selectArr.length == 0) return Pub.msg(Pub.getLang('please_select_member'));
+        //   var params = {
+        //     gid: gid,
+        //     uids: JSON.stringify(selectArr)
+        //   }
+        //   Pub.post(Pub.apiChat +'group/pack_authority_set', params, function(res){
+        //     console.log('加群成员:' + JSON.stringify(res));
+        //     if(res.code == 0){
+        //       Pub.msg(res.data);
+        //       Pub.eventSend('group_info');
+        //       setTimeout(function(){
+        //           api.closeWin();
+        //           Pub.setStatusBar();
+        //       }, 1000);
+        //     }
+        //   });
+        // })
+    }
+
+    function clickSubmit(){
+      var name = $('#name').val();
+      if(!name) return Pub.msg(Pub.getLang('please_fill_in_group_chat_name'));
+      Pub.showProgress()
+      var params = {
+        group_name: name,
+        introduction: "",
+        can_recommend: 1,
+        type: 1,
+        expire:""
+      }
+
+      Pub.post(Pub.apiChat +'group/operation/create', params, function(res){
+        api.hideProgress();
+        if(res.code == 0){
+          if(checkArr.length == 0){
+            Pub.msg("创建成功！");
+            setTimeout(function(){
+              api.closeWin();
+            }, 1000);
+            return;
+          }
+          var params = {
+              gid: res.data,
+              invited_uids: JSON.stringify(checkArr)
+          }
+          Pub.post(Pub.apiChat +'group/invite/invite_group', params, function(res1){
+            api.hideProgress();
+              if(res1.code == 0){
+                  Pub.msg(res1.echo);
+                  Pub.eventSend('group_info');
+                  Pub.eventSend('update_groupinfo');
+                  setTimeout(function(){
+                      api.closeWin();
+                      Pub.setStatusBar();
+                  }, 1000);
+
+              }
+          });
+        }
+      });
+    }
+    function getData(){
+        Pub.post(Pub.apiChat +'friend/friend/list2', {}, function(res){
+          if(res.code==0){
+            memberData = res;
+            console.log(JSON.stringify(memberData));
+            var html = template('friend_html', memberData);
+            $('#member_list').html(html);
+            Pub.setLang();
+            $('.img_url').each(function(){
+                var thisSrc = $(this).attr('src');
+                if(thisSrc){
+                    if(thisSrc.indexOf('http') == -1){
+                        $(this).attr('src', Pub.imgHost + thisSrc);
+                    }
+                }else{
+                    $(this).attr('src', '../../skin/default/images/chat/default_avatar.png');
+                }
+            });
+            $('.check').each(function(){
+                var thisPack = $(this).attr('data-pack');
+                var thisFid = $(this).attr('data-fid');
+                console.log(thisPack);
+                if(thisPack=="true"){
+                    $(this).addClass('active');
+                    checkArr = checkArr.concat(thisFid);
+                }else{
+                    $(this).removeClass('active');
+                    checkArr = Pub.deleteByValue(checkArr, thisFid);
+                }
+            });
+            $('#member_list').find('.item').on('click', function(){
+                var thisFid = $(this).attr('data-fid'),
+                    thisName = $(this).attr('data-name');
+                Pub.openView('./personal_info_win', {
+                    pageParam:{
+                        fid: thisFid,
+                        name: thisName,
+                        isStatus: true
+                    }
+                });
+            });
+            checkEvent();
+          }
+        })
+    }
+    function search(words){
+        console.log(words);
+        var memberArr = memberData.data;
+        var searchArr = [];
+        var searchData = [];
+        if(words){
+            for(var i = 0; i<memberArr.length; i++){
+                if(memberArr[i].uname.indexOf(words) > -1){
+                    searchArr.push(memberArr[i]);
+                }
+            }
+            if(searchArr.length == 0) return Pub.msg(Pub.getLang('search_nothing'));
+            searchData.data = searchArr;
+        }else{
+            searchData = memberData;
+        }
+        var html = template('friend_html', searchData);
+        $('#member_list').html(html);
+        Pub.setLang();
+        $('.img_url').each(function(){
+            var thisSrc = $(this).attr('src');
+            if(thisSrc){
+                if(thisSrc.indexOf('http') == -1){
+                    $(this).attr('src', Pub.imgHost + thisSrc);
+                }
+            }else{
+                $(this).attr('src', '../../skin/default/images/chat/default_avatar.png');
+            }
+        });
+        $('.check').each(function(){
+          var thisFid = $(this).attr('data-fid');
+            var thisPack = $(this).attr('data-pack');
+            if(thisPack=="true"){
+                $(this).addClass('active');
+                checkArr = checkArr.concat(thisFid);
+            }else{
+                $(this).removeClass('active');
+                checkArr = Pub.deleteByValue(checkArr, thisFid);
+            }
+        });
+        $('#member_list').find('.item').on('click', function(){
+            var thisFid = $(this).attr('data-fid'),
+                thisName = $(this).attr('data-name');
+              Pub.openView('./personal_info_win', {
+                  pageParam:{
+                      fid: thisFid,
+                      name: thisName,
+                      isStatus: true
+                  }
+              });
+        });
+        checkEvent();
+    }
+    function checkEvent(){
+      $('.check').on('click', function(e){
+          e.stopPropagation();
+          var thisFid = $(this).attr('data-fid');
+          if($(this).hasClass('active')){
+              $(this).removeClass('active');
+              checkArr = Pub.deleteByValue(checkArr, thisFid);
+          }else{
+              $(this).addClass('active');
+              checkArr = checkArr.concat(thisFid);
+          }
+      });
+    }
+</script>
+
+</html>

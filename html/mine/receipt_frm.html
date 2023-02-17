@@ -1,0 +1,68 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="" class="bgc-white">
+  <div class="receipt-container">
+    <div class="top">
+      <div class="receipt-top">
+        <span class="name">充值方式</span>
+        <div class="select" onclick="payMethod()">
+          <img src="../../skin/default/images/icon/icon_wechat3.png" alt="">
+          <span>微信充值</span>
+        </div>
+        <div class="arrow"><img src="../../skin/default/images/icon/icon_arrow_down_gray.png" alt=""></div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="name">充值金额</div>
+      <div class="input">
+        <div class="unit">￥</div>
+        <input type="number" name="" value="" id="amount">
+      </div>
+      <!-- <div class="tip" onclick="tip()"><span id="tip">添加转账说明</span> <span id="edit" class="hide">修改</span></div> -->
+      <div class="btn-group">
+        <a class="primary" onclick="recharge()" set-lang="text:">充值</a>
+      </div>
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+var fid;
+var coinId;
+    apiready = function() {
+        api.parseTapmode();
+        fid = api.pageParam.fid;
+    }
+    function payMethod(){
+        api.actionSheet({
+            title: "选择充值方式",
+            cancelTitle: "取消",
+            buttons: ["微信"]
+      }, function(ret, err) {
+          var index = ret.buttonIndex;
+          var btnIndex = index - 1;
+          if(index>1){
+            return;
+          }else{
+
+          }
+      });
+
+    }
+    function recharge(){
+      Pub.msg("暂未开放")
+    }
+</script>
+
+</html>

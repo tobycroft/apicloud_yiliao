@@ -1,0 +1,274 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+          content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,initial-scale=1.0,width=device-width"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title set-lang="text:mine_transaction_record">交易记录</title>
+    <!-- <link rel="stylesheet" type="text/css" href="../../css/aui.css"/>
+    <link rel="stylesheet" type="text/css" href="../../css/mobileSelect.css" /> -->
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+    <div class="trading-menu">
+        <span onclick="chooseAll()" set-lang="text:all">全部</span>
+        <!-- <span onclick="typeChoose()" id="type"><em >类型</em><i></i></span> -->
+        <span onclick="timeChoose()" id="date"><em >时间</em><i></i></span>
+    </div>
+    <div class="trading-record-container">
+        <div class="trading-items" id="record_list">
+            <!-- <div class="item">
+                <div class="item-left">
+                    <p>类型：提现退回</p>
+                    <p>币种：WNCT</p>
+                    <p>数量：10.00011</p>
+                </div>
+                <div class="item-right">
+                    <p>时间：2018-09-04 20:20:02</p>
+                    <p>余额：<span>271.9999900909</span></p>
+                </div>
+            </div>
+            <div class="item">
+                <div class="item-left">
+                    <p>类型：提现退回</p>
+                    <p>币种：WNCT</p>
+                    <p>数量：10.00011</p>
+                </div>
+                <div class="item-right">
+                    <p>时间：2018-09-04 20:20:02</p>
+                    <p>余额：<span>271.9999900909</span></p>
+                </div>
+            </div>
+            <div class="item">
+                <div class="item-left">
+                    <p>类型：提现退回</p>
+                    <p>币种：WNCT</p>
+                    <p>数量：10.00011</p>
+                    <p>账户：abcabc</p>
+                </div>
+                <div class="item-right">
+                    <p>余额：<span>271.9999900909</span></p>
+                    <p>时间：2018-09-04 20:20:02</p>
+                </div>
+            </div>
+            <div class="item">
+                <div class="item-left">
+                    <p>类型：提现退回</p>
+                    <p>币种：WNCT</p>
+                    <p>数量：10.00011</p>
+                </div>
+                <div class="item-right">
+                    <p>时间：2018-09-04 20:20:02</p>
+                    <p>余额：<span>271.9999900909</span></p>
+                </div>
+            </div> -->
+        </div>
+    </div>
+    <script type="text/html" id="record_list_html">
+        {{if data.length > 0}}
+            {{each data}}
+            <div class="item">
+              <div class="one-line"><font set-lang="text:order_number">订单编号</font>：{{$value.order_id}}</div>
+              <div class="one-line"><font set-lang="text:type">类型</font>：{{$value.type}}</div>
+              <div class="one-line"><font set-lang="text:">金额</font>：{{$value.balance}}</div>
+              <div class="one-line"><font set-lang="text:">钱包</font>：{{$value.after_balance}}</div>
+              <div class="one-line"><font set-lang="text:">时间</font>：{{$value.date}}</div>
+              <!-- <div class="item-left">
+                  <p><font set-lang="text:coin_type">币种</font>：{{$value.coin_info.cname}}</p>
+                  <p><font set-lang="text:">金额</font>：{{$value.balance}}</p>
+                  <p><font set-lang="text:">账户余额</font>：<span>{{$value.after_balance}}</span></p>
+
+              </div>
+              <div class="item-right">
+
+                  <p><font set-lang="text:time">时间</font>：{{$value.date}}</p>
+              </div> -->
+            </div>
+            {{/each}}
+            {{if isDown}}
+                <div class="aui-padded-10 aui-text-center" style="color: #999;text-align:center" set-lang="text:no_data">没有更多啦！！</div>
+            {{/if}}
+        {{else}}
+            <div class="aui-padded-10 aui-text-center" style="color: #999;text-align:center" set-lang="text:no_data">没有更多啦！！</div>
+        {{/if}}
+    </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script src="../../script/mobileSelect.min.js"></script>
+<script src="../../script/datePicker.js"></script>
+<script type="text/javascript">
+    var uid = '', page = 1, size = 30, type = '', dateDay = '', listObj = {}, listData = [], typeData=[], typeDataAll = [];
+    apiready = function(){
+        api.parseTapmode();
+        uid = $api.getStorage('uid');
+        getType();
+        getData(true);
+        pullDown();
+        pullUp();
+        $('#type').find('em').text(Pub.getLang("type"));
+        $('#date').find('em').text(Pub.getLang("time"));
+    }
+    function timeChoose(){
+        var date = new Date();
+        Y = date.getFullYear() + '-';
+        M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+        D = date.getDate();
+        var day= Y + M + D;
+        api.openPicker({
+            type: 'date',
+            title: Pub.getLang("choose_time"),
+        }, function(ret, err) {
+            if (ret) {
+                var chooseDay = ret.year + '-' + ret.month + '-' + ret.day,
+                    chooseTime = ret.year + '-' +  ret.month + '-' + ret.day + ' ' + ret.hour + ':' + ret.minute + ':00';
+                $('#date').find('em').html(chooseDay);
+                dateDay = $api.toUnix(chooseTime) / 1000;
+                console.log(dateDay)
+                page = 1;
+                listData = [];
+                getData(true);
+
+            } else {
+                alert(JSON.stringify(err));
+            }
+        });
+    }
+    function dateEvent(){
+        var calendar = new datePicker();
+        var date = new Date();
+        Y = date.getFullYear() + '-';
+        M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+        D = date.getDate();
+        var day= Y + M + D;
+        console.log(day);
+        calendar.init({
+        	'trigger': '#date', /*按钮选择器，用于触发弹出插件*/
+        	'type': 'date',/*模式：date日期；datetime日期时间；time时间；ym年月；*/
+        	'minDate':'2018-1-1',/*最小日期*/
+        	'maxDate':day,/*最大日期*/
+        	'onSubmit':function(){/*确认时触发事件*/
+        		var theSelectData=calendar.value;
+
+        	},
+        	'onClose':function(){/*取消时触发事件*/
+        	}
+        })
+    }
+    function getType(){
+        var params = {
+            uid: $api.getStorage('uid')
+        }
+        Pub.post('user/balance/record_type', params, function(res){
+            if(res.code == 0){
+                typeDataAll = res.data;
+                //typeDataAll = data;
+                //var typeDataAll = []
+                // for (var key in data) {
+                //   console.log(key);     //获取key值
+                //   console.log(data[key]); //获取对应的value值
+                //   var type = "";
+                //   for(var i = 0;i<res.data[key].length;i++){
+                //     type += data[key][i].type + ",";
+                //   }
+                //   var ele = {name:key,type:type};
+                //   typeDataAll.push(ele);
+                // }
+                console.log(JSON.stringify(typeDataAll));
+                for(var i=0; i<typeDataAll.length; i++){
+                    typeData.push(typeDataAll[i].name);
+                }
+                console.log(JSON.stringify(typeData));
+            }
+        });
+    }
+    function typeChoose(){
+        api.actionSheet({
+            title: Pub.getLang('please_choose_type'),
+            cancelTitle: Pub.getLang('cancel'),
+            // destructiveTitle: '红色警告按钮',
+            buttons: typeData
+        }, function(ret, err) {
+            var index = ret.buttonIndex;
+            console.log(index);
+            for(var i=0; i<typeDataAll.length; i++){
+                if(index == (i+1)){
+                    type = typeDataAll[i].type;
+                    $('#type').find('em').text(typeDataAll[i].name);
+                    page = 1;
+                    listData = [];
+                    getData(true);
+                }
+            }
+        });
+    }
+    function getData(isEmpty, callback){
+        var uid = $api.getStorage('uid');
+        var params = {
+            uid: $api.getStorage('uid'),
+            in: type || "all",
+            page: page,
+            limit: size,
+            // start_time: dateDay,
+            // end_time: dateDay,
+            date: dateDay,
+            cid:"",
+        }
+        console.log(JSON.stringify(params))
+        Pub.post('user/balance/record_list', params, function(ret){
+            if(ret.code == 0){
+                if(isEmpty){
+                    listData = ret.data;
+                } else {
+                    listData = listData.concat(ret.data);
+                }
+                listObj = {
+                    data: listData
+                };
+                if(ret.data.length == 0 || ret.data.length < 10){
+                    listObj.isDown = true;
+                }
+                var html = template('record_list_html', listObj);
+                $api.byId('record_list').innerHTML = html;
+                Pub.setLang();
+                if(typeof callback == 'function'){
+                    callback();
+                }
+            } else {
+                Pub.msg(ret.data);
+            }
+        })
+    }
+    function chooseAll(){
+        type = '';
+        dateDay = '';
+        page = 1;
+        listData = [];
+        $('#type').find('em').text(Pub.getLang('type'));
+        $('#date').find('em').text(Pub.getLang('time'));
+        getData(true);
+    }
+    function pullDown(){
+        Pub.pullDown(function(){
+            page = 1;
+            listData = [];
+            getData(true, function(){
+                api.refreshHeaderLoadDone();
+            });
+        })
+    }
+    function pullUp(){
+        api.addEventListener({name:'scrolltobottom', extra:{
+        threshold: 100            //设置距离底部多少距离时触发，默认值为0，数字类型
+    }}, function(ret, err){
+           ++page;
+           getData(false);
+        });
+
+    }
+</script>
+</html>

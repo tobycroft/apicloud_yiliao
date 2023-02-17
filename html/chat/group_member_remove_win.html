@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <header id="header">
+        <div class="header-box" id="header_box">
+          <div class="header" >
+              <div class="header-left">
+                  <a onclick="closeWin()" set-lang="text:cancel">取消</a>
+              </div>
+              <div class="header-middle" set-lang="text:remove_member">移除成员</div>
+              <div class="header-right" onclick="done()">
+                <a class="btn-green" set-lang="text:finish">完成</a>
+              </div>
+          </div>
+        </div>
+        <div class="main-search">
+          <div class="input-box">
+              <div class="input">
+                <input type="text" placeholder="搜索" set-lang="placeholder:search" id="search_text">
+                <div class="btn-submit my-btn" id="search" set-lang="text:search">搜索</div>
+              </div>
+          </div>
+        </div>
+    </header>
+
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+apiready = function() {
+    api.parseTapmode();
+    Pub.setStatusBar();
+    var headerBox = $api.byId('header_box');
+    $api.fixStatusBar(headerBox);
+    var header = $api.byId('header');
+    var headerPos = $api.offset(header);
+    openFrame(headerPos);
+    Pub.keybackClose();
+    inputEvent();
+}
+function inputEvent(){
+  $('#search_text').on('input prototype', function(){
+    var thisVal = $(this).val();
+    if(thisVal){
+      $('#search').show();
+    }else{
+      $('#search').hide();
+      Pub.eventSend('member_remove_search', {
+        words: ''
+      })
+    }
+  });
+  $('#search').on('click', function(){
+    var searchVal = $('#search_text').val();
+    Pub.eventSend('member_remove_search', {
+      words: searchVal
+    })
+  });
+}
+function openFrame(headerPos){
+    Pub.openFrame('./group_member_remove_frm',{headerPos:headerPos},{bounces:false, pageParam: api.pageParam, bgColor: '#fff'});
+}
+function done(){
+  Pub.eventSend('group_member_remove');
+}
+function closeWin() {
+  api.closeWin();
+  Pub.setStatusBar();
+}
+</script>
+
+</html>

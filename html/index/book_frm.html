@@ -1,0 +1,386 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0, minimum-scale=1.0, user-scalable=0, initial-scale=1.0, width=device-width" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body ontouchstart="">
+    <div id="app">
+        <template>
+      <div class="book-slide" id="book_silde" v-show="listData.length > 0">
+        <a href="#A">A</a>
+        <a href="#B">B</a>
+        <a href="#C">C</a>
+        <a href="#D">D</a>
+        <a href="#E">E</a>
+        <a href="#F">F</a>
+        <a href="#G">G</a>
+        <a href="#H">H</a>
+        <a href="#I">I</a>
+        <a href="#J">J</a>
+        <a href="#K">K</a>
+        <a href="#L">L</a>
+        <a href="#M">M</a>
+        <a href="#N">N</a>
+        <a href="#O">O</a>
+        <a href="#P">P</a>
+        <a href="#Q">Q</a>
+        <a href="#R">R</a>
+        <a href="#S">S</a>
+        <a href="#T">T</a>
+        <a href="#U">U</a>
+        <a href="#V">V</a>
+        <a href="#W">W</a>
+        <a href="#X">X</a>
+        <a href="#Y">Y</a>
+        <a href="#Z">Z</a>
+        <a href="#0">*</a>
+      </div>
+      <div class="index-search" @click="toSearch" tapmode>
+        <div class="search-box"><img src="../../skin/default/images/icon/icon_search.png"> {{lang.search}}</div>
+      </div>
+      <div class="book-cell">
+        <ul class="bd-gray-light">
+          <li tapmode @click="toPage('../book/message_win')">
+            <div class="icon">
+              <div class="icon-box">
+                <img src="../../skin/default/images/icon/icon_book_message.png">
+                <em v-if="applyNum > 0">{{applyNum}}</em>
+              </div>
+            </div>
+            <div class="name">{{lang.message_notification}}</div>
+          </li>
+          <li tapmode @click="toPage('../chat/group_list_win')">
+            <div class="icon">
+              <div class="icon-box">
+                <img src="../../skin/default/images/icon/icon_book_group.png">
+              </div>
+            </div>
+            <div class="name">{{lang.group_chat}}</div>
+          </li>
+          <li tapmode @click="toPage('../book/blacklist_win')">
+            <div class="icon">
+              <div class="icon-box">
+                <img src="../../skin/default/images/icon/icon_book_blacklist.png">
+              </div>
+            </div>
+            <div class="name">{{lang.blacklist}}</div>
+          </li>
+        </ul>
+      </div>
+      <div v-for="(item,index) in listData" :key="index" >
+      <div class="group-cell-index" id="0" v-if="item.letter == '*'">{{item.letter}}</div>
+      <div class="group-cell-index" :id="item.letter" v-else>{{item.letter}}</div>
+      <div class="book-cell">
+        <ul class="big">
+          <li v-for="(item2, index2) in item.letterData" @click="toInfo(item2.fid, item2.uname)">
+              <div class="icon" v-if="item2.face">
+                <div class="icon-box" v-if="Pub.imageManage(item2.face)">
+                  <img :src="getAvatarCache(item2.face)" v-if="getAvatarCache(item2.face)">
+                  <img v-lazy="(item2.face.indexOf('http') == -1)?(imgHost + item2.face):item2.face" :key="item2.face" @load="loadAvatar(item2.face)" v-else>
+                </div>
+                <div class="icon-box" v-else>
+                  <img src="../../icon/logo.png">
+                </div>
+              </div>
+              <div class="icon" v-else>
+                <div class="icon-box">
+                  <div class="avatar-font">{{Pub.showNickname(item2).substring(0,1).toUpperCase()}}</div>
+                </div>
+              </div>
+              <div class="name">{{Pub.showNickname(item2)}}
+                <!-- <p>在线</p> -->
+              </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="default-box box-margin" v-show="isShowImg">
+      <img src="../../image/default/default_book.png">
+      <h3>{{lang.go_to_talk_with_your_friends}}</h3>
+    </div>
+    </template>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/pinyin.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script src="../../script/vue-lazyload.js"></script>
+<script>
+    apiready = function() {
+        api.parseTapmode();
+        Pub.setStatusBar();
+        initEvent();
+    }
+
+    function initEvent() {
+        Vue.use(VueLazyload, {
+            error: '../../icon/error.png',
+            loading: '../../icon/loading.png',
+        });
+        var app = new Vue({
+            el: "#app",
+            data: {
+                imgHost: Pub.imgHost,
+                uid: $api.getStorage('uid'),
+                listData: [],
+                listDataInit: '',
+                listDataLen: 0,
+                isShowImg: false,
+                avatarCache: {},
+                fs: api.require('fs'),
+                applyNum: 0,
+                isShowImg: false,
+                timer: null,
+                lang: {
+                    go_to_talk_with_your_friends: Pub.getLang("go_to_talk_with_your_friends"),
+                    message_notification: "新的朋友",
+                    group_chat: Pub.getLang("group_chat"),
+                    blacklist: Pub.getLang("blacklist"),
+                    search: Pub.getLang("search"),
+                }
+            },
+            mounted: function() {
+                var _this = this;
+                this.openHeader();
+                _this.pullDown();
+                this.avatarCache = $api.getStorage('avatar_cache') || {};
+                if (this.avatarCache && Object.keys(this.avatarCache).length > 0) {
+                    for (var i in this.avatarCache) {
+                        if (this.avatarCache.hasOwnProperty(i)) {
+                            _this.avatarIsExist(i, this.avatarCache[i]);
+                        }
+                    }
+                }
+                if ($api.getStorage('uid')) {
+                    this.getDataInit();
+                    this.getBookCount();
+                    Pub.eventListen('book_load', function() {
+                        _this.getDataInit();
+                    });
+                    Pub.eventListen('update_userinfo', function() {
+                        _this.getDataInit();
+                    });
+                }
+                Pub.eventListen('login', function() {
+                    _this.getDataInit();
+                });
+                Pub.eventListen('book_count', function(ret) {
+                    _this.applyNum = ret.value.count;
+                    _this.getDataInit();
+                });
+                Pub.eventListen('socket_connect', function() {
+                    _this.getDataInit();
+                    _this.getBookCount();
+                });
+                Pub.eventListen('language', function() {
+                    _this.lang = {
+                        go_to_talk_with_your_friends: Pub.getLang("go_to_talk_with_your_friends"),
+                        message_notification: "新的朋友",
+                        group_chat: Pub.getLang("group_chat"),
+                        blacklist: Pub.getLang("blacklist"),
+                        search: Pub.getLang("search"),
+                    };
+                    Pub.setTabText();
+                });
+            },
+            methods: {
+                openHeader: function() {
+                    api.openFrame({
+                        name: 'book_header_frm',
+                        url: './book_header_frm.html',
+                        rect: {
+                            x: 0,
+                            y: 0,
+                            w: 'auto',
+                            h: 50 + api.safeArea.top,
+                        },
+                        pageParam: {},
+                        bounces: false,
+                        bgColor: 'rgba(0,0,0,0)',
+                    });
+                },
+                getDataInit: function() {
+                    var _this = this;
+                    if ($api.getStorage(_this.uid + "_friendList")) {
+                        _this.listData = JSON.stringify($api.getStorage(_this.uid + "_friendList"));
+                        console.log(_this.listData);
+                    }
+                    Pub.post(Pub.apiChat + 'friend/friend/list2', {}, function(res) {
+                        console.log('好友列表:' + JSON.stringify(res));
+                        if (res.code == 0) {
+                            $api.setStorage(_this.uid + "_friendList", res.data);
+                            var arr = new Array();
+                            for (var i in res.data) {
+                                if (res.data[i].temp == 0) {
+                                    arr.push(res.data[i]);
+                                }
+                            }
+                            res.data = arr;
+                            _this.listData = _this.letterSort(res.data);
+                            _this.listDataLen = _this.listData.length;
+                            _this.listDataInit = JSON.stringify(res.data);
+                            if (_this.listData.length > 0) {
+                                _this.isShowImg = false;
+                            } else {
+                                _this.isShowImg = true;
+                            }
+                        }
+                    }, true)
+                },
+                getData: function() {
+                    var _this = this;
+                    Pub.post(Pub.apiChat + 'friend/friend/list2', {}, function(res) {
+                        if (res.code == 0) {
+                            if (res.data.length > 0) {
+                                if (JSON.stringify(res.data) != _this.listDataInit) {
+                                    $api.setStorage(_this.uid + "_friendList", res.data);
+
+                                    var arr = new Array();
+                                    for (var i in res.data) {
+                                        if (res.data[i].temp == 0) {
+                                            arr.push(res.data[i]);
+                                        }
+                                    }
+                                    res.data = arr;
+                                    _this.listData = _this.letterSort(res.data);
+                                    _this.listDataLen = _this.listData.length;
+                                    _this.listDataInit = JSON.stringify(res.data);
+                                    if (_this.listData.length > 0) {
+                                        _this.isShowImg = false;
+                                    } else {
+                                        _this.isShowImg = true;
+                                    }
+                                }
+                            }
+                        }
+                    }, true)
+                },
+                getBookCount: function() {
+                    var _this = this;
+                    Pub.post('request/request/count', {}, function(res) {
+                        if (res.code == 0) {
+                            _this.applyNum = res.data;
+                        }
+                    }, true);
+                },
+                toPage: function(url) {
+                    Pub.openView(url);
+                },
+                toInfo: function(id, name) {
+                    Pub.openView('../chat/personal_info_win', {
+                        pageParam: {
+                            id: id,
+                            name: name
+                        }
+                    })
+                },
+                loadAvatar: function(img) {
+                    console.log('头像' + img);
+                    var _this = this;
+                    var imgUrl = img.indexOf('http') == -1 ? (Pub.imgHost + img) : img;
+                    if (!this.avatarCache) {
+                        this.avatarCache = {};
+                    }
+                    api.imageCache({
+                        url: imgUrl
+                    }, function(ret, err) {
+                        var url = ret.url;
+                        if (JSON.stringify(_this.avatarCache).indexOf(window.encodeURI(img)) == -1 || !_this.avatarCache[window.encodeURI(img)]) {
+                            _this.avatarCache[window.encodeURI(img)] = url;
+                            $api.setStorage('avatar_cache', _this.avatarCache);
+                        }
+                    });
+                },
+                getAvatarCache: function(img) {
+                    var _this = this;
+                    var imgName = window.encodeURI(img);
+                    if (this.avatarCache.hasOwnProperty(imgName)) {
+                        return _this.avatarCache[imgName];
+                    } else {
+                        return false;
+                    }
+                },
+                avatarIsExist: function(i, img) {
+                    var _this = this;
+                    this.fs.exist({
+                        path: img
+                    }, function(ret, err) {
+                        if (!ret.exist) {
+                            _this.avatarCache[i] = '';
+                        }
+                    })
+                },
+                letterSort: function(arr) {
+                    if (!String.prototype.localeCompare) return null;
+                    var letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ*'.split('');
+                    var segs = [];
+                    var curr = {};
+                    for (var i = 0; i < letters.length; i++) {
+                        curr = {
+                            letter: letters[i],
+                            letterData: []
+                        };
+                        for (var j = 0; j < arr.length; j++) {
+                            if (arr[j].nickname === null) {
+                                if (pinyin.getFullChars(arr[j].uname).substring(0, 1).toUpperCase() == letters[i]) {
+                                    curr.letterData.push(arr[j]);
+                                    // arr.splice(j,1);
+                                } else {
+                                    if (letters[i] == '*' && !Pub.regex.rgLetterCap.test(pinyin.getFullChars(arr[j].uname).substring(0, 1).toUpperCase())) {
+                                        for (var k = 0; k < letters.length - 1; k++) {
+                                            if (Pub.arrIndexOf(curr.letterData, JSON.stringify(arr[j])) == -1) {
+                                                curr.letterData.push(arr[j]);
+                                            }
+                                        }
+                                    }
+
+                                }
+                            }else{
+                              if (pinyin.getFullChars(arr[j].nickname).substring(0, 1).toUpperCase() == letters[i]) {
+                                  curr.letterData.push(arr[j]);
+                                  // arr.splice(j,1);
+                              } else {
+                                  if (letters[i] == '*' && !Pub.regex.rgLetterCap.test(pinyin.getFullChars(arr[j].nickname).substring(0, 1).toUpperCase())) {
+                                      for (var k = 0; k < letters.length - 1; k++) {
+                                          if (Pub.arrIndexOf(curr.letterData, JSON.stringify(arr[j])) == -1) {
+                                              curr.letterData.push(arr[j]);
+                                          }
+                                      }
+                                  }
+
+                              }
+                            }
+                        }
+                        if (curr.letterData.length) {
+                            segs.push(curr);
+                        }
+                    }
+                    console.log('好友列表' + JSON.stringify(segs));
+                    return segs;
+                },
+                pullDown: function() {
+                    var _this = this;
+                    Pub.pullDown(function() {
+                        _this.getData();
+                        Pub.pullDownDone();
+                    });
+                },
+                toSearch: function(){
+                  Pub.openView('../chat/chat_search_win');
+                },
+
+            }
+        });
+    }
+</script>
+
+</html>

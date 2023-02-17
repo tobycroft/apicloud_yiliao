@@ -1,0 +1,76 @@
+<!doctype html>
+<html class="bg-transparent">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bg-transparent">
+  <header class="no-bg white-mode hidden" id="header">
+    <div class="header">
+        <div class="header-left">
+          <a onclick="closeWin()">
+            <i class="return"></i><span id="title"></span>
+          </a>
+        </div>
+        <div class="header-middle"></div>
+        <div class="header-right">
+          <a onclick="openPopup()"><img src="../../skin/default/images/circle/icon_photo_white.png" id="icon_phone"></a>
+        </div>
+    </div>
+  </header>
+
+
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+var headerStatus = '';
+apiready = function() {
+    api.parseTapmode();
+    Pub.changeStatusBar();
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    $('#header').removeClass('hidden')
+}
+function setHeader(status){
+  if(status == 1){
+    $('#header').removeClass('no-bg');
+    $('#header').removeClass('white-mode');
+    $('#title').text(Pub.getLang('friend_circle'));
+    $('#icon_phone').attr('src', '../../skin/default/images/circle/icon_photo_black.png');
+    Pub.setStatusBar();
+  }else{
+    $('#header').addClass('no-bg');
+    $('#header').addClass('white-mode');
+    $('#title').text('');
+    $('#icon_phone').attr('src', '../../skin/default/images/circle/icon_photo_white.png');
+    Pub.changeStatusBar();
+  }
+  Pub.eventSend('header_status', {
+    status: status
+  });
+  headerStatus = status;
+}
+function openPopup(){
+  Pub.openFrame('./circle_popup_frm', {}, {
+    bounces: false,
+    bgColor: 'transparent',
+    pageParam: {
+      headerStatus: headerStatus
+    }
+  });
+}
+function closeWin(){
+  if(api.pageParam.isToInfo){
+    Pub.setStatusBar();
+  }
+  api.closeWin();
+}
+</script>
+
+</html>

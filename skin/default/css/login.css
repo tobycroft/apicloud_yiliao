@@ -1,0 +1,353 @@
+@charset "UTF-8";
+/**
+* 变量
+**/
+/**
+* function
+**/
+html {
+  font-size: 100vw !important;
+}
+@media screen and (max-width: 320px) {
+  html {
+    font-size: 64px;
+  }
+}
+@media screen and (min-width: 540px) {
+  html {
+    font-size: 108px;
+  }
+}
+.border-radius-25 {
+  -webkit-border-radius: 25%;
+  border-radius: 25%;
+}
+.border-radius-50 {
+  -webkit-border-radius: 50%;
+  border-radius: 50%;
+}
+.border-radius-full {
+  -webkit-border-radius: 100%;
+  border-radius: 100%;
+}
+.overflow-hidden {
+  overflow: hidden;
+}
+.shade-black {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+.shade-white {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+.shade-white-light {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+.box-shadow-primary {
+  -webkit-box-shadow: 0 2px 5px rgba(255, 128, 1, 0.5);
+  box-shadow: 0 2px 5px rgba(255, 128, 1, 0.5);
+}
+.box-shadow-primary-mini {
+  -webkit-box-shadow: 0 1px 2px rgba(255, 128, 1, 0.1);
+  box-shadow: 0 1px 2px rgba(255, 128, 1, 0.1);
+}
+.transtion {
+  -webkit-transition: all .3s;
+  transition: all .3s;
+}
+.translateY-50 {
+  -webkit-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+.translate-50 {
+  -webkit-transform: translate3d(-50%, -50%, 0);
+  transform: translate3d(-50%, -50%, 0);
+}
+@keyframes animateScale {
+  0% {
+    transform: scale(1);
+    -webkit-transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+    -webkit-transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    -webkit-transform: scale(1);
+  }
+}
+@keyframes smallToBig {
+  0% {
+    transform: translateY(-100%);
+    -webkit-transform: translateY(-100%);
+    opacity: 0;
+    height: 0;
+  }
+  100% {
+    transform: translateY(0%);
+    -webkit-transform: translateY(0%);
+    opacity: 1;
+    height: auto;
+  }
+}
+@-webkit-keyframes rockLeftRight {
+  0% {
+    -webkit-transform: translateX(-0.015rem);
+    transform: translateX(-0.015rem);
+  }
+  50% {
+    -webkit-transform: translateX(0);
+    transform: translateX(0);
+  }
+  100% {
+    -webkit-transform: translateX(-0.015rem);
+    transform: translateX(-0.015rem);
+  }
+}
+@-webkit-keyframes rockRightLeft {
+  0% {
+    -webkit-transform: translateX(0.015rem);
+    transform: translateX(0.015rem);
+  }
+  50% {
+    -webkit-transform: translateX(0);
+    transform: translateX(0);
+  }
+  100% {
+    -webkit-transform: translateX(0.015rem);
+    transform: translateX(0.02rem);
+  }
+}
+@keyframes rockLeftRight {
+  0% {
+    left: -10px;
+  }
+  50% {
+    left: 0;
+  }
+  100% {
+    left: -10px;
+  }
+}
+@keyframes rockRightLeft {
+  0% {
+    right: -10px;
+  }
+  50% {
+    right: 0;
+  }
+  100% {
+    right: -10px;
+  }
+}
+@keyframes animationShow {
+  0% {
+    height: 0;
+  }
+  100% {
+    height: auto;
+  }
+}
+@keyframes voiceAnimate {
+  0% {
+    background: url(../../images/icon/icon_voice1.png) no-repeat;
+    background-size: 100% 100%;
+  }
+  50% {
+    background: url(../../images/icon/icon_voice2.png) no-repeat;
+    background-size: 100% 100%;
+  }
+  100% {
+    background: url(../../images/icon/icon_voice3.png) no-repeat;
+    background-size: 100% 100%;
+  }
+}
+@keyframes voiceAnimateReverse {
+  0% {
+    background: url(../../images/icon/icon_voice1.png) no-repeat;
+    background-size: 100% 100%;
+    transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+  }
+  50% {
+    background: url(../../images/icon/icon_voice2.png) no-repeat;
+    background-size: 100% 100%;
+    transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+  }
+  100% {
+    background: url(../../images/icon/icon_voice3.png) no-repeat;
+    background-size: 100% 100%;
+    transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+  }
+}
+.login-bg {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: url(../../images/bg/bg_login.png) no-repeat 50% 0;
+  background-size: 100% auto;
+}
+.login-form {
+  width: 100%;
+  overflow: hidden;
+  padding: 0.06666667rem;
+}
+.login-form .form-logo {
+  width: 100%;
+  height: 0.20266667rem;
+  margin-top: 0.06666667rem;
+  text-align: center;
+}
+.login-form .form-logo img {
+  height: 100%;
+}
+.login-form .form-info {
+  width: 100%;
+}
+.login-form .form-info h3 {
+  font-size: 0.048rem;
+  color: #000000;
+}
+.login-form .form-info p {
+  padding-top: 0.01333333rem;
+  font-size: 0.032rem;
+  color: #008fff;
+}
+.login-form .form-box {
+  width: 100%;
+  margin-top: 0.13333333rem;
+}
+.login-form .form-box .item {
+  width: 100%;
+  display: table;
+  margin-top: 0.02666667rem;
+  height: 0.14666667rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f3f4f8;
+}
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  .login-form .form-box .item {
+    border-bottom: 0.5px solid #f3f4f8;
+  }
+}
+@media screen and (-webkit-min-device-pixel-ratio: 3) {
+  .login-form .form-box .item {
+    border-bottom: 1px solid #f3f4f8;
+  }
+}
+.login-form .form-box .item .input {
+  display: table-cell;
+  vertical-align: middle;
+}
+.login-form .form-box .item .input input {
+  width: 100%;
+  height: 100%;
+  font-size: 0.04266667rem;
+}
+.login-form .form-box .item .handle {
+  display: table-cell;
+  vertical-align: middle;
+  text-align: center;
+}
+.login-form .form-box .item .handle a {
+  font-size: 0.04266667rem;
+  color: #008fff;
+}
+.login-form .form-box .agreement {
+  padding-top: 0.02666667rem;
+}
+.login-form .form-box .agreement img {
+  width: 0.032rem;
+}
+.login-form .form-box .agreement span {
+  font-size: 0.032rem;
+  color: #008fff;
+  padding-left: 0.02666667rem;
+}
+.login-form .form-box .link {
+  width: 100%;
+  padding-top: 0.02666667rem;
+  display: table;
+}
+.login-form .form-box .link a {
+  display: table-cell;
+  font-size: 0.032rem;
+  color: #008fff;
+}
+.login-form .form-box .link a:nth-child(2) {
+  text-align: right;
+}
+.login-form .form-box .btn {
+  width: 100%;
+  height: 0.13333333rem;
+  margin-top: 0.13333333rem;
+  margin-bottom: 0.06666667rem;
+  background-color: #07c160;
+  -webkit-border-radius: 0.13333333rem;
+  border-radius: 0.13333333rem;
+  text-align: center;
+  line-height: 0.13333333rem;
+  font-size: 0.048rem;
+  color: #ffffff;
+}
+.login-form .form-box .btn:active {
+  opacity: .8;
+}
+.login-form .wechat {
+  text-align: center;
+  font-size: 0.04rem;
+}
+.login-form .wechat .icon-wechat {
+  margin-top: 0.06666667rem;
+}
+.login-form .wechat .icon-wechat img {
+  width: 0.13333333rem;
+  height: 0.13333333rem;
+  border-radius: 0.06666667rem;
+}
+.pop-verify-img {
+  padding: 0.03333333rem;
+}
+.pop-verify-img .box {
+  text-align: center;
+  background-color: #ffffff;
+  border-radius: 0.02133333rem;
+  margin-top: 0.53333333rem;
+  width: 0.93333333rem;
+  position: relative;
+  padding: 0.04666667rem;
+  padding-top: 0.10666667rem;
+  padding-bottom: 0.10666667rem;
+}
+.pop-verify-img .box .close {
+  position: absolute;
+  top: 0.04rem;
+  right: 0.04rem;
+  width: 0.04rem;
+}
+.pop-verify-img .box .img img {
+  width: 0.34666667rem;
+  height: 0.17333333rem;
+}
+.pop-verify-img .box .input {
+  font-size: 0.048rem;
+  margin-top: 0.05333333rem;
+}
+.pop-verify-img .box .input input {
+  text-align: center;
+}
+.pop-verify-img .box .btn {
+  display: inline-block;
+  width: 0.37333333rem;
+  padding: 0.04666667rem;
+  padding-left: 0.13333333rem;
+  padding-right: 0.13333333rem;
+  font-size: 0.048rem;
+  color: #f9e000;
+  -webkit-border-radius: 0.072rem;
+  border-radius: 0.072rem;
+  background-color: #ffffff;
+  margin-top: 0.05333333rem;
+}

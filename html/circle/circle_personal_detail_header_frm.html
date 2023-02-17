@@ -1,0 +1,59 @@
+<!doctype html>
+<html class="bg-transparent">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bg-transparent">
+  <header class="hidden white-mode no-bg" id="header">
+    <div class="header">
+        <div class="header-left">
+            <a onclick="closeWin()">
+              <i class="return"></i>
+            </a>
+        </div>
+        <div class="header-middle" id="time"></div>
+        <div class="header-right">
+          <i class="more" onclick="openPopup()" tapmode></i>
+        </div>
+    </div>
+  </header>
+
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+  var detail = {};
+  apiready = function() {
+      api.parseTapmode();
+      Pub.setStatusBar();
+      var header = $api.byId('header');
+      $api.fixStatusBar(header);
+      $('#header').removeClass('hidden');
+      var headerPos = $api.offset(header);
+      getData();
+  }
+  function getData(){
+    detail = api.pageParam.detail;
+    $('#time').text(detail.post.date.replace('-', Pub.getLang('year')).replace('-', Pub.getLang('month')).replace(' ', Pub.getLang('day')));
+  }
+  function openPopup(){
+      Pub.openFrame('./circle_personal_detail_popup_frm',{},{bounces:false, pageParam: api.pageParam, bgColor: 'transparent'});
+  }
+  function closeWin() {
+    var headerStatus = api.pageParam.headerStatus;
+    if(!headerStatus || headerStatus == 1){
+      Pub.changeStatusBar();
+    }else if(headerStatus == 2){
+      Pub.setStatusBar();
+    }
+    api.closeWin();
+  }
+</script>
+
+</html>

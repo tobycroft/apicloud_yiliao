@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="">
+  <header id="header">
+    <div class="header">
+        <div class="header-left">
+            <a onclick="closeWin()"><i class="return"></i></a>
+        </div>
+        <div class="header-middle" set-lang="text:authentication">身份认证</div>
+    </div>
+  </header>
+
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+apiready = function() {
+    api.parseTapmode();
+    Pub.setStatusBar();
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    var headerPos = $api.offset(header);
+    openFrame(headerPos);
+    api.addEventListener({
+        name: 'keyback'
+    }, function(ret, err) {
+      ifExit();
+    });
+    api.addEventListener({
+        name: 'viewdisappear'
+    }, function(ret, err) {
+      ifExit();
+    });
+}
+function openFrame(headerPos){
+    Pub.openFrame('./identity_card_frm',{headerPos:headerPos},{bounces:false, pageParam: api.pageParam});
+}
+function closeWin() {
+  ifExit();
+}
+function ifExit(){
+  Pub.post('user/cert/get', {}, function(res){
+    if(res.code == 0){
+        if(!res.data || res.data === null){
+          Pub.confirm("提示","您没有实名认证，现在退出将直接退出登录！",function(){
+            $api.rmStorage('uid');
+            $api.rmStorage('token');
+            Pub.openView('../login/login_win', {
+                slidBackEnabled: false
+            });
+            api.rebootApp();
+          })
+        }else if(res.data.is_verify==-1){
+          Pub.confirm("提示","您实名认证未通过，请再次提交实名认证信息，现在退出将直接退出登录！",function(){
+            $api.rmStorage('uid');
+            $api.rmStorage('token');
+            Pub.openView('../login/login_win', {
+                slidBackEnabled: false
+            });
+            api.rebootApp();
+          }) 
+        }else{
+          api.closeWin();
+        }
+    }
+  })
+  
+}
+</script>
+
+</html>

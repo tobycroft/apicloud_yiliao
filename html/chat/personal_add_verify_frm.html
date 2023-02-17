@@ -1,0 +1,108 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-white">
+  <div class="verify-container">
+    <div class="info-box">
+      <div class="avatar" id="avatar"><img src="../../icon/logo.png"></div>
+      <div class="info">
+        <h3 id="name">&nbsp;</h3>
+        <p>易聊号：<em id="account">&nbsp;</em></p>
+      </div>
+    </div>
+    <div class="sign">
+      <font set-lang="text:autograph">签名</font>：<span id="sign"></span>
+    </div>
+    <div class="tips" set-lang="text:you_need_seed_verify">你需要发送验证申请等待对方通过</div>
+    <div class="textarea">
+      <textarea placeholder="请输入" set-lang="placeholder:please_enter" id="cont"></textarea>
+      <div class="font"><span id="cont_num">0</span>/50</div>
+    </div>
+  </div>
+  <div class="btn-group">
+    <a class="primary my-btn" onclick="addFriend()" set-lang="text:add_to_address_book">添加到通讯录</a>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var fid = '';
+    apiready = function() {
+        api.parseTapmode();
+        init();
+    }
+    function init(){
+      fid = api.pageParam.fid;
+      getData();
+      inputEvent();
+    }
+    function inputEvent () {
+      $('#cont_num').text($('#cont').val().length);
+      $('#cont').on('input prototype', function(){
+        var thisVal = $(this).val();
+        $('#cont_num').text(thisVal.length);
+        console.log(thisVal);
+        if(thisVal.length >= 50){
+          $('#cont_num').text('50');
+          $('#cont').val(thisVal.substring(0, 50));
+        }
+      });
+    }
+    function getData(callback){
+        if(fid){
+            var params = {
+                fid: fid
+            }
+            Pub.post(Pub.apiChat +'friend/info/userinfo', params, function(res){
+                console.log('好友信息:'+JSON.stringify(res));
+                if(res.code == 0){
+                    var data = res.data;
+                    var avatar = '';
+                    if(data.face){
+                        if(data.face.indexOf('http') == -1){
+                            avatar = Pub.imgHost + data.face;
+                        }else{
+                          avatar = data.face;
+                        }
+                        $('#avatar').html('<img src="'+avatar+'">');
+                    }else{
+                      $('#avatar').html('<img src="../../icon/logo.png">');
+                    }
+                    $('#name').text(data.uname);
+                    $('#account').text(data.uid);
+                    $('#sign').text(data.introduction || '无');
+                }
+                if(callback && typeof callback == 'function'){
+                    callback(res);
+                }
+            });
+        }
+    }
+    function addFriend(){
+      var cont = $('#cont').val();
+      var params = {
+          fid: fid,
+          comment: cont
+      }
+      Pub.post(Pub.apiChat +'request/request/friend', params, function(res){
+          if(res.code == 0){
+              Pub.msg(Pub.getLang('sended_wait_for_pass'));
+              setTimeout(function(){
+                api.closeWin();
+              }, 1000);
+          }
+      });
+    }
+
+</script>
+
+</html>

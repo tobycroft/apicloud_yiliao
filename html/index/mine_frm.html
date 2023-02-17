@@ -1,0 +1,286 @@
+<!DOCTYPE HTML>
+<html class="bgc-white-dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0, minimum-scale=1.0, user-scalable=0, initial-scale=1.0, width=device-width" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body ontouchstart="" class="bgc-white-dark">
+    <div id="app">
+        <template>
+      <div class="mine-info">
+        <div class="info-box" @click="toPage('../chat/personal_set_win')" tapmode>
+          <div class="avatar">
+            <div class="img">
+              <img :src="detail.face" v-if="detail.face">
+               <div class="avatar-font" v-else><em v-if="detail.uname">{{detail.uname.substring(0,1).toUpperCase()}}</em></div>
+            </div>
+          </div>
+          <div class="info" v-if="Object.keys(detail).length > 0">
+            <div class="name">{{detail.uname}}</div>
+            <div class="desc">易聊号: {{detail.uid}}</div>
+          </div>
+          <div class="toSet"><img src="../../skin/default/images/icon/img_qrcode_gray.png" alt=""></div>
+        </div>
+      </div>
+      <div class="group-cell-icon mt-20">
+        <ul>
+          <li class="link" @click="toPage('../mine/wallet_win')" tapmode>
+            <div class="icon"><img src="../../skin/default/images/icon/icon_pay.png"></div>
+            <div class="name">支付</div>
+          </li>
+        </ul>
+      </div>
+      <div class="group-cell-icon mt-20">
+        <ul>
+          <li class="link" @click="toPage('../mine/notice_win')" tapmode>
+            <div class="icon"><img src="../../skin/default/images/icon/icon_notice.png"></div>
+            <div class="name">通知</div>
+            <div class="line"></div>
+          </li>
+          <!-- <li class="link" @click="toPage('../chat/personal_qrcode_win')" tapmode>
+            <div class="icon"><img src="../../skin/default/images/icon/icon_share.png"></div>
+            <div class="name">分享</div>
+            <div class="line"></div>
+          </li> -->
+          <li class="link" @click="toPage('../mine/safety_win')" tapmode>
+            <div class="icon"><img src="../../skin/default/images/icon/icon_secret.png"></div>
+            <div class="name">设置</div>
+            <div class="line"></div>
+          </li>
+          <li class="link" @click="toPage('../mall/order_detail_win')" tapmode>
+            <div class="icon"><img src="../../skin/default/images/icon/icon_wallet.png"></div>
+            <div class="name">订单管理</div>
+            <div class="line"></div>
+          </li>
+          <li class="link" @click="toPage('../mall/address_win')" tapmode>
+            <div class="icon"><img src="../../skin/default/images/icon/icon_wallet.png"></div>
+            <div class="name">订单地址</div>
+            <div class="line"></div>
+          </li>
+          <li class="link" @click="toInfo(5, '官方客服')" tapmode>
+            <div class="icon"><img src="../../skin/default/images/icon/icon_servicer.png"></div>
+            <div class="name">联系客服</div>
+            <div class="line"></div>
+          </li>
+          <!-- <li class="link" @click="toPage('../mine/feedback_win')" tapmode>
+            <div class="icon"><img src="../../skin/default/images/icon/icon_help.png"></div>
+            <div class="name">问题反馈</div>
+            <div class="line"></div>
+          </li> -->
+          <li class="link" @click="toPage('../mine/about_win')" tapmode>
+            <div class="icon"><img src="../../skin/default/images/icon/icon_about.png"></div>
+            <div class="name">关于我们</div>
+          </li>
+
+        </ul>
+      </div>
+      <!-- <div class="group-cell-icon mt-20">
+        <ul>
+          <li class="link" @click="toPage('../chat/personal_set_win')" tapmode>
+            <div class="icon"><img src="../../skin/default/images/icon/icon_setting.png"></div>
+            <div class="name">设置</div>
+          </li>
+        </ul>
+      </div> -->
+    </template>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script>
+    apiready = function() {
+        api.parseTapmode();
+        Pub.setStatusBar();
+        initEvent();
+        getStatus();
+        Pub.eventListen("refresh_real",function(){
+          window.location.reload();
+        });
+        var lang = $api.getStorage('lang');
+        if(lang == 'en'){
+          $('#language').text('English');
+        }else{
+          $('#language').text('中文');
+        }
+    }
+
+    function initEvent() {
+        var app = new Vue({
+            el: "#app",
+            data: {
+                detail: $api.getStorage($api.getStorage('uid')+'_user_info') || {},
+                version: '',
+                uid: $api.getStorage('uid'),
+                lang: {
+                  wallet: Pub.getLang('wallet'),
+                  safe: Pub.getLang('safe'),
+                  notice: Pub.getLang('notice'),
+                  complaint: Pub.getLang('complaint'),
+                  authentication: Pub.getLang('authentication'),
+                  language_switching: Pub.getLang('language_switching'),
+                  bank_card: Pub.getLang('bank_card'),
+                  version_info: Pub.getLang('version_info'),
+                }
+            },
+            mounted: function() {
+                var _this = this;
+                this.version = api.appVersion; // 比如： 1.0.0
+                this.getData();
+                this.openHeader();
+                Pub.eventListen('login', function(){
+                    _this.getData();
+                });
+                Pub.eventListen('update_userinfo', function(){
+                    _this.getData();
+                });
+                Pub.eventListen('socket_connect', function(){
+                  _this.getData();
+                });
+                Pub.eventListen("login",function(){
+                  api.setFrameAttr({
+                      name: 'chat_header_frm',
+                      hidden: false
+                  });
+                  api.setFrameAttr({
+                      name: 'book_header_frm',
+                      hidden: true
+                  });
+                  api.setFrameAttr({
+                      name: 'find_header_frm',
+                      hidden: true
+                  });
+                  api.setFrameAttr({
+                      name: 'mine_header_frm',
+                      hidden: true
+                  });
+                  api.setNavBarAttr({
+                      background: '#fff',
+                      shadow: '#f9f9f9',
+                      color: '#000',
+                  });
+                })
+                Pub.eventListen('language', function(){
+                  getStatus();
+                  _this.lang = {
+                    wallet: Pub.getLang('wallet'),
+                    safe: Pub.getLang('safe'),
+                    notice: Pub.getLang('notice'),
+                    complaint: Pub.getLang('complaint'),
+                    authentication: Pub.getLang('authentication'),
+                    language_switching: Pub.getLang('language_switching'),
+                    bank_card: Pub.getLang('bank_card'),
+                    version_info: Pub.getLang('version_info'),
+                  };
+                  Pub.setTabText();
+                });
+            },
+            methods: {
+              openHeader: function() {
+                api.openFrame({
+                  name: 'mine_header_frm',
+                  url: './mine_header_frm.html',
+                  rect: {
+                    x: 0,
+                    y: 0,
+                    w: 'auto',
+                    h: 50 + api.safeArea.top,
+                  },
+                  pageParam: {},
+                  bounces: false,
+                  bgColor: 'rgba(0,0,0,0)',
+                });
+              },
+                setNav: function() {
+                    api.setNavBarAttr({
+                        rightButtons: [{
+                            iconPath: "widget://image/navbar/icon_plus.png",
+                        }, {
+                            iconPath: "widget://image/navbar/icon_plus.png",
+                        }]
+                    });
+                },
+                getData: function(){
+                    var _this = this;
+                    Pub.post(Pub.apiChat + 'user/info/myinfo', {}, function(res){
+                      if(res.code == 0){
+                        _this.detail = res.data;
+                        $api.setStorage(_this.uid+'_user_info', res.data);
+                      }
+                    });
+                },
+                toPage: function(url){
+                    Pub.openView(url);
+                },
+                toInfo: function(id, name){
+                  Pub.openView('../chat/personal_info_win', {
+                      pageParam:{
+                          fid: id,
+                          name: name
+                      }
+                  });
+                },
+
+            }
+        });
+    }
+    function getStatus(){
+      Pub.post("user/cert/get",{},function(res){
+        if(res.code==0){
+          if(!res.data){
+            $("#status").html(Pub.getLang("uncertified"));
+          }else{
+            if(res.data.is_verify==0){
+              $("#status").html(Pub.getLang("in_certification"));
+            }else if(res.data.is_verify==1){
+              $("#status").html(Pub.getLang("certified"));
+            }else{
+              $("#status").html(Pub.getLang("authentication_failed"));
+            }
+          }
+
+        }
+      })
+    }
+    function changeLanguage(){
+      var _this = this;
+      api.actionSheet({
+        title: Pub.getLang('language_switching'),
+        cancelTitle: Pub.getLang('cancel'),
+        // destructiveTitle: '红色警告按钮',
+        buttons: ['简体中文', 'English']
+      }, function (ret, err) {
+        var index = ret.buttonIndex;
+        console.log(index);
+        var lang = '';
+        switch (index) {
+          case 1:
+            $api.setStorage('lang', 'zh');
+            $('#language').text('中文');
+            lang = 'zh';
+            break;
+          case 2:
+            $api.setStorage('lang', 'en');
+            $('#language').text('English');
+            lang = 'en';
+            break;
+          default:
+            break;
+        }
+        if (index != 3) {
+          Pub.setLang();
+          Pub.eventSend('language');
+        }
+      });
+    }
+</script>
+
+
+</html>

@@ -1,0 +1,90 @@
+<!doctype html>
+<html class="bgc-base">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body ontouchstart="" class="bgc-base">
+    <div id="app">
+        <template>
+      <div class="group-cell-font mt-20">
+        <ul>
+          <li class="link" @click="toPage('./change_payment_password_win')" tapmode>
+            <div class="name">设置支付密码</div>
+          </li>
+          <li class="link" @click="toPage('./change_password_win')" tapmode>
+            <div class="name">设置登录密码</div>
+          </li>
+          <li class="link" @click="toPage('./identity_card_win')" tapmode>
+            <div class="name">实名认证</div>
+          </li>
+          <!-- <li class="link">
+            <div class="name">销毁密码</div>
+          </li> -->
+        </ul>
+      </div>
+      <!-- <div class="group-cell-font mt-20">
+        <ul>
+          <li class="link">
+            <div class="name">私钥管理</div>
+          </li>
+          <li class="link">
+            <div class="name">清理聊天记录</div>
+          </li>
+        </ul>
+      </div> -->
+      <br /><br />
+      <!-- <div class="btn-full-white c-red" style="margin-bottom: 0;">销毁账号</div> -->
+      <div class="btn-full-white c-primary" @click="logout" tapmode>{{lang.logout_account}}</div>
+    </template>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+
+    function initEvent() {
+        var app = new Vue({
+            el: '#app',
+            data: {
+              lang:{
+                payment_password: Pub.getLang("payment_password"),
+                login_password: Pub.getLang("login_password"),
+                logout_account: Pub.getLang("logout_account"),
+              }
+            },
+            mounted: function() {
+
+            },
+            methods: {
+                logout: function() {
+                    Pub.confirm(Pub.getLang("tips"), Pub.getLang("confirm_logout"), function() {
+                        $api.rmStorage('uid');
+                        $api.rmStorage('token');
+                        Pub.openView('../login/login_win', {
+                            slidBackEnabled: false
+                        });
+                        api.rebootApp();
+                    });
+                },
+                toPage: function(url){
+                  Pub.openView(url);
+                }
+            }
+        })
+    }
+</script>
+
+</html>

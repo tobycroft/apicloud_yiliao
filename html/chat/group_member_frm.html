@@ -1,0 +1,280 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body>
+    <div class="group-member pd-top-20" id="member_list">
+        <!-- <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div> -->
+    </div>
+    <script type="text/html" id="member_list_html">
+        {{if data.length > 0}}
+            {{each data}}
+            <div class="item" data-fid="{{$value.uid}}" data-name="{{$value.uname}}">
+                <img src="{{$value.face}}" class="img_url">
+                <p>{{$value.uname}}</p>
+            </div>
+            {{/each}}
+        {{/if}}
+    </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var memberData = {}, searchData = {};
+    apiready = function() {
+        api.parseTapmode();
+        getMember();
+        Pub.eventListen('member_search', function(ret){
+            search(ret.value.words)
+        });
+    }
+    function getMember(){
+        if($api.getStorage('member_data')){
+            memberData = $api.getStorage('member_data');
+            console.log(JSON.stringify(memberData));
+            var html = template('member_list_html', memberData);
+            $('#member_list').html(html);
+            Pub.setLang();
+            $('.img_url').each(function(){
+                var thisSrc = $(this).attr('src');
+                if(thisSrc){
+                    if(thisSrc.indexOf('http') == -1){
+                        $(this).attr('src', Pub.imgHost + thisSrc);
+                    }
+                }else{
+                    $(this).attr('src', '../../skin/default/images/chat/default_avatar.png');
+                }
+            });
+            $('#member_list').find('.item').on('click', function(){
+                var thisFid = $(this).attr('data-fid'),
+                    thisName = $(this).attr('data-name');
+                    checkGroupMaster(gid, $api.getStorage('uid'), function(t){
+                      if(t == true){
+                        Pub.openView('./personal_info_win', {
+                            pageParam: {
+                              fid: thisFid,
+                              name: thisName
+                            }
+                        });
+                      }else{
+                        isCanAdd(function(canData){
+                          if(canData == true){
+                            Pub.openView('./personal_info_win', {
+                                pageParam: {
+                                  fid: thisFid,
+                                  name: thisName
+                                }
+                            });
+                          }
+                        })
+                      }
+                    });
+                    // checkGroupMaster(gid, $api.getStorage('uid'), function(t){
+                    //   if(t == 'y'){
+                    //     Pub.openView('./personal_info_win', {
+                    //         pageParam: {
+                    //           fid: thisFid,
+                    //           name: thisName
+                    //         }
+                    //     });
+                    //   }
+                    // });
+                    // if(thisFid == $api.getStorage('uid')){
+                    //   Pub.openView('./personal_info_win', {
+                    //       pageParam: {
+                    //         fid: thisFid,
+                    //         name: thisName
+                    //       }
+                    //   });
+                    // }else{
+                    //   checkGroupMaster(gid, $api.getStorage('uid'), function(t){
+                    //     if(t == 'y'){
+                    //       Pub.openView('./personal_info_win', {
+                    //           pageParam: {
+                    //             fid: thisFid,
+                    //             name: thisName
+                    //           }
+                    //       });
+                    //     }
+                    //   });
+                    // }
+            });
+        }
+    }
+    function isCanAdd(callback){
+      var params = {
+        gid: gid,
+      }
+      Pub.post('group/admin/can_add', params, function(res){
+        if(res.code == 0){
+          if(callback && typeof callback == 'function'){
+            callback(res.data);
+          }
+        }
+      },true);
+    }
+    function checkGroupMaster(gid,fid,callback){
+      var params = {
+        member_id: fid,
+        gid: gid
+      }
+      Pub.post(Pub.apiChat + 'group/info/isgroupmaster', params, function(res){
+        if(res.code == 0){
+          if(callback && typeof callback == 'function'){
+            callback(res.data)
+          }
+        }
+      }, true);
+    }
+    function search(words){
+        console.log(words);
+        var memberArr = memberData.data;
+        var searchArr = [];
+        if(words){
+            for(var i = 0; i<memberArr.length; i++){
+                if(memberArr[i].uname.indexOf(words) > -1){
+                    searchArr.push(memberArr[i]);
+                }
+            }
+            if(searchArr.length == 0) return Pub.msg(Pub.getLang('search_nothing'));
+            searchData.data = searchArr;
+        }else{
+            searchData = memberData;
+        }
+        var html = template('member_list_html', searchData);
+        $('#member_list').html(html);
+        Pub.setLang();
+        $('.img_url').each(function(){
+            var thisSrc = $(this).attr('src');
+            if(thisSrc){
+                if(thisSrc.indexOf('http') == -1){
+                    $(this).attr('src', Pub.imgHost + thisSrc);
+                }
+            }else{
+                $(this).attr('src', '../../skin/default/images/chat/default_avatar.png');
+            }
+        });
+        $('#member_list').find('.item').on('click', function(){
+            var thisFid = $(this).attr('data-fid'),
+                thisName = $(this).attr('data-name');
+              Pub.openView('./personal_info_win', {
+                  pageParam:{
+                      fid: thisFid,
+                      name: thisName,
+                      isStatus: true
+                  }
+              });
+        });
+    }
+    function isFriend(fid, callback){
+        var params = {
+            fid: fid
+        }
+        Pub.post(Pub.apiChat +'friend/friend/is_friend', params, function(res){
+            console.log('是否好友:' + JSON.stringify(res));
+            if(res.code == 0){
+                if(callback && typeof callback == 'function'){
+                    callback(res);
+                }
+            }
+        });
+    }
+    function groupInvite(){
+        Pub.openView('./group_invite_win');
+    }
+</script>
+
+</html>

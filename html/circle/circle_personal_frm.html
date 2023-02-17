@@ -1,0 +1,455 @@
+<!doctype html>
+<html class="bgc-white">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bgc-white">
+    <div id="app">
+        <template>
+      <div class="circle-container" ref="circle_container">
+        <div class="circle-bg" ref="circle_bg">
+          <img :src="(circleInfo.bg.indexOf('http') == -1)?(imgHost + circleInfo.bg):circleInfo.bg"  v-if="circleInfo.bg">
+          <img src="../../skin/default/images/circle/bg_circle.jpg" v-else>
+        </div>
+        <div class="user-info" @click="toInfo()">
+          <div class="name">{{userInfo.uname}}</div>
+          <div class="avatar" v-if="userInfo.face">
+            <img :src="getAvatarCache(userInfo.face)" v-if="getAvatarCache(userInfo.face)">
+            <img v-lazy="(userInfo.face.indexOf('http') == -1)?(imgHost + userInfo.face):userInfo.face" :key="userInfo.face"  @load="loadImg(userInfo.face)" v-else>
+          </div>
+          <div class="avatar" v-else>
+            <img src="../../icon/logo.png">
+          </div>
+        </div>
+        <div class="circle-personal-list">
+          <div class="list-item" v-for="(item, index) in list" :key="index">
+            <div class="title">{{index}}{{lang.year}}</div>
+            <div class="items">
+              <div class="item" v-if="(!userId || userId == uid)" @click="toSend()">
+                <div class="time"><span>{{lang.today}}</span></div>
+                <div class="info">
+                  <div class="info-box">
+                    <div class="img">
+                      <div class="img-box">
+                        <img src="../../skin/default/images/circle/icon_take_photo.png">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="item" v-for="(item2, index2) in item" :key="index2">
+                <div class="item" v-for="(item3, index3) in item2" :key="index3">
+                  <div class="item" @click="toDetail(item4.post.id, item4.attachs.length)" v-for="(item4, index4) in item3" :key="index4">
+                      <div class="time"><span>{{index3}}</span>{{index2}}月</div>
+                  <div class="info">
+                    <div class="info-box">
+                      <div class="img" v-if="item4.attachs.length > 0" >
+                        <div :class="['img-box', {'two': (item4.attachs.length == 2 ||item4.attachs.length == 3)}, {'four': item4.attachs.length > 4}]">
+                          <img v-lazy="imgItem.url" v-for="(imgItem, imgIndex) in item4.attachs" :key="imgItem.url">
+                        </div>
+                       </div>
+                      <div :class="['info-cont',{'active': item4.attachs.length == 0}]">
+                        <div class="cont-box">{{item4.post.content}}</div>
+                        <div class="num-box" v-show="item4.attachs.length > 1">{{lang.total}}{{item4.attachs.length}}{{lang.piece}}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            </div>
+          </div>
+          <div class="nothing-line" v-if="isNothing"><em></em></div>
+          <!-- <div class="list-item">
+            <div class="title">2019年</div>
+            <div class="items">
+              <div class="item">
+                <div class="time"><span>17</span>3月</div>
+                <div class="info">
+                  <div class="info-box">
+                    <div class="img"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+                    <div class="info-cont">
+                      久违的味道....不错哦
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <div class="time"><span>17</span>3月</div>
+                <div class="info">
+                  <div class="info-box">
+                    <div class="img"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+                    <div class="info-cont">
+                      久违的味道....不错哦
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <div class="time"><span>17</span>3月</div>
+                <div class="info">
+                  <div class="info-box">
+                    <div class="img"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+                    <div class="info-cont">
+                      久违的味道....不错哦
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="item">
+                <div class="time"><span>17</span>3月</div>
+                <div class="info">
+                  <div class="info-box">
+                    <div class="img"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+                    <div class="info-cont">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div> -->
+        </div>
+      </div>
+    </template>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script src="../../script/vue-lazyload.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+
+    function initEvent() {
+        Vue.use(VueLazyload, {
+            error: '../../icon/error.png',
+            loading: '../../icon/loading.gif'
+        });
+        var app = new Vue({
+            el: '#app',
+            data: {
+                headerH: 0,
+                bgHeight: 0,
+                commentChooseId: '',
+                headerStatus: '',
+                uid: $api.getStorage('uid'),
+                userId: api.pageParam.userId,
+                imgHost: Pub.imgHost,
+                userInfo: {
+                    uname: '',
+                },
+                circleInfo: {},
+                page: 0,
+                listData: [],
+                isNothing: false,
+                isToInfo: api.pageParam.isToInfo,
+                avatarCache: {},
+                fs: api.require('fs'),
+                lang: {
+                    year: Pub.getLang('year'),
+                    today: Pub.getLang('today'),
+                    month: Pub.getLang('month'),
+                    total: Pub.getLang('total'),
+                    piece: Pub.getLang('piece'),
+                },
+                list: {},
+            },
+            mounted: function() {
+                var _this = this;
+                this.avatarCache = $api.getStorage('avatar_cache') || {};
+                if (this.avatarCache && Object.keys(this.avatarCache).length > 0) {
+                    for (var i in this.avatarCache) {
+                        if (this.avatarCache.hasOwnProperty(i)) {
+                            _this.isExist(i, this.avatarCache[i]);
+                        }
+                    }
+                }
+                this.scrollEvent();
+                this.getInfo();
+                this.getData(false);
+                window.getHeaderH = this.getHeaderH;
+                Pub.eventSend('circle_personal_frm_done');
+                Pub.eventListen('header_status', function(ret) {
+                    if (ret) {
+                        _this.headerStatus = ret.value.status;
+                    }
+                });
+                Pub.eventListen('circle_personal_update', function(ret) {
+                    console.log(JSON.stringify(ret))
+                    if (ret) {
+                        var id = ret.value.id;
+                        if (id) {
+                            console.log(id)
+                            console.log(JSON.stringify(_this.listData));
+                            for (var i = 0; i < _this.listData.length; i++) {
+                                for (j = 0; j < _this.listData[i].data.length; j++) {
+                                    if (_this.listData[i].data[j].id === id) {
+                                        _this.listData[i].data.splice(j, 1);
+                                    }
+                                }
+                            }
+                            if (_this.listData.length == 0) {
+                                _this.isNothing = true;
+                            } else {
+                                _this.isNothing = false;
+                            }
+                        } else {
+                            _this.page = 0;
+                            _this.getData(false);
+                        }
+                    }
+                });
+            },
+            methods: {
+                loadImg: function(img) {
+                    var _this = this;
+                    var imgUrl = img.indexOf('http') == -1 ? (Pub.imgHost + img) : img;
+                    if (!this.avatarCache) {
+                        this.avatarCache = {};
+                    }
+                    api.imageCache({
+                        url: imgUrl
+                    }, function(ret, err) {
+                        var url = ret.url;
+                        if (JSON.stringify(_this.avatarCache).indexOf(window.btoa(img)) == -1 || !_this.avatarCache[window.btoa(img)]) {
+                            _this.avatarCache[window.btoa(img)] = url;
+                            $api.setStorage('avatar_cache', _this.avatarCache);
+                        }
+                    });
+
+                },
+                getAvatarCache: function(img) {
+                    var _this = this;
+                    var imgName = window.btoa(img);
+                    if (this.avatarCache.hasOwnProperty(imgName)) {
+                        return _this.avatarCache[imgName];
+                    } else {
+                        return false;
+                    }
+                },
+                isExist: function(i, img) {
+                    var _this = this;
+                    this.fs.exist({
+                        path: img
+                    }, function(ret, err) {
+                        if (!ret.exist) {
+                            _this.avatarCache[i] = '';
+                        }
+                    })
+                },
+                getInfo: function() {
+                    var _this = this;
+                    var params = {
+                        fid: _this.userId || _this.uid
+                    }
+                    if ($api.getStorage(_this.userId + "_user_info")) {
+                        _this.userInfo = $api.getStorage(_this.userId + "_user_info");
+                    } else if ($api.getStorage(_this.userId + "_anynomous")) {
+                        _this.userInfo = $api.getStorage(_this.userId + "_anynomous");
+                    }
+                    Pub.post(Pub.apiChat + 'circle/index/setting', params, function(res) {
+                        console.log('信息' + JSON.stringify(res))
+                        if (res.code == 0) {
+                            //_this.userInfo = res.data.user;
+                            _this.circleInfo = res.data;
+                        }
+                    });
+                },
+                getData: function(isMore, callback) {
+                    var _this = this;
+                    var params = {
+                        fid: this.userId || this.uid,
+                        page: this.page
+                    }
+                    Pub.post(Pub.apiChat + 'circle/list/direct', params, function(res) {
+                        console.log('朋友圈' + JSON.stringify(res));
+                        if (res.code == 0) {
+                            var data = res.data;
+                            for (var i in data) {
+                              for (var o in data[i]) {
+                                if (data[i][o] == null) {
+                                    data[i][o] = [];
+                                }
+                              }
+                            }
+                            var temp_data = {};
+                            for (var i in data) {
+                                var date = ""
+                                var dates = data[i]["post"]["date_time"].split("T");
+                                date = dates[0];
+                                var datetimes = date.split("-")
+                                var year = datetimes[0];
+                                var month = datetimes[1];
+                                var day = datetimes[2];
+                                if (typeof temp_data[year] == "undefined") {
+                                    temp_data[year] = {};
+                                }
+                                if (typeof temp_data[year][month] == "undefined") {
+                                    temp_data[year][month] = {};
+                                }
+                                if (typeof temp_data[year][month][day] == "undefined") {
+                                    temp_data[year][month][day] = [];
+                                }
+                                temp_data[year][month][day].push(data[i]);
+                            }
+                            _this.list = temp_data;
+                            console.log(JSON.stringify(_this.list));
+                            //
+                            // _this.maxPage = res.data.max_page;
+                            // var data = res.data;
+                            // // console.log(_this.listData.length);
+                            // // console.log(data.length)
+                            // if (isMore) {
+                            //     var newData = [];
+                            //     for (var i = 0; i < _this.listData.length; i++) {
+                            //         var curYear = _this.listData[i].year;
+                            //         for (var j = 0; j < data.length; j++) {
+                            //             if (curYear == data[j].year) {
+                            //                 _this.listData[i].data = _this.listData[i].data.concat(data[j].data);
+                            //                 console.log(JSON.stringify(_this.listData));
+                            //             } else {
+                            //                 newData.push(data[j]);
+                            //             }
+                            //         }
+                            //     }
+                            //     if (newData.length > 0) {
+                            //         _this.listData = _this.listData.concat(newData);
+                            //     }
+                            // } else {
+                            //     _this.listData = res.data.data;
+                            // }
+                            if (_this.list.length == 0) {
+                                _this.isNothing = true;
+                                _this.pullUp(true);
+                            } else {
+                                _this.isNothing = false;
+                                _this.pullUp(false);
+                            }
+
+                        }
+                        if (callback && typeof callback == 'function') {
+                            callback();
+                        }
+                    });
+                },
+                pullUp: function(bol) {
+
+                    var _this = this;
+                    Pub.pullUp(function() {
+                        if (bol) {
+                            ++_this.page;
+                            _this.getData(true);
+                        } else {
+                            Pub.pullUpDone();
+                        }
+                    });
+                },
+                toSend: function() {
+                    var _this = this;
+                    Pub.openView('./circle_send_win', {
+                        pageParam: {
+                            headerStatus: _this.headerStatus
+                        }
+                    });
+                },
+                toInfo: function() {
+                    var _this = this;
+                    if (this.isToInfo) {
+                        Pub.changeStatusBar();
+                        api.closeWin();
+                    } else {
+                        Pub.openView('../chat/personal_info_win', {
+                            pageParam: {
+                                fid: _this.userId || _this.uid
+                            }
+                        });
+                    }
+                },
+                scrollEvent: function() {
+                    var _this = this;
+                    this.bgHeight = this.$refs.circle_bg.offsetHeight;
+
+                    window.addEventListener('scroll', function() {
+                        var scrollH = document.body.scrollTop;
+                        if (scrollH >= _this.bgHeight - _this.headerH) {
+                            if (_this.headerStatus != 1) {
+                                api.execScript({
+                                    frameName: 'circle_personal_header_frm',
+                                    script: 'setHeader(1)'
+                                });
+                            }
+                        } else {
+                            if (_this.headerStatus != 2) {
+                                api.execScript({
+                                    frameName: 'circle_personal_header_frm',
+                                    script: 'setHeader(2)'
+                                });
+                            }
+                        }
+                    });
+                },
+                chatSpace: function(isChat) {
+                    if (isChat) {
+                        this.$nextTick(() => {
+                            var container = this.$el.querySelector('.circle_container');
+                            if (this.panelHeight > 0) {
+                                document.querySelector('html').style.paddingBottom = this.panelHeight + this.inputBarHeight + api.safeArea.bottom + api.safeArea.top + 'px';
+                            } else {
+                                document.querySelector('html').style.paddingBottom = 60 + api.safeArea.bottom + 'px'
+                            }
+                        })
+                    } else {
+                        document.querySelector('html').style.paddingBottom = 0;
+                    }
+
+                },
+                getHeaderH: function(h) {
+                    this.headerH = h;
+                },
+                toDetail: function(id, length) {
+                    var _this = this;
+                    if (length && length > 0) {
+                        Pub.openView('./circle_personal_detail_win', {
+                            bgColor: '#000',
+                            pageParam: {
+                                id: id,
+                                headerStatus: _this.headerStatus
+                            }
+                        });
+                    } else {
+                        Pub.openView('./circle_detail_win', {
+                            pageParam: {
+                                id: id
+                            }
+                        });
+                    }
+
+                }
+            }
+        });
+    }
+
+    function clickEvent() {
+        $('.omit').on('click', function(e) {
+            e.stopPropagation();
+            $(this).find('.omit-popup').addClass('active');
+        });
+        $(document).bind("click", function() {
+            $('.omit-popup').removeClass('active');
+        });
+    }
+</script>
+
+</html>

@@ -1,0 +1,75 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-white">
+  <div id="app">
+    <template>
+      <div class="feedback-list">
+        <div class="item" v-if="Object.keys(detailData).length > 0">
+            <h4>{{lang.title}}：{{detailData.title}}</h4>
+            <p>{{lang.time}}：{{detailData.date}}</p>
+            <p>{{lang.type}}：{{detailData.type_info.name}}</p>
+            <p>{{lang.content}}：{{detailData.content}}</p>
+            <p v-if="detailData.img1"><img :src="detailData.img1"></p>
+            <p v-if="detailData.img2"><img :src="detailData.img2"></p>
+            <p v-if="detailData.img3"><img :src="detailData.img3"></p>
+            <p v-if="detailData.status">{{lang.costomer_service_reply}}：{{detailData.answer}}</p>
+            <p v-if="detailData.status">{{lang.reply_time}}：{{detailData.rep_date}}</p>
+        </div>
+      </div>
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      var app = new Vue({
+        el: '#app',
+        data: {
+          id: api.pageParam.id,
+          detailData: {},
+          lang: {
+            title: Pub.getLang("title"),
+            time: Pub.getLang("time"),
+            type: Pub.getLang("type"),
+            content: Pub.getLang("content"),
+            costomer_service_reply: Pub.getLang("costomer_service_reply"),
+            reply_time: Pub.getLang("reply_time"),
+          }
+        },
+        mounted: function(){
+          this.getData();
+        },
+        methods: {
+          getData: function(){
+            var _this = this;
+            var params = {
+              id: this.id
+            }
+            Pub.post('report/report_detail', params, function(res){
+              if(res.code == 0){
+                _this.detailData = res.data;
+              }
+            });
+          }
+        }
+      });
+    }
+
+</script>
+
+</html>

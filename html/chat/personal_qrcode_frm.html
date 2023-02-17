@@ -1,0 +1,121 @@
+<!doctype html>
+<html class="bgc-green">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-green">
+  <div class="personal-qrcode-container">
+    <div class="qrcode-box">
+      <div class="info-box">
+        <div class="avatar" id="avatar"></div>
+        <div class="info">
+          <h3 id="nickname"></h3>
+          <p>易聊号：<span id="account"></span></p>
+        </div>
+      </div>
+      <div class="sign"><font set-lang="text:autograph">签名</font>：<span id="sign"></span></div>
+      <div class="qrcode" id="qrcode">
+      </div>
+      <div class="tips" set-lang="text:scan_and_add_friend">扫一扫添加好友</div>
+    </div>
+    <!-- <div class="btn-share my-btn" onclick="share()">分享给好友</div> -->
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var shareUrl = '', qrImg = '', fid = '';
+    apiready = function() {
+        api.parseTapmode();
+        fid = api.pageParam.fid;
+        if(fid){
+          console.log(fid);
+          getFriendInfo();
+        }else{
+          getMemberInfo();
+        }
+        getQrcode();
+    }
+    function getMemberInfo(){
+      Pub.post(Pub.apiChat +'user/info/myinfo', {}, function(res){
+        console.log(JSON.stringify(res));
+          if(res.code == 0){
+              var data = res.data;
+              var avatar = data.face;
+              if(avatar){
+                  if(avatar.indexOf('http') == -1){
+                      $('#avatar').html('<img src="'+ Pub.imgHost + avatar +'">');
+                  }else{
+                    $('#avatar').html('<img src="'+ avatar +'">');
+                  }
+              }else{
+                $('#avatar').html('<img src="../../icon/logo.png">');
+              }
+              $('#nickname').text(data.uname);
+              $('#account').text(data.uid);
+              $('#sign').text(data.introduction || '');
+          }
+      });
+    }
+    function getFriendInfo(){
+      if(fid){
+          var params = {
+              fid: fid
+          }
+          Pub.post(Pub.apiChat +'friend/info/userinfo', params, function(res){
+              console.log('好友信息:'+JSON.stringify(res));
+              if(res.code == 0){
+                  var data = res.data;
+                  var avatar = '';
+                  if(data.face){
+                      if(data.face.indexOf('http') == -1){
+                          avatar = Pub.imgHost + data.face;
+                      }else{
+                        avatar = data.face;
+                      }
+                      $('#avatar').html('<img src="'+avatar+'">');
+                  }else{
+                    $('#avatar').html('<img src="../../icon/logo.png">');
+                  }
+                  $('#nickname').text(data.uname);
+                  $('#account').text(data.uid);
+                  $('#sign').text(data.introduction || '');
+              }
+          });
+      }
+    }
+    function getQrcode(){
+      var params = {
+        personal_uid: fid || $api.getStorage('uid')
+      }
+      Pub.post(Pub.apiChat +'friend/friend/qrcode', params, function(res){
+        if(res.code == 0){
+          shareUrl = res.data;
+          Pub.createQrcode(shareUrl, function(img){
+            qrImg = img;
+            $('#qrcode').html('<img src="'+img+'">');
+          });
+        }
+      });
+    }
+    function share(){
+      var shareImg = [];
+      console.log(qrImg);
+      shareImg.push(qrImg);
+      var sharedModule = api.require('shareAction');
+      sharedModule.share({
+          text: '',
+          images: shareImg,
+          type: 'image'
+      });
+    }
+</script>
+
+</html>

@@ -1,0 +1,1807 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="maximum-scale=1.0, minimum-scale=1.0, user-scalable=0, initial-scale=1.0, width=device-width" />
+  <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+  <title></title>
+  <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+  <script src="../../script/language.js"></script>
+</head>
+
+<body ontouchstart="">
+<div id="app">
+  <template>
+    <div class="chat-loading" v-show="socketStatus != 1 || !isOnline">
+      <img src="../../skin/default/images/icon/loading.gif" v-show="socketStatus == 2"><img src="../../skin/default/images/icon/icon_error.png" v-show="socketStatus == 3"> <em v-show="socketStatus == 2">{{lang.network_connection}}...</em><em v-show="socketStatus == 3">网络连接已断开</em>
+    </div>
+    <!-- <div class="index-search" @click="toSearch" tapmode>
+      <div class="search-box"><img src="../../skin/default/images/icon/icon_search.png"> {{lang.search}}</div>
+    </div> -->
+    <div class="chat-container">
+      <ul id="list" ref="listCont">
+        <li class="open-view list-li" v-for="(item, index) in chatData" :key="index">
+          <a :class="{'active': item.gid == chooseId}" v-if="item.chat_type == 'group'" v-swipeLeft="()=>mylongtap(item.gid,index, 'group')" v-swipeRight="()=>swiperRight()">
+            <div class="avatar" v-if="Pub.imageManage(item.group_info.img)">
+              <img :src="getAvatarCache(item.group_info.img)" @click="toGroupChat(item.gid, item.group_name, item.member_count)" :key="item.group_info.img" tapmode="" v-if="getAvatarCache(item.group_info.img)">
+              <img :src="(item.group_info.img.indexOf('http') == -1)?(imgHost + item.group_info.img):item.group_info.img" @click="toGroupChat(item.gid, item.group_name, item.member_count)" :key="item.group_info.img" tapmode="" @load="loadImg(item.group_info.img)" v-else>
+            </div>
+            <div class="avatar" v-else @click="toGroupChat(item.gid, item.group_name, item.member_count)" tapmode="">
+              <img src="../../skin/default/images/img_group.png">
+            </div>
+            <div class="info" @click="toGroupChat(item.gid, item.group_info.group_name, item.member_count)" tapmode="">
+              <div class="info-top">
+                <!-- <div class="name">{{item.group_name}}</div> -->
+                <div class="name" v-if="item.group_info">{{item.group_info.group_name}}<span v-if="item.is_top == 1">(置顶)</span></div>
+                <div class="name" v-else>群聊</div>
+                <p class="time">{{timeShow(item.date)}}</p>
+              </div>
+              <div class="info-bottom">
+                <div class="desc message">
+                  <span v-if="item.type == -2" v-html="messageCont(item.message)"></span>
+                  <span v-if="item.type == -1" v-html="messageCont(item.message)"></span>
+                  <span v-if="item.at_me == 1" style="color:red">[有人@我]</span>
+                  <span v-if="item.type == 1" v-html="messageCont(item.message)"></span>
+                  <span v-if="item.type == 2">[{{lang.group_received_a_picture}}]</span>
+                  <span v-if="item.type == 3">[{{lang.group_received_a_voice}}]</span>
+                  <span v-if="item.type == 5">[{{lang.group_received_a_video}}]</span>
+                  <span v-if="item.type == 4">[{{lang.group_received_a_file}}]</span>
+                  <span v-if="item.type == 6" v-html="messageCont(item.message)"></span>
+                  <span v-if="item.type == 7" v-html="messageCont(item.message)"></span>
+                  <span v-if="item.type == 20" >[群公告：{{item.message}}]</span>
+                  <span v-if="item.type == 21" >[群简介：{{item.message}}]</span>
+                  <span v-if="item.type == 50 || item.type == 51">[{{lang.group_received_a_redpacket}}]</span>
+                  <span v-if="item.type == -50 || item.type == -51">[{{lang.group_some_people_get_a_redpacket}}]</span>
+                  <!-- <span v-if="item.type == 10">[{{lang.group_received_a_redpacket}}]</span>
+                  <span v-if="item.type == 39">[{{lang.group_received_a_card}}]</span>
+                  <span v-if="item.type == 40">[{{lang.group_received_a_redpacket}}]</span>
+                  <span v-if="item.type == 42">[您收到一笔对方的转账]</span>
+                  <span v-if="item.type == 12">[{{lang.group_received_a_redpacket}}]</span>
+                  <span v-if="item.type == 13">[{{lang.game_redpacket}}]</span>
+                  <span v-if="item.type == 101">[{{lang.group_some_people_get_a_redpacket}}]</span>
+                  <span v-if="item.type == 102">[您领取了一笔对方的转账]</span>
+                  <span v-if="item.type == 30">[{{item.message}}]</span>
+                  <span v-if="item.type == 4">[群聊语音-通话失败]</span>
+                  <span v-if="item.type == 5">[群聊语音-通话成功]</span>
+                  <span v-if="item.type == 31">[群公告]</span> -->
+                </div>
+                <div class="badge" v-if="item.last_count-item.last_read > 0"><span>{{item.last_count-item.last_read}}</span></div>
+              </div>
+            </div>
+            <!-- <div class="btn delete" @touchstart="deleteEvent(item.id,item.chat_type)"><span>删除</span></div> -->
+            <div class="btns" >
+              <div @touchstart="chatTop(item.gid,item.chat_type,item.is_top,index)" v-if="item.is_top==0">置顶</div>
+              <div @touchstart="chatTop(item.gid,item.chat_type,item.is_top,index)" v-if="item.is_top==1">取消置顶</div>
+              <div @touchstart="deleteEvent(item.gid,item.chat_type,index)">删除</div>
+            </div>
+          </a>
+          <a v-else :class="{'active': item.fid == chooseId}" v-swipeLeft="()=>mylongtap(item.fid, index, 'private')" v-swipeRight="()=>swiperRight(item.chat_id)">
+
+            <div class="avatar" v-if="Pub.imageManage(item.user_info.face)">
+              <img :src="getAvatarCache(item.user_info.face)" :key="item.user_info.face" @click="toPersonalChat(item.fid, Pub.showNickname(item.user_info),item.chat_id)" tapmode="" v-if="getAvatarCache(item.user_info.face)">
+              <img :src="item.user_info.face" :key="item.user_info.face" @click="toPersonalChat(item.fid, Pub.showNickname(item.user_info),item.chat_id)" tapmode="" @load="loadImg(item.user_info.face)"
+                   v-else>
+            </div>
+            <div class="avatar" v-else @click="toPersonalChat(item.fid, Pub.showNickname(item.user_info),item.chat_id)" tapmode="">
+              <img src="../../skin/default/images/img_avatar.png">
+            </div>
+            <div class="info" @click="toPersonalChat(item.fid, Pub.showNickname(item.user_info),item.chat_id)" tapmode="">
+              <div class="info-top">
+                <div class="name" v-if="item.user_info">{{Pub.showNickname(item.user_info)}}<span v-if="item.is_top == 1">(置顶)</span></div>
+                <div class="name" v-else>用户</div>
+                <p class="time">{{timeShow(item.date)}}</p>
+              </div>
+              <div class="info-bottom">
+                <div class="desc message">
+                  <span v-if="item.type == -2" v-html="messageCont(item.message)"></span>
+                  <span v-if="item.type == -1" v-html="messageCont(item.message)"></span>
+                  <span v-if="item.type == 1" v-html="messageCont(item.message)"></span>
+                  <span v-if="item.type == -8">
+                      <em v-if="item.extra=='00:00' && item.sender == uid">[对方未接听]</em>
+                      <em v-if="item.extra=='00:00' && item.sender != uid">[未接来电]</em>
+                      <em v-if="item.extra!='00:00'">[通话成功]</em>
+                    </span>
+                  <span v-if="item.type == 8">
+                      <em v-if="item.sender == uid">[您发起了一个通话]</em>
+                      <em v-else>[对方发起了一个通话]</em>
+                    </span>
+                  <span v-else-if="item.type == 2">
+                      <em v-if="item.sender == uid">[{{lang.you_send_a_picture}}]</em>
+                      <em v-else>[{{lang.you_receive_a_picture}}]</em>
+                    </span>
+                  <span v-else-if="item.type == 5">
+                      <em v-if="item.sender == uid">[{{lang.you_send_a_video}}]</em>
+                      <em v-else>[{{lang.you_receive_a_video}}]</em>
+                    </span>
+                  <span v-else-if="item.type == 4">
+                      <em v-if="item.sender == uid">[{{lang.you_send_a_file}}]</em>
+                      <em v-else>[{{lang.you_receive_a_file}}]</em>
+                    </span>
+                  <!-- <span v-else-if="item.type == 39">
+                    <em v-if="item.sender == uid">[{{lang.you_send_a_card}}]</em>
+                    <em v-else>[{{lang.you_receive_a_card}}]</em>
+                  </span> -->
+                  <span v-else-if="item.type == 3">
+                      <em v-if="item.sender == uid">[{{lang.you_send_a_voice}}]</em>
+                      <em v-else>[{{lang.you_receive_a_voice}}]</em>
+                    </span>
+                  <span v-if="item.type == 6" v-html="messageCont(item.message)"></span>
+                  <span v-if="item.type == 7" v-html="messageCont(item.message)"></span>
+                  <span v-else-if="item.type == 40">
+                      <em v-if="item.sender == uid">[您发送了一个红包]</em>
+                      <em v-else>[您收到了一个红包]</em>
+                    </span>
+                  <span v-else-if="item.type == 42">
+                      <em v-if="item.sender == uid">[您发送了一笔转账]</em>
+                      <em v-else>[您收到了一笔转账]</em>
+                    </span>
+                  <span v-else-if="item.type == -40">
+                      <em v-if="item.sender == uid">[{{lang.you_get_a_redpacket}}]</em>
+                      <em v-else>[{{lang.you_give_a_redpacket}}]</em>
+                    </span>
+                  <span v-else-if="item.type == -42">
+                      <em v-if="item.sender == uid">[您领取了一笔对方的转账]</em>
+                      <em v-else>[您发送了一笔转账]</em>
+                    </span>
+                  <!-- <span v-else-if="item.type == 4">
+                    <em>[语音聊天失败]</em>
+                  </span>
+                  <span v-else-if="item.type == 5">
+                    <em>[语音聊天成功]</em>
+                  </span>
+                  <span v-else-if="item.type == 50">
+                    <em>[视频通话失败]</em>
+                  </span>
+                  <span v-else-if="item.type == 51">
+                    <em>[视频通话成功]</em>
+                  </span>
+                  <span v-else-if="item.type == 40">
+                    <em v-if="item.sender == uid">[{{lang.you_send_a_redpacket}}]</em>
+                    <em v-else>[{{lang.you_receive_a_redpacket}}]</em>
+                  </span>
+                  <span v-else-if="item.type == 42">
+                    <em v-if="item.sender == uid">[您发送了一笔转账]</em>
+                    <em v-else>[您收到一笔对方的转账]</em>
+                  </span>
+
+                  <span v-else-if="item.type == 32">
+                    <em v-if="item.sender == uid">[{{lang.message_send_but_rejected}}]</em>
+                  </span>
+                  <span v-if="item.type == 30">[{{item.message}}]</span> -->
+                </div>
+                <div class="badge" v-if="item.last_count-item.last_read > 0"><span>{{item.last_count-item.last_read}}</span></div>
+              </div>
+            </div>
+            <!-- <div class="btn delete" @touchstart="deleteEvent(item.chat_id,item.chat_type)"><span>{{lang.delete}}</span></div> -->
+            <div class="btns" >
+              <div @touchstart="chatTop(item.fid,item.chat_type,item.is_top,index)" v-if="item.is_top==0">置顶</div>
+              <div @touchstart="chatTop(item.fid,item.chat_type,item.is_top,index)" v-if="item.is_top==1">取消置顶</div>
+              <div @touchstart="deleteEvent(item.fid,item.chat_type,index)">删除</div>
+            </div>
+          </a>
+        </li>
+      </ul>
+      <div class="default-box" v-show="isShowImg">
+<!--        <img src="../../image/default/default_chat.png">-->
+        <h3>{{lang.go_to_talk_with_your_friends}}</h3>
+      </div>
+    </div>
+  </template>
+</div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script src="../../script/vue-touch.js"></script>
+<script src="../../script/info.js"></script>
+<script>
+  apiready = function() {
+    var resultList = api.hasPermission({
+      list: ["camera", "photos", "microphone", "storage"],
+    });
+    api.requestPermission({
+      list: ["camera", "photos", "microphone", "storage"],
+    }, function(res) {
+
+    });
+    api.parseTapmode();
+    Pub.setStatusBar();
+    $api.setStorage('isVoiceConnected', '0');
+    initEvent();
+
+    Pub.setTabText();
+    //api.notification({ notify: { title: '通知标题', content: '通知内容' } });
+  }
+
+  function initEvent() {
+    var app = new Vue({
+      el: "#app",
+      data: {
+        uid: $api.getStorage('uid'),
+        isContact: false,
+        isGetDataList: false,
+        chatList: [],
+        isVoiceConnected: $api.getStorage('isVoiceConnected'),
+        page: 1,
+        size: 30,
+        contactTimes: 0,
+        isOnline: true,
+        socketStatus: 1,
+        chatData: [],
+        //chatDataInit: '',
+        deleteSlider: '',
+        chooseId: '',
+        swipeItem: {},
+        sourcePath: 'widget://expression/emotion',
+        emotionData: {},
+        isShowImg: false,
+        avatarCache: {},
+        friendList: {},
+        isPause: false,
+        groupList: {},
+        groupAdminList: [],
+        groupMemberList: [],
+        groupOtherList: [],
+        groupOwnerList: [],
+        fs: api.require('fs'),
+        lang: {
+          search: Pub.getLang('search'),
+          group_received_a_picture: Pub.getLang('group_received_a_picture'),
+          group_received_a_voice: Pub.getLang('group_received_a_voice'),
+          group_received_a_redpacket: Pub.getLang('group_received_a_redpacket'),
+          group_some_people_get_a_redpacket: Pub.getLang('group_some_people_get_a_redpacket'),
+          you_send_a_picture: Pub.getLang('you_send_a_picture'),
+          you_receive_a_picture: Pub.getLang('you_receive_a_picture'),
+          you_send_a_voice: Pub.getLang('you_send_a_voice'),
+          you_receive_a_voice: Pub.getLang('you_receive_a_voice'),
+          you_send_a_redpacket: Pub.getLang('you_send_a_redpacket'),
+          you_receive_a_redpacket: Pub.getLang('you_receive_a_redpacket'),
+          you_get_a_redpacket: Pub.getLang('you_get_a_redpacket'),
+          you_give_a_redpacket: Pub.getLang('you_give_a_redpacket'),
+          message_send_but_rejected: Pub.getLang('message_send_but_rejected'),
+          delete: Pub.getLang('delete'),
+          game_redpacket: Pub.getLang('game_redpacket'),
+          go_to_talk_with_your_friends: Pub.getLang('go_to_talk_with_your_friends'),
+          network_connection: Pub.getLang('network_connection'),
+          search: Pub.getLang('search'),
+          group_received_a_video: Pub.getLang('group_received_a_video'),
+          you_send_a_video: Pub.getLang('you_send_a_video'),
+          you_receive_a_video: Pub.getLang('you_receive_a_video'),
+          group_received_a_card: Pub.getLang('group_received_a_card'),
+          you_send_a_card: Pub.getLang('you_send_a_card'),
+          you_receive_a_card: Pub.getLang('you_receive_a_card'),
+          group_received_a_file: Pub.getLang('group_received_a_file'),
+          you_send_a_file: Pub.getLang('you_send_a_file'),
+          you_receive_a_file: Pub.getLang('you_receive_a_file'),
+        }
+      },
+      mounted: function() {
+        var _this = this;
+        // this.getMyInfo();
+        // this.getCoinList();
+        //this.getPackInfo();
+        this.tabFrame();
+        this.openHeader();
+        this.checkLogin();
+        //this.pullDown();
+        //this.getAllGroupMember();
+        this.avatarCache = $api.getStorage('avatar_cache') || {};
+        if (this.avatarCache && Object.keys(this.avatarCache).length > 0) {
+          for (var i in this.avatarCache) {
+            if (this.avatarCache.hasOwnProperty(i)) {
+              _this.isExist(i, this.avatarCache[i]);
+            }
+          }
+        }
+        this.getImgsPaths(this.sourcePath, function(emotion) {
+          _this.emotionData = emotion;
+        });
+        // this.openDb();
+        this.setTimeRun();
+        if (this.uid) {
+          this.getMyInfo();
+          this.getCoinList();
+          this.getPackInfo();
+          if (!_this.isGetDataList) {
+            this.chatInit();
+            this.getBookCount();
+            _this.isGetDataList = true;
+            setTimeout(function() {
+              _this.isGetDataList = false;
+            }, 3000)
+          }
+          this.getAllGroupMember();
+        }
+        Pub.eventListen('login', function() {
+          _this.uid = $api.getStorage('uid');
+          _this.pushEvent();
+          _this.getMyInfo();
+          _this.getCoinList();
+          _this.getPackInfo();
+          if (!_this.isGetDataList) {
+            _this.chatInit();
+            _this.getBookCount();
+            _this.isGetDataList = true;
+            setTimeout(function() {
+              _this.isGetDataList = false;
+            }, 3000)
+          }
+          _this.getAllGroupMember();
+          _this.tabFrame();
+        })
+        api.addEventListener({
+            name:'pause'
+        }, function(ret, err){
+            _this.isPause = true;
+        });
+        api.addEventListener({
+            name:'resume'
+        }, function(ret, err){
+            _this.isPause = false;
+        });
+        Pub.eventListen("update_groupinfo", function() {
+          _this.getChatInit();
+        })
+        Pub.eventListen("update_userinfo", function() {
+          _this.getChatInit();
+        })
+        Pub.eventListen('chat_list_load', function() {
+          _this.chatInit();
+        });
+        Pub.eventListen('book_count', function() {
+          _this.getBookCount();
+        });
+        Pub.eventListen('language', function() {
+          _this.lang = {
+            search: Pub.getLang('search'),
+            group_received_a_picture: Pub.getLang('group_received_a_picture'),
+            group_received_a_voice: Pub.getLang('group_received_a_voice'),
+            group_received_a_redpacket: Pub.getLang('group_received_a_redpacket'),
+            group_some_people_get_a_redpacket: Pub.getLang('group_some_people_get_a_redpacket'),
+            you_send_a_picture: Pub.getLang('you_send_a_picture'),
+            you_receive_a_picture: Pub.getLang('you_receive_a_picture'),
+            you_send_a_voice: Pub.getLang('you_send_a_voice'),
+            you_receive_a_voice: Pub.getLang('you_receive_a_voice'),
+            you_send_a_redpacket: Pub.getLang('you_send_a_redpacket'),
+            you_receive_a_redpacket: Pub.getLang('you_receive_a_redpacket'),
+            you_get_a_redpacket: Pub.getLang('you_get_a_redpacket'),
+            you_give_a_redpacket: Pub.getLang('you_give_a_redpacket'),
+            message_send_but_rejected: Pub.getLang('message_send_but_rejected'),
+            delete: Pub.getLang('delete'),
+            game_redpacket: Pub.getLang('game_redpacket'),
+            go_to_talk_with_your_friends: Pub.getLang('go_to_talk_with_your_friends'),
+            network_connection: Pub.getLang('network_connection'),
+            search: Pub.getLang('search'),
+            group_received_a_video: Pub.getLang('group_received_a_video'),
+            you_send_a_video: Pub.getLang('you_send_a_video'),
+            you_receive_a_video: Pub.getLang('you_receive_a_video'),
+            group_received_a_card: Pub.getLang('group_received_a_card'),
+            you_send_a_card: Pub.getLang('you_send_a_card'),
+            you_receive_a_card: Pub.getLang('you_receive_a_card'),
+            group_received_a_file: Pub.getLang('group_received_a_file'),
+            you_send_a_file: Pub.getLang('you_send_a_file'),
+            you_receive_a_file: Pub.getLang('you_receive_a_file'),
+          }
+          _this.getChatInit();
+          Pub.setTabText();
+        });
+      },
+      methods: {
+        pushEvent: function() {
+          var _this = this;
+          var ajpush = api.require('ajpush');
+          if (api.systemType == 'android') {
+            ajpush.init(function(ret) {
+              if (ret && ret.status) {
+                console.log(JSON.stringify(ret))
+                if (ret.status) {
+                  ajpush.getRegistrationId(function(ret) {
+                    var registrationId = ret.id;
+                    console.log('极光ID:' + registrationId);
+                    var params = {
+                      user: $api.getStorage('uid'),
+                      rid: registrationId
+                    }
+                    api.ajax({
+                      url: 'http://push.tuuz.cc:10080/sync?token=gochat',
+                      method: 'post',
+                      data: {
+                        values: params,
+                      },
+                      function(ret, err) {
+                        // alert('推送:' + JSON.stringify(ret));
+                        if (ret.code == -1) {
+                          isLogin = false;
+                        } else {
+                          isLogin = true;
+                        }
+                      }
+                    });
+                  });
+                }
+              }
+            });
+          } else {
+            ajpush.getRegistrationId(function(ret) {
+              var registrationId = ret.id;
+              console.log('极光ID:' + registrationId);
+              var params = {
+                user: $api.getStorage('uid'),
+                rid: registrationId,
+                token: 'gochat',
+              }
+              Pub.post('http://push.tuuz.cc:10080/sync?token=gochat', params, function(res) {
+                // alert('params:' + JSON.stringify(params));
+                // alert('推送:' + JSON.stringify(res));
+                if (ret.code == -1) {
+                  isLogin = false;
+                } else {
+                  isLogin = true;
+                }
+              });
+              // api.ajax({
+              //       url: 'http://push.t1.tuuz.cc/sync?token=gochat',
+              //       method: 'post',
+              //       data: {
+              //           values: params,
+              //       },
+              //       function(ret, err) {
+              //           alert('推送:' + JSON.stringify(ret));
+              //         alert('错误:' + JSON.stringify(err));
+              //           if (ret.code == -1) {
+              //               isLogin = false;
+              //           } else {
+              //               isLogin = true;
+              //           }
+              //       }
+              //   });
+            });
+          }
+          api.addEventListener({
+            name: 'appintent'
+          }, function(ret, err) {
+            console.log('android点击推送' + JSON.stringify(ret));
+            if (ret && ret.appParam.ajpush) {
+              var ajpushData = ret.appParam.ajpush;
+              var id = ajpushData.id;
+              var title = ajpushData.title;
+              var content = ajpushData.content;
+              var extra = ajpushData.extra;
+              var wins = JSON.stringify(api.windows());
+              ajpush.setBadge({
+                badge: 0
+              });
+              ajpush.clearNotification({id:-1},function(ret) {
+                if(ret && ret.status){
+                }
+              });
+              if (extra.module == 'chat') {
+                if (extra.type == 'group_chat') {
+                  if(wins.indexOf('chat_group_win') > -1){
+                    api.closeWin({"name":"chat_group_win"});
+                  };
+                  api.openWin({
+                    name: 'chat_group_win',
+                    url: '../chat/chat_group_win.html',
+                    pageParam: {
+                      id: extra.data.gid,
+                      name: extra.data.group_info.group_name
+                    }
+                  });
+                } else if (extra.type == 'private_chat') {
+                  if (extra.data.type == 8) {
+                    if (_this.isVoiceConnected == "0" || wins.indexOf('chat_voice_win') == -1) {
+                      Pub.openView('../chat/chat_voice_win', {
+                        pageParam: {
+                          type: "getVoice",
+                          fid: extra.data.sender,
+                          roomId: data.data.extra,
+                        }
+                      });
+                    }
+                  } else {
+                    if(wins.indexOf('chat_personal_win') > -1){
+                      api.closeWin({name:"chat_personal_win"});
+                    }
+                    Pub.openView('../chat/chat_personal_win', {
+                      pageParam: {
+                        fid: extra.data.sender,
+                        name: Pub.showNickname(extra.data.user_info),
+                        chat_id: extra.data.chat_id,
+                      }
+                    }, false);
+                  }
+                } else if (extra.type == 'voice' && extra.data.msg_type == 'private') {
+                  var voiceData = extra.data;
+                  Pub.openView('../chat/chat_voice_win', {
+                    pageParam: {
+                      channel: voiceData.channel,
+                      id: voiceData.sender,
+                      type: voiceData.msg_type,
+                      msgId: voiceData.msg_id
+                    },
+                    slidBackEnabled: false
+                  });
+                } else if (extra.type == 'refuse_voice' && extra.data.msg_type == 'private') {
+                  Pub.eventSend('voice_refuse');
+                } else if (extra.type == 'joined_voice' && extra.data.msg_type == 'private') {
+                  Pub.eventSend('voice_joined');
+                } else if (extra.type == 'video' && extra.data.msg_type == 'private') {
+                  var videoData = extra.data;
+                  Pub.openView('../chat/chat_video_win', {
+                    pageParam: {
+                      channel: videoData.channel,
+                      id: videoData.sender,
+                      type: videoData.msg_type,
+                      msgId: videoData.msg_id
+                    },
+                    slidBackEnabled: false
+                  });
+                } else if (extra.type == 'refuse_video' && extra.data.msg_type == 'private') {
+                  Pub.eventSend('video_refuse');
+                } else if (extra.type == 'joined_voice' && extra.data.msg_type == 'private') {
+                  Pub.eventSend('voice_joined');
+                } else if (extra.type == 'voice' && extra.data.msg_type == 'group') {
+                  var voiceData = extra.data;
+                  Pub.openView('../chat/chat_voice_group_win', {
+                    pageParam: {
+                      channel: voiceData.channel,
+                      id: voiceData.sender,
+                      type: voiceData.msg_type,
+                      msgId: voiceData.msg_id,
+                      member: voiceData.member
+                    },
+                    slidBackEnabled: false
+                  });
+                } else if (extra.type == 'refuse_voice' && extra.data.msg_type == 'group') {
+                  Pub.eventSend('group_voice_refuse');
+                }
+              }
+            }
+          })
+          api.addEventListener({
+            name: 'noticeclicked'
+          }, function(ret, err) {
+            console.log('ios点击推送' + JSON.stringify(ret));
+            if (ret && ret.value) {
+              var ajpushData = ret.value;
+              var content = ajpushData.content;
+              var extra = ajpushData.extra;
+              var wins = JSON.stringify(api.windows());
+              ajpush.setBadge({
+                badge: 0
+              });
+              ajpush.clearNotification({id:-1},function(ret) {
+                if(ret && ret.status){
+                }
+              });
+              if (extra.module == 'chat') {
+                if (extra.type == 'group_chat') {
+                  if(wins.indexOf('chat_group_win') > -1){
+                    api.closeWin({"name":"chat_group_win"});
+                  };
+                  api.openWin({
+                    name: 'chat_group_win',
+                    url: '../chat/chat_group_win.html',
+                    pageParam: {
+                      id: extra.data.gid,
+                      name: extra.data.group_info.group_name
+                    }
+                  });
+                } else if (extra.type == 'private_chat') {
+                  if (extra.data.type == 8) {
+                    if (_this.isVoiceConnected == "0" || wins.indexOf('chat_voice_win') == -1) {
+                      Pub.openView('../chat/chat_voice_win', {
+                        pageParam: {
+                          type: "getVoice",
+                          fid: extra.data.sender,
+                          roomId: data.data.extra,
+                        }
+                      });
+                    }
+                  } else {
+                    if(wins.indexOf('chat_personal_win') > -1){
+                      api.closeWin({name:"chat_personal_win"});
+                    };
+                    Pub.openView('../chat/chat_personal_win', {
+                      pageParam: {
+                        fid: extra.data.sender,
+                        name: Pub.showNickname(extra.data.user_info),
+                        chat_id: extra.data.chat_id,
+                      }
+                    }, false);
+                  }
+                } else if (extra.type == 'voice' && extra.data.msg_type == 'private') {
+                  var voiceData = extra.data;
+                  Pub.openView('../chat/chat_voice_win', {
+                    pageParam: {
+                      channel: voiceData.channel,
+                      id: voiceData.sender,
+                      type: voiceData.msg_type,
+                      msgId: voiceData.msg_id
+                    },
+                    slidBackEnabled: false
+                  });
+                } else if (extra.type == 'refuse_voice' && extra.data.msg_type == 'private') {
+                  Pub.eventSend('voice_refuse');
+                } else if (extra.type == 'joined_voice' && extra.data.msg_type == 'private') {
+                  Pub.eventSend('voice_joined');
+                } else if (extra.type == 'video' && extra.data.msg_type == 'private') {
+                  var videoData = extra.data;
+                  Pub.openView('./chat/chat_video_win', {
+                    pageParam: {
+                      channel: videoData.channel,
+                      id: videoData.sender,
+                      type: videoData.msg_type,
+                      msgId: videoData.msg_id
+                    },
+                    slidBackEnabled: false
+                  });
+                } else if (extra.type == 'refuse_video' && extra.data.msg_type == 'private') {
+                  Pub.eventSend('video_refuse');
+                } else if (extra.type == 'joined_voice' && extra.data.msg_type == 'private') {
+                  Pub.eventSend('voice_joined');
+                } else if (extra.type == 'voice' && extra.data.msg_type == 'group') {
+                  var voiceData = extra.data;
+                  Pub.openView('./chat/chat_voice_group_win', {
+                    pageParam: {
+                      channel: voiceData.channel,
+                      id: voiceData.sender,
+                      type: voiceData.msg_type,
+                      msgId: voiceData.msg_id,
+                      member: voiceData.member
+                    },
+                    slidBackEnabled: false
+                  });
+                } else if (extra.type == 'refuse_voice' && extra.data.msg_type == 'group') {
+                  Pub.eventSend('group_voice_refuse');
+                }
+              }
+            }
+          })
+          ajpush.setListener(
+              function(ret) {
+                ajpush.clearNotification({id:-1},function(ret) {
+                    if(ret && ret.status){
+                        //success
+                    }
+                });
+              }
+          );
+        },
+        chatInit: function() {
+          //this.history_data();
+          var _this = this;
+          Pub.post(Pub.apiChat + 'index/index/userauth', {}, function(res) {
+            console.log('聊天:' + JSON.stringify(res));
+            _this.getChatInit();
+            _this.socket();
+          });
+        },
+        checkLogin: function() {
+          var token = $api.getStorage('token');
+          if (!token) {
+            Pub.openView('widget://html/login/login_win', {
+              slidBackEnabled: false
+            });
+          } else {
+            this.pushEvent();
+          }
+        },
+        toSearch: function() {
+          Pub.openView('../chat/chat_search_win');
+        },
+        socket: function() {
+          var _this = this;
+          var ws = api.require('myWebSocket');
+          Pub.eventListen('socket_end', function() {
+            ws.close();
+            ws = null;
+          });
+
+          function wsOpen(callback) {
+            if (!$api.getStorage("uid") || !$api.getStorage("token")) return;
+            if (_this.isOnline && !_this.isContact) {
+              var pingData = {
+                type: 'ping',
+                data: {}
+              }
+              ws.open({
+                url: Pub.apiWS,
+                pingInterval: 30,
+                pingData: JSON.stringify(pingData),
+                autoReconnect: true //开启自动重连
+              }, function(ret, err) {
+                if (ret) {
+                  _this.socketStatus = 2;
+                  _this.isContact = true;
+                } else {
+                  console.log('打开失败:' + JSON.stringify(err));
+                }
+              });
+            }
+            if (callback && typeof callback === 'function') {
+              callback();
+            }
+          }
+          wsOpen();
+          ws.bindEvent(function(ret, err) {
+            var type = ret.type;
+            var str = ret.data;
+            switch (type) {
+              case 'opened':
+                //登录...
+                _this.isContact = false;
+                _this.socketStatus = 1;
+                Pub.eventSend('socket_connect');
+                if (!_this.isGetDataList) {
+                  _this.chatInit();
+                  _this.getBookCount();
+                }
+                break;
+              case 'receive':
+                var data = JSON.parse(str);
+                console.log("接收消息：" + str);
+                if (data.code == 1) {
+                  var initParams = {
+                    type: 'init',
+                    data: {
+                      uid: $api.getStorage('uid'),
+                      token: $api.getStorage('token'),
+                      version: api.appVersion
+                    }
+                  };
+                  ws.send({
+                    msg: JSON.stringify(initParams)
+                  });
+                }
+                if (data.type == 'connected') {
+                  var initParams = {
+                    type: 'init',
+                    data: {
+                      uid: $api.getStorage('uid'),
+                      token: $api.getStorage('token'),
+                      version: api.appVersion
+                    }
+                  };
+                  console.log('初始化' + JSON.stringify(initParams));
+                  ws.send({
+                    msg: JSON.stringify(initParams)
+                  });
+                }
+
+                if (data.type == 'init') {
+                  var wins = JSON.stringify(api.windows());
+                  if (wins.indexOf('chat_personal_win') > -1 || wins.indexOf('chat_group_win') > -1) {
+                    var roomData = $api.getStorage('room_value');
+                    console.log(JSON.stringify(roomData));
+                    if (roomData) {
+                      Pub.eventSend('join_room', roomData);
+                    }
+                  } else {
+                    exitRoom();
+                    var param = {
+                      type: 'msg_list'
+                    }
+                    ws.send({
+                      msg: JSON.stringify(param)
+                    });
+                  }
+                  Pub.eventListen('join_room', function(ret) {
+                    console.log('加入房间ret' + JSON.stringify(ret));
+                    if (ret) {
+                      var retValue = ret.value;
+                      $api.setStorage('room_value', retValue);
+                      console.log('加入房间' + retValue.id);
+                      joinRoom(retValue.type, retValue.id);
+                    }
+                  });
+                  if (data.code == -1) {
+                    // Pub.msg(Pub.getLang('logon_has_expired'));
+                    isLogin = false;
+                    var wins = JSON.stringify(api.windows());
+                    if (wins.indexOf('login') == -1 && wins.indexOf('register') == -1 && wins.indexOf('forget') == -1) {
+                      Pub.openView('widget://html/login/login_win', {
+                        slidBackEnabled: false
+                      });
+                    }
+                  }
+                }
+                if (data.code == 0 && data.type == 'msg_list') {
+                  Pub.eventSend('home_socket', {
+                    data: data.data
+                  });
+                  var uid = $api.getStorage('uid');
+                  var arr = [];
+                  for (var i = 0; i < data.data.length; i++) {
+                    if (data.data[i].chat_type == "private") {
+                      if (data.data[i].chat_id != $api.getStorage("uid") + '_' + $api.getStorage("uid")) {
+                        arr.push(data.data[i]);
+                      }
+                    } else {
+                      arr.push(data.data[i]);
+                    }
+                  }
+                  data.data = arr;
+                  $api.setStorage(uid + '/message/msg_list', data.data);
+                  _this.getUnreadSession(data.data);
+                  _this.chatData = _this.chatSort(data.data);
+                  _this.getFriendList(false);
+                  _this.getGroupList(false);
+                  //_this.chatDataInit = JSON.stringify(data.data);
+                  if (_this.chatData.length > 0) {
+                    _this.isShowImg = false;
+                  } else {
+                    _this.isShowImg = true;
+                  }
+                }
+                if (data.code == 0 && data.type == 'private_chat') {
+                  Pub.eventSend('private_socket', {
+                    data: data.data
+                  });
+                  if (data.data.type == 8) {
+                    if (_this.isVoiceConnected == "0") {
+                      Pub.openView('../chat/chat_voice_win', {
+                        pageParam: {
+                          type: "getVoice",
+                          fid: data.data.sender,
+                          roomId: data.data.extra,
+                        }
+                      });
+                    }
+                  } else if (data.data.type == -8) {
+                    Pub.eventSend("voice_end");
+                  }
+                }
+                if (data.code == 0 && data.type == 'group_chat') {
+                  Pub.eventSend('group_socket', {
+                    data: data.data
+                  });
+                }
+                if (data.code == 0 && data.type == 'refresh_list') {
+                  var param = {
+                    type: 'msg_list'
+                  }
+                  ws.send({
+                    msg: JSON.stringify(param)
+                  });
+                }
+                if (data.code == 0 && data.type == 'request_count') {
+                  console.log('消息数量' + JSON.stringify(data.data));
+                  //alert(JSON.stringify(data.data));
+                  api.setTabBarItemAttr({
+                    index: 1,
+                    badge: {
+                      text: data.data.count,
+                      color: '#fff',
+                    }
+                  });
+                  Pub.eventSend('book_count', {
+                    count: data.data.count
+                  });
+                }
+                break;
+              case 'error':
+                _this.isContact = false;
+                if (_this.isOnline) {
+                  _this.socketStatus = 2;
+                  wsOpen();
+                }
+                break;
+              case 'closed':
+                _this.isContact = false;
+                if (_this.isOnline) {
+                  _this.socketStatus = 2;
+                  wsOpen();
+                }
+                break;
+            }
+          });
+          // 返回前台重连
+          api.addEventListener({
+            name: 'resume'
+          }, function(ret, err) {
+            var readyState = ws.readyState();
+            if (readyState != 1) {
+              wsOpen();
+            }
+          });
+          // 监听连线
+          api.addEventListener({
+            name: 'online'
+          }, function(ret, err) {
+            console.log('网络状态正确:' + JSON.stringify(ret));
+            console.log('网络状态错误:' + JSON.stringify(err));
+            _this.isOnline = true;
+            wsOpen();
+          });
+          // 监听掉线
+          api.addEventListener({
+            name: 'offline'
+          }, function(ret, err) {
+            _this.isOnline = false;
+            _this.socketStatus = 3;
+            Pub.msg('网络连接不可用，请稍后重试');
+          });
+          Pub.eventListen('close_chat_group_home', function(ret) {
+            console.log('群刷新首页');
+            if (ret.value.id) {
+              var paramsUnRead = {
+                type: 'clear_group_unread',
+                data: {
+                  id: ret.value.id
+                }
+              }
+              ws.send({
+                msg: JSON.stringify(paramsUnRead)
+              });
+            }
+            var param = {
+              type: 'msg_list'
+            }
+            ws.send({
+              msg: JSON.stringify(param)
+            });
+          });
+          Pub.eventListen('close_chat_personal_home', function(ret) {
+            console.log('单人刷新首页');
+            if (ret.value.id) {
+              var paramsUnRead = {
+                type: 'clear_private_unread',
+                data: {
+                  id: ret.value.id
+                }
+              }
+              ws.send({
+                msg: JSON.stringify(paramsUnRead)
+              });
+            }
+            var param = {
+              type: 'msg_list'
+            }
+            ws.send({
+              msg: JSON.stringify(param)
+            });
+          });
+          Pub.eventListen('exit_room', function(ret) {
+            if (ret) {
+              var retValue = ret.value
+              exitRoom(retValue.type, retValue.id);
+            }
+          });
+          var joinRoom = function(chatType, id) {
+            var params = {
+              type: 'join_room',
+              data: {
+                chat_type: chatType,
+                id: id,
+              }
+            }
+            console.log('加入房间' + JSON.stringify(params));
+            ws.send({
+              msg: JSON.stringify(params)
+            });
+          }
+          var exitRoom = function() {
+            var params = {
+              type: 'exit_room',
+              data: []
+            }
+            console.log('退出房间');
+            ws.send({
+              msg: JSON.stringify(params)
+            });
+          }
+        },
+        openDb: function() {
+          var db = api.require('db');
+          db.openDatabase({
+            name: 'nimo',
+            path: 'fs://nimo/nimo.db'
+          }, function(ret, err) {
+            console.log(JSON.stringify(ret));
+            if (ret.status) {
+
+            } else {
+              console.log(JSON.stringify(err));
+            }
+          });
+        },
+        loadImg: function(img) {
+          var _this = this;
+          var imgUrl = img.indexOf('http') == -1 ? (Pub.imgHost + img) : img;
+          if (!this.avatarCache) {
+            this.avatarCache = {};
+          }
+          api.imageCache({
+            url: imgUrl
+          }, function(ret, err) {
+            var url = ret.url;
+            if (JSON.stringify(_this.avatarCache).indexOf(window.encodeURI(img)) == -1 || !_this.avatarCache[window.encodeURI(img)]) {
+              _this.avatarCache[window.encodeURI(img)] = url;
+              console.log('缓存' + _this.avatarCache[window.encodeURI(img)]);
+              $api.setStorage('avatar_cache', _this.avatarCache);
+            }
+          });
+
+        },
+        getAvatarCache: function(img) {
+          var _this = this;
+          var imgName = window.encodeURI(img);
+          if (this.avatarCache.hasOwnProperty(imgName)) {
+            return _this.avatarCache[imgName];
+          } else {
+            return false;
+          }
+        },
+        isExist: function(i, img) {
+          var _this = this;
+          this.fs.exist({
+            path: img
+          }, function(ret, err) {
+            if (!ret.exist) {
+              _this.avatarCache[i] = '';
+            }
+          })
+        },
+        initWebsocket: function() {
+          // this.history_data();
+          var _this = this;
+          // Pub.eventListen('home_socket', function(ret) {
+          //     if (ret) {
+          //         var data = ret.value.data;
+          //         $api.setStorage('message/msg_list', data);
+          //         _this.chatData = data;
+          //         _this.chatDataInit = data;
+          //         if (_this.chatData.length > 0) {
+          //             _this.isShowImg = false;
+          //         } else {
+          //             _this.isShowImg = true;
+          //         }
+          //     }
+          // });
+        },
+        getChatInit: function() {
+          this.history_data();
+          var _this = this;
+          Pub.post(Pub.apiChat + 'message/message/list', {}, function(res) {
+            //console.log('聊天列表:' + JSON.stringify(res));
+            if (res.code == 0) {
+              var uid = $api.getStorage('uid');
+              var arr = [];
+              for (var i = 0; i < res.data.length; i++) {
+                if (res.data[i].chat_type == "private") {
+                  if (res.data[i].chat_id != $api.getStorage("uid") + '_' + $api.getStorage("uid")) {
+                    arr.push(res.data[i]);
+                  }
+                } else {
+                  arr.push(res.data[i]);
+                }
+              }
+              res.data = arr;
+              $api.setStorage(uid + '/message/msg_list', res.data);
+              _this.chatData = _this.chatSort(res.data);
+              _this.getUnreadSession(res.data);
+              _this.getFriendList(true);
+              _this.getGroupList(true);
+              $api.setStorage(uid + 'transmit_list', res.data);
+              //_this.chatDataInit = JSON.stringify(res.data);
+              if (_this.chatData.length > 0) {
+                _this.isShowImg = false;
+              } else {
+                _this.isShowImg = true;
+              }
+            }
+          }, true)
+        },
+        history_data() {
+          var _this = this;
+          var uid = $api.getStorage('uid');
+          var data = $api.getStorage(uid + '/message/msg_list');
+          console.log("chatmessage" + JSON.stringify(data));
+          if (data) {
+            _this.chatData = _this.chatSort(data);
+            _this.getFriendList(false);
+            _this.getGroupList(false);
+            //_this.chatDataInit = JSON.stringify(data);
+            if (_this.chatData.length > 0) {
+              _this.isShowImg = false;
+            } else {
+              _this.isShowImg = true;
+            }
+          }
+        },
+        getChat: function() {
+          var _this = this;
+          // Pub.post(Pub.apiChat + 'message/message/list', {}, function(res) {
+          //     if (res.code == 0) {
+          //         if (JSON.stringify(res.data) != _this.chatDataInit) {
+          //             $api.setStorage('message/msg_list', res.data);
+          //             _this.chatData = res.data;
+          //             _this.chatDataInit = JSON.stringify(res.data);
+          //             if (_this.chatData.length > 0) {
+          //                 _this.isShowImg = false;
+          //             } else {
+          //                 _this.isShowImg = true;
+          //             }
+          //         }
+          //     }
+          // }, true)
+        },
+        getBookCount: function() {
+          var _this = this;
+          Pub.post('request/request/count', {}, function(res) {
+            if (res.code == 0) {
+              api.setTabBarItemAttr({
+                index: 1,
+                badge: {
+                  text: res.data,
+                  color: '#fff',
+                }
+              });
+            }
+          }, true);
+        },
+        timeShow: function(text) {
+          return Pub.timestampFormat(text);
+        },
+        toPersonalChat: function(id, name, chatId) {
+          Pub.eventSend('chat_list_end');
+          Pub.eventSend('chat_window_load');
+          console.log(id);
+          Pub.openView('../chat/chat_personal_win', {
+            pageParam: {
+              fid: id,
+              name: name,
+              chat_id: chatId,
+            }
+          }, false);
+        },
+        toGroupChat: function(id, name, memberNum) {
+          // Pub.eventSend('chat_list_end');
+          // Pub.eventSend('group_window_load');
+          if (this.chooseId) {
+            return this.chooseId = ''
+          }
+          Pub.openView('../chat/chat_group_win', {
+            pageParam: {
+              id: id,
+              name: name,
+              memberNum: memberNum,
+            }
+          });
+        },
+        getImgsPaths(sourcePathOfChatBox, callback) {
+          var jsonPath = "widget://expression/emotion/emotion.json"; //表情的JSON数组
+          api.readFile({
+            path: jsonPath
+          }, function(ret, err) {
+            if (ret.status) {
+              var emotionArray = JSON.parse(ret.data);
+              var emotion = {};
+              for (var i = 0; i < emotionArray.length; i++) {
+                emotion[emotionArray[i]['text']] = '<img src="../../expression/emotion/' + emotionArray[i]['name'] + '.png' + '" width="25" height="25">';
+              }
+              /*把emotion对象 回调出去*/
+              if ("function" === typeof(callback)) {
+                callback(emotion);
+              }
+            }
+          });
+        },
+        messageCont(msg) {
+          var _this = this;
+          var jp;
+
+          try {
+              jp = JSON.parse('"' + msg + '"');
+          } catch (e) {
+              jp = msg;
+          }
+          var htmlMsg = jp.replace(Pub.regex.rg1Script, function(a, b) {
+              if (_this.emotionData[a] && _this.emotionData[a] != 'undefined') {
+                  return _this.emotionData[a];
+              } else {
+                  return a;
+              }
+          });
+          htmlMsg = htmlMsg.replace(Pub.regex.rg2Script, function(a, b) {
+              if (_this.emotionData[a] && _this.emotionData[a] != 'undefined') {
+                  return _this.emotionData[a];
+              } else {
+                  return a;
+              }
+          });
+          htmlMsg = htmlMsg.replace(Pub.regex.rgEmotion, function(a, b) {
+              if (_this.emotionData[a] && _this.emotionData[a] != 'undefined') {
+                  return _this.emotionData[a];
+              } else {
+                  return a;
+              }
+          });
+          //htmlMsg = htmlMsg.toHtmlEntities();
+          htmlMsg = htmlMsg.replaceAll('\n', ' ');
+          htmlMsg = htmlMsg.replaceAll('\r', ' ');
+          var htmlMsg = htmlMsg;
+          return htmlMsg;
+        },
+        mylongtap: function(id, index, type) {
+          if (type == "group") {
+            this.chooseId = this.chatData[index].gid;
+          } else {
+            this.chooseId = this.chatData[index].fid;
+          }
+          // api.openFrame({
+          //     name: 'chat_delete_frm',
+          //     url: './chat_delete_frm.html',
+          //     rect: {
+          //         x: 0,
+          //         y: 0,
+          //         w: 'auto',
+          //         h: 'auto'
+          //     },
+          //     pageParam: {
+          //         id: id,
+          //         type: type,
+          //     },
+          //     bounces: false,
+          //     bgColor: 'rgba(0,0,0,0)',
+          //     vScrollBarEnabled: true,
+          //     hScrollBarEnabled: true
+          // });
+        },
+        swiperRight: function() {
+          this.chooseId = '';
+        },
+        deleteEvent: function(id, type, index) {
+          //alert(id)
+          var _this = this;
+          Pub.confirm(Pub.getLang("tip"), Pub.getLang("Are_you_sure_to_delete_this_session"), function() {
+            _this.chatData.splice(index, 1);
+            $api.setStorage(_this.uid + '/message/msg_list', _this.chatData);
+            if (type == 'group') {
+              var paramsGroup = {
+                gid: id
+              }
+              Pub.post(Pub.apiChat + 'message/group/hide', paramsGroup, function(res) {
+                if (res.code == 0) {
+                  _this.chooseId = '';
+                  _this.getChatInit();
+
+                }
+              });
+            } else {
+              var params = {
+                fid: id
+              }
+              Pub.post(Pub.apiChat + 'message/single/hide', params, function(res) {
+                if (res.code == 0) {
+                  _this.chooseId = '';
+                  _this.getChatInit();
+                }
+              });
+            }
+          });
+        },
+        tabFrame: function() {
+          api.setFrameAttr({
+            name: 'chat_header_frm',
+            hidden: false
+          });
+          api.setFrameAttr({
+            name: 'book_header_frm',
+            hidden: true
+          });
+          api.setFrameAttr({
+            name: 'find_header_frm',
+            hidden: true
+          });
+          api.setFrameAttr({
+            name: 'mine_header_frm',
+            hidden: true
+          });
+          api.setNavBarAttr({
+            background: '#fff',
+            shadow: '#f9f9f9',
+            color: '#000',
+          });
+          Pub.eventListen('tabframe', function(ret) {
+            var index = ret.index;
+            switch (index) {
+              case 0:
+                api.setFrameAttr({
+                  name: 'chat_header_frm',
+                  hidden: false
+                });
+                api.setFrameAttr({
+                  name: 'book_header_frm',
+                  hidden: true
+                });
+                api.setFrameAttr({
+                  name: 'find_header_frm',
+                  hidden: true
+                });
+                api.setFrameAttr({
+                  name: 'mine_header_frm',
+                  hidden: true
+                });
+                api.setNavBarAttr({
+                  background: '#fff',
+                  shadow: '#f9f9f9',
+                  color: '#000',
+                });
+                break;
+              case 1:
+                api.setFrameAttr({
+                  name: 'chat_header_frm',
+                  hidden: true
+                });
+                api.setFrameAttr({
+                  name: 'book_header_frm',
+                  hidden: false
+                });
+                api.setFrameAttr({
+                  name: 'find_header_frm',
+                  hidden: true
+                });
+                api.setFrameAttr({
+                  name: 'mine_header_frm',
+                  hidden: true
+                });
+                api.setNavBarAttr({
+                  background: '#fff',
+                  shadow: '#f9f9f9',
+                  color: '#000',
+                });
+                break;
+              case 2:
+                api.setFrameAttr({
+                  name: 'chat_header_frm',
+                  hidden: true
+                });
+                api.setFrameAttr({
+                  name: 'book_header_frm',
+                  hidden: true
+                });
+                api.setFrameAttr({
+                  name: 'find_header_frm',
+                  hidden: false
+                });
+                api.setFrameAttr({
+                  name: 'mine_header_frm',
+                  hidden: true
+                });
+                api.setNavBarAttr({
+                  background: '#fff',
+                  shadow: '#f9f9f9',
+                  color: '#000',
+                });
+                break;
+              case 3:
+                api.setFrameAttr({
+                  name: 'chat_header_frm',
+                  hidden: true
+                });
+                api.setFrameAttr({
+                  name: 'book_header_frm',
+                  hidden: true
+                });
+                api.setFrameAttr({
+                  name: 'find_header_frm',
+                  hidden: true
+                });
+                api.setFrameAttr({
+                  name: 'mine_header_frm',
+                  hidden: false
+                });
+                api.setNavBarAttr({
+                  background: '#fff',
+                  shadow: '#fff',
+                  color: '#fff',
+                });
+                break;
+              default:
+                api.setFrameAttr({
+                  name: 'chat_header_frm',
+                  hidden: false
+                });
+                api.setFrameAttr({
+                  name: 'book_header_frm',
+                  hidden: true
+                });
+                api.setFrameAttr({
+                  name: 'find_header_frm',
+                  hidden: true
+                });
+                api.setFrameAttr({
+                  name: 'mine_header_frm',
+                  hidden: true
+                });
+
+                api.setNavBarAttr({
+                  background: '#fff',
+                  shadow: '#f9f9f9',
+                  color: '#000',
+                });
+                break;
+            }
+          })
+        },
+        openHeader: function() {
+          api.openFrame({
+            name: 'chat_header_frm',
+            url: './chat_header_frm.html',
+            rect: {
+              x: 0,
+              y: 0,
+              w: 'auto',
+              h: 50 + api.safeArea.top,
+            },
+            pageParam: {},
+            bounces: false,
+            bgColor: 'rgba(0,0,0,0)',
+          });
+        },
+        toChat: function(fid, name) {
+          if (this.chooseId) {
+            return this.chooseId = ''
+          }
+          Pub.openView('../chat/chat_single_win', {
+            pageParam: {
+              fid: fid,
+              name: name
+            }
+          })
+        },
+        setTimeRun: function() {
+          Pub.eventListen('login_time', function(ret) {
+            setTimeout(function() {
+              $api.rmStorage('login_count');
+            }, ret.value.time || 60000);
+          });
+          Pub.eventListen('change_password_time', function(ret) {
+            setTimeout(function() {
+              $api.rmStorage('change_password_count');
+            }, ret.value.time || 60000);
+          });
+          Pub.eventListen('change_payment_password_time', function(ret) {
+            setTimeout(function() {
+              $api.rmStorage('change_payment_password_count');
+            }, ret.value.time || 60000);
+          });
+          Pub.eventListen('mobile_bind_time', function(ret) {
+            setTimeout(function() {
+              $api.rmStorage('mobile_bind_count');
+            }, ret.value.time || 60000);
+          });
+          Pub.eventListen('mobile_bind_time', function(ret) {
+            setTimeout(function() {
+              $api.rmStorage('mobile_bind_count');
+            }, ret.value.time || 60000);
+          });
+          Pub.eventListen('register_verify_time', function(ret) {
+            setTimeout(function() {
+              $api.rmStorage('register_verify_count');
+            }, ret.value.time || 60000);
+          });
+          Pub.eventListen('forget_verify_time', function(ret) {
+            setTimeout(function() {
+              $api.rmStorage('forget_verify_count');
+            }, ret.value.time || 60000);
+          });
+        },
+        chatTop: function(id, type, is_top, index) {
+          var _this = this;
+          console.log(type);
+          console.log(index);
+          var val;
+          if (is_top == 1) {
+            val = 0
+          } else {
+            val = 1
+          }
+          if (type == "group") {
+            var params = {
+              gid: id,
+              is_top: val
+            }
+            Pub.post(Pub.apiChat + 'group/operation/top_set', params, function(res) {
+              if (res.code == 0) {
+                _this.chooseId = '';
+                //_this.getChatInit();
+                _this.chatData[index].is_top = val;
+                console.log(JSON.stringify(_this.chatData));
+                if (val == 1) {
+                  _this.chatData.unshift(_this.chatData.splice(index, 1)[0]);
+                } else {
+                  var noTopIndex = 0;
+                  for (var i = 0; i < _this.chatData.length; i++) {
+                    if (_this.chatData[i].is_top == 1) {
+                      noTopIndex++;
+                    }
+                  }
+                  _this.chatData.unshift(_this.chatData.splice(index, 1)[noTopIndex]);
+                }
+                //Pub.eventSend("update_groupinfo");
+              }
+            });
+          } else {
+            var params = {
+              fid: id,
+              is_top: val
+            }
+            Pub.post(Pub.apiChat + 'friend/friend/top_set', params, function(res) {
+              if (res.code == 0) {
+                _this.chooseId = '';
+                //_this.getChatInit();
+                _this.chatData[index].is_top = val;
+                console.log(JSON.stringify(_this.chatData));
+                if (val == 1) {
+                  _this.chatData.unshift(_this.chatData.splice(index, 1)[0]);
+                } else {
+                  var noTopIndex = 0;
+                  for (var i = 0; i < _this.chatData.length; i++) {
+                    if (_this.chatData[i].is_top == 1) {
+                      noTopIndex++;
+                    }
+                  }
+                  _this.chatData.unshift(_this.chatData.splice(index, 1)[noTopIndex]);
+                }
+                //Pub.eventSend("update_groupinfo");
+              }
+            });
+          }
+        },
+        pullDown: function() {
+          var _this = this;
+          Pub.pullDown(function() {
+            window.location.reload();
+            Pub.pullDownDone();
+          });
+        },
+        getFriendList: function(isGet) {
+          var _this = this;
+          if ($api.getStorage(_this.uid + "_friendList")) {
+            _this.friendList = $api.getStorage(_this.uid + "_friendList");
+            //console.log(JSON.stringify(_this.friendList));
+            _this.getListInfo(_this.chatData);
+          } else {
+            Pub.post(Pub.apiChat + 'friend/friend/list2', {}, function(res) {
+              if (res.code == 0) {
+                if (res.data.length > 0) {
+                  //console.log(JSON.stringify($api.getStorage(_this.uid+"_friendList")));
+                  _this.friendList = res.data;
+                  $api.setStorage(_this.uid + "_friendList", res.data);
+                  for (var i = 0; i < res.data.length; i++) {
+                    $api.setStorage(res.data[i].uid + '_user_info', res.data[i]);
+                  }
+                  _this.getListInfo(_this.chatData);
+                }
+              }
+            })
+          }
+          if (isGet) {
+            Pub.post(Pub.apiChat + 'friend/friend/list2', {}, function(res) {
+              if (res.code == 0) {
+                if (res.data.length > 0) {
+                  //console.log(JSON.stringify($api.getStorage(_this.uid+"_friendList")));
+                  _this.friendList = res.data;
+                  $api.setStorage(_this.uid + "_friendList", res.data);
+                  for (var i = 0; i < res.data.length; i++) {
+                    $api.setStorage(res.data[i].uid + '_user_info', res.data[i]);
+                  }
+                  _this.getListInfo(_this.chatData);
+                }
+              }
+            })
+          }
+
+        },
+        getSingleFriendInfo: function(id,callback) {
+          var _this = this;
+          Pub.post(Pub.apiChat + 'friend/info/simple', {
+            fid: id
+          }, function(res) {
+            if (res.code == 0) {
+              $api.setStorage(id + "_user_info", res.data);
+              if(callback && typeof callback == 'function'){
+                callback(res.data);
+              }
+            }
+          })
+        },
+        getGroupList: function(isGet) {
+          var _this = this;
+          if ($api.getStorage(_this.uid + "_groupList")) {
+            _this.groupAdminList = $api.getStorage(_this.uid + "_groupList").admin;
+            _this.groupMemberList = $api.getStorage(_this.uid + "_groupList").member;
+            _this.groupOtherList = $api.getStorage(_this.uid + "_groupList").admin;
+            _this.groupOwnerList = $api.getStorage(_this.uid + "_groupList").owner;
+            _this.getListInfo(_this.chatData);
+          } else {
+            Pub.post(Pub.apiChat + 'group/info/list2', {}, function(res) {
+              if (res.code == 0) {
+                _this.groupList = res.data;
+                _this.groupList = $api.setStorage(_this.uid + "_groupList", res.data);
+                _this.groupAdminList = $api.getStorage(_this.uid + "_groupList").admin;
+                _this.groupMemberList = $api.getStorage(_this.uid + "_groupList").member;
+                _this.groupOtherList = $api.getStorage(_this.uid + "_groupList").admin;
+                _this.groupOwnerList = $api.getStorage(_this.uid + "_groupList").owner;
+                var totalGroupList = _this.groupOwnerList.concat(_this.groupAdminList.concat(_this.groupMemberList.concat(_this.groupOtherList)));
+                console.log(JSON.stringify(totalGroupList));
+                for (var i = 0; i < totalGroupList.length; i++) {
+                  $api.setStorage(totalGroupList[i].gid + '_group_info', totalGroupList[i]);
+                }
+                _this.getListInfo(_this.chatData);
+              }
+            })
+          }
+          if (isGet) {
+            Pub.post(Pub.apiChat + 'group/info/list2', {}, function(res) {
+              if (res.code == 0) {
+                _this.groupList = res.data;
+                //alert(JSON.stringify(_this.groupList));
+                _this.groupList = $api.setStorage(_this.uid + "_groupList", res.data);
+                _this.groupAdminList = $api.getStorage(_this.uid + "_groupList").admin;
+                _this.groupMemberList = $api.getStorage(_this.uid + "_groupList").member;
+                _this.groupOtherList = $api.getStorage(_this.uid + "_groupList").admin;
+                _this.groupOwnerList = $api.getStorage(_this.uid + "_groupList").owner;
+                var totalGroupList = _this.groupOwnerList.concat(_this.groupAdminList.concat(_this.groupMemberList.concat(_this.groupOtherList)));
+                console.log(JSON.stringify(totalGroupList));
+                for (var i = 0; i < totalGroupList.length; i++) {
+                  $api.setStorage(totalGroupList[i].gid + '_group_info', totalGroupList[i]);
+                }
+                _this.getListInfo(_this.chatData);
+              }
+            })
+          }
+        },
+        getSingleGroupInfo: function(id,callback) {
+          var _this = this;
+          Pub.post(Pub.apiChat + 'group/info/list2', {}, function(res) {
+            if (res.code == 0) {
+              _this.groupList = res.data;
+              _this.groupList = $api.setStorage(_this.uid + "_groupList", res.data);
+              _this.groupAdminList = $api.getStorage(_this.uid + "_groupList").admin;
+              _this.groupMemberList = $api.getStorage(_this.uid + "_groupList").member;
+              _this.groupOtherList = $api.getStorage(_this.uid + "_groupList").other;
+              _this.groupOwnerList = $api.getStorage(_this.uid + "_groupList").owner;
+              var totalGroupList = _this.groupOwnerList.concat(_this.groupAdminList.concat(_this.groupMemberList.concat(_this.groupOtherList)));
+              for (var i = 0; i < totalGroupList.length; i++) {
+                //$api.setStorage(res.data[i].gid + '_group_info', res.data[i]);
+                if (id == totalGroupList[i].gid) {
+                  $api.setStorage(id + '_group_info', totalGroupList[i]);
+                  if(callback && typeof callback == 'function'){
+                    callback(totalGroupList[i]);
+                  }
+                  //return totalGroupList[i];
+                }
+              }
+            }
+          })
+        },
+        getListInfo: function(data) {
+          var _this = this;
+          for (var i = 0; i < data.length; i++) {
+            if (data[i].chat_type == "private") {
+              if ($api.getStorage(data[i].fid + '_user_info')) {
+                data[i].user_info = $api.getStorage(data[i].fid + '_user_info');
+              } else if($api.getStorage(data[i].fid + '_anynomous')){
+                data[i].user_info = $api.getStorage(data[i].fid + '_anynomous');
+              }else {
+                data[i].user_info = {"face":null,uname:"新好友"};
+                _this.getSingleFriendInfo(data[i].fid,function(data2){
+                  data[i].user_info = data2;
+                  _this.chatData = data;
+                });
+              }
+              _this.chatData = data;
+            } else {
+              if ($api.getStorage(data[i].gid + '_group_info')) {
+                data[i].group_info = $api.getStorage(data[i].gid + '_group_info');
+              } else {
+                data[i].group_info = {"img":null,"group_name":"新群组"};
+                _this.getSingleGroupInfo(data[i].gid,function(data2){
+                  //alert(JSON.stringify(data));
+                  data[i].group_info = data2;
+                  _this.chatData = data;
+                });
+              }
+              _this.chatData = data;
+
+            }
+          }
+          console.log(JSON.stringify(data));
+        },
+        chatSort: function(data) {
+          var topChat = [];
+          var chat = [];
+          for (var i = 0; i < data.length; i++) {
+            if (data[i].is_top == 1) {
+              topChat.push(data[i]);
+            } else {
+              chat.push(data[i]);
+            }
+          };
+          topChat = topChat.sort(function(a, b) {
+            return b.date - a.date;
+          });
+          chat = chat.sort(function(a, b) {
+            return b.date - a.date;
+          });
+          return topChat.concat(chat);
+        },
+        getMyInfo: function() {
+          var _this = this;
+          if (!$api.getStorage(_this.uid + '_user_info')) {
+            Pub.post(Pub.apiChat + 'user/info/myinfo', {}, function(res) {
+              if (res.code == 0) {
+                $api.setStorage(_this.uid + '_user_info', res.data);
+              }
+            });
+          }
+        },
+        getAllGroupMember: function() {
+          var _this = this;
+          if (!$api.getStorage(_this.uid + 'all_group_member')) {
+            Pub.post(Pub.apiChat + 'group/info/combine_member', {}, function(res) {
+              if (res.code == 0) {
+                //console.log(JSON.stringify(res.data));
+                member_list(res.data);
+                //console.log($api.getStorage("group_members_12"));
+              }
+            });
+          }
+        },
+        getPackInfo: function() {
+          var _this = this;
+          Pub.post(Pub.apiChat + 'pack/setting/get', {}, function(res) {
+            if (res.code == 0) {
+              $api.setStorage('pack_avail', res.data.pack_avail);
+              $api.setStorage('transfer_avail', res.data.transfer_avail);
+            }
+          });
+        },
+        getCoinList: function() {
+          var _this = this;
+          Pub.post(Pub.apiChat + 'balance/coin/list', {}, function(res) {
+            if (res.code == 0) {
+              var totalCoinInfo = [];
+              for (var i = 0; i < res.data.length; i++) {
+                $api.setStorage(res.data[i].id + "_coin_info", res.data[i]);
+                totalCoinInfo.push(res.data[i]);
+              }
+              $api.setStorage("total_coin_info", totalCoinInfo);
+            }
+          });
+        },
+        getUnreadSession: function(data) {
+          var _this = this;
+          var unreadNum = 0;
+          if (data.length > 0) {
+            for (var i = 0; i < data.length; i++) {
+              unreadNum = unreadNum + (data[i].last_count - data[i].last_read);
+            }
+            //return unreadNum;
+            Pub.eventSend("Unread_chat_num", {
+              unreadNum: unreadNum
+            });
+            api.setTabBarItemAttr({
+              index: 0,
+              badge: {
+                text: unreadNum,
+                color: '#fff',
+              }
+            });
+          }
+        },
+
+      }
+    });
+  }
+</script>
+
+
+</html>

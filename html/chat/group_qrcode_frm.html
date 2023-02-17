@@ -1,0 +1,85 @@
+<!doctype html>
+<html class="bg-transparent">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bg-transparent">
+  <div class="group-qrcode-container">
+    <div class="avatar" id="avatar"></div>
+
+    <div class="qrcode-box">
+      <div class="name" id="name">&nbsp;</div>
+      <!-- <div class="desc" id="desc">&nbsp;</div> -->
+      <!-- <div class="font-red" set-lang="text:join_now">立即加入</div> -->
+      <div class="qrcode" id="qrcode">
+      </div>
+      <div class="tips" set-lang="text:scan_qrcode_add_group">扫描二维码加入群聊</div>
+    </div>
+    <div class="btn-share my-btn" onclick="share()">分享给好友</div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var shareUrl = '', qrImg = '';
+    apiready = function() {
+        api.parseTapmode();
+        getGroupInfo();
+        getQrcode();
+    }
+    function getGroupInfo(){
+      var params = {
+          gid: api.pageParam.id || ''
+      }
+      Pub.post(Pub.apiChat +'group/info/get', params, function(res){
+        console.log('群资料'+ JSON.stringify(res));
+          if(res.code == 0){
+              var data = res.data;
+              var avatar = '';
+              if(data.img){
+                if(data.img.indexOf('http') == -1){
+                  avatar = Pub.imgHost + data.img;
+                }else{
+                  avatar = data.img
+                }
+                $('#avatar').html('<img src="'+avatar+'">');
+              }
+              $('#name').text(data.group_name);
+              $('#desc').text(data.introduction);
+          }
+      });
+    }
+    function getQrcode(){
+      var params = {
+        gid: api.pageParam.id
+      }
+      Pub.post(Pub.apiChat +'group/info/qrcode', params, function(res){
+        if(res.code == 0){
+          shareUrl = res.data;
+          Pub.createQrcode(shareUrl, function(img){
+            qrImg = img;
+            $('#qrcode').html('<img src="'+img+'">');
+          });
+        }
+      });
+    }
+    function share(){
+      var shareImg = [];
+      shareImg.push(qrImg);
+      var sharedModule = api.require('shareAction');
+      sharedModule.share({
+          text: '',
+          images: shareImg,
+          type: 'image'
+      });
+    }
+</script>
+
+</html>

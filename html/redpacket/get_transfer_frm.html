@@ -1,0 +1,140 @@
+<!doctype html>
+<html class="bgc-white-dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bgc-white-dark">
+  <div class="redpacket-info-header">
+    <div class="info-header">
+      <!-- <img src="../../skin/default/images/chat/img_avatar.png" class="avatar" id="user_avatar"> -->
+      <div class="avatar" id="user_avatar"></div>
+      <div class="name" id="user_name"></div>
+      <div class="desc" id="desc"></div>
+    </div>
+  </div>
+    <div class="redpacket-main-info" id="red_amount">
+        <div class="money">
+            <strong id="money_amount"></strong><em id="money_unit" class="unit"></em>
+        </div>
+        <div class="tips" set-lang="text:">已存入零钱，可用来发转账</div>
+    </div>
+    <div class="redpack-group-get" id="red_open_no" style="display: none;">
+      <div class="count"><font set-lang="text:">转账金额</font><span class="amount2">0.00</span> <span class="unit"></span>，<font set-lang="text:wait_receive">等待对方领取</font></div>
+    </div>
+    <div class="redpack-group-get" id="red_open_yes" style="display: none;">
+      <div class="count"><font set-lang="text:">1个转账共</font><span class="amount2">0.00</span><span class="unit"></span></div>
+      <div class="item">
+        <div class="avatar" id="receive_avatar"></div>
+        <div class="info">
+          <h3 id="recieve_name"></h3>
+          <p id="red_time"></p>
+        </div>
+        <div class="amount"><span class="amount2">0.00</span> <span class="unit"></span></div>
+      </div>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    var id = '', fid = '', red = '';
+    apiready = function() {
+        api.parseTapmode();
+        id = api.pageParam.id;
+        fid = api.pageParam.fid;
+        red = api.pageParam.red;
+        console.log(red);
+        getUserInfo();
+        getData();
+    }
+    function getData(){
+        var params = {
+            packid: red,
+            tkey: 'test1936',
+        }
+        Pub.post(Pub.apiChat +'pack/single/info', params, function(res){
+            console.log('转账详情:' + JSON.stringify(res));
+            if(res.code == 0){
+                var data = res.data;
+                var desc = '';
+                if(data.sender == $api.getStorage('uid')){
+                    desc = data.remark|| "转账";
+                }else{
+                    desc = data.remark|| "转账";
+                }
+                $('#desc').text(desc);
+                $('#money_amount').text(data.amount);
+                //$('#money_unit').text(data.name);
+                if(data.sender == $api.getStorage('uid')){
+                  $('#red_amount').hide();
+                  if(data.opened == 0){
+                    $('#red_open_no').show();
+                    $('#red_open_yes').hide();
+                  }else{
+                    $('#red_open_no').hide();
+                    $('#red_open_yes').show();
+                    // var avatar = '';
+                    // if(data.log[0].user.face){
+                    //     if(data.log[0].user.face.indexOf('http') == -1){
+                    //         avatar = Pub.imgHost + data.log[0].user.face;
+                    //     }else{
+                    //       avatar = data.log[0].user.face;
+                    //     }
+                    //     $('#receive_avatar').html('<img src="'+avatar+'">');
+                    // }else{
+                    //   $('#receive_avatar').html('<img src="../../icon/logo.png">');
+                    // }
+                    // $('#recieve_name').text(data.log[0].user.uname);
+                    // $('#red_time').text(data.log[0].create_time);
+                  }
+                }else{
+                  $('#red_amount').show();
+                  $('#red_open_no').hide();
+                  $('#red_open_yes').hide();
+                }
+                $('.amount2').text(data.amount);
+                console.log(JSON.stringify($api.getStorage(data.cid + "_coin_info")));
+                if($api.getStorage(data.cid + "_coin_info")){
+                  $('.unit').text($api.getStorage(data.cid + "_coin_info").cname);
+                }
+
+            }
+        });
+    }
+    function getUserInfo(){
+      if($api.getStorage(fid + "_user_info")){
+        var data = $api.getStorage(fid + "_user_info");
+        var avatar = data.face;
+        if(avatar){
+            if(avatar.indexOf('http') == -1){
+                $('#user_avatar').html('<img src="'+Pub.imgHost + avatar+'">');
+            }else{
+                $('#user_avatar').html('<img src="' + avatar+'">');
+            }
+        }else{
+          $('#avatar_receive').html('<img src="../../icon/logo.png">');
+        }
+        $('#user_name').text(data.uname + ' 的转账');
+      }
+      Pub.post(Pub.apiChat+"friend/info/userinfo",{fid:fid},function(res){
+        if(res.code == 0){
+          if(res.data.face.indexOf("http")==-1){
+            $("#user_avatar").attr("src",Pub.imgHost+res.data.face);
+          }else{
+            $("#user_avatar").attr("src",res.data.face);
+          }
+          $("#user_name").html(res.data.uname);
+          $api.setStorage(fid + "_user_info",res.data);
+        }
+      })
+    }
+</script>
+
+</html>

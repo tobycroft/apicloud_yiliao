@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <header id="header">
+    <div class="header">
+      <div class="header-left">
+        <a onclick="closeWin()"><i class="return"></i></a>
+      </div>
+      <div class="header-middle" set-lang="text:create_group_chat">创建群聊</div>
+      <div class="header-right my-btn" onclick="clickSubmit()">完成</div>
+    </div>
+    <div class="main-search">
+      <div class="input-box">
+          <div class="input">
+            <input type="text" placeholder="搜索" set-lang="placeholder:search" id="search_text">
+            <div class="btn-submit my-btn" id="search" set-lang="text:search">搜索</div>
+          </div>
+      </div>
+    </div>
+  </header>
+
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+apiready = function() {
+    api.parseTapmode();
+    Pub.setStatusBar();
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    var headerPos = $api.offset(header);
+    openFrame(headerPos);
+    inputEvent();
+}
+function openFrame(headerPos, footerPos, isSafe){
+     Pub.openFrame('./group_create_frm',{headerPos:headerPos},{bounces:false, reload: false, pageParam: api.pageParam});
+}
+function closeWin() {
+    api.closeWin();
+}
+function clickSubmit(){
+  Pub.eventSend("create_group");
+}
+function inputEvent(){
+  $('#search_text').on('input prototype', function(){
+    var thisVal = $(this).val();
+    if(thisVal){
+      $('#search').show();
+    }else{
+      $('#search').hide();
+      Pub.eventSend('group_member_search', {
+        words: ''
+      })
+    }
+  });
+  $('#search').on('click', function(){
+    var searchVal = $('#search_text').val();
+    Pub.eventSend('group_member_search', {
+      words: searchVal
+    })
+  });
+}
+</script>
+
+</html>

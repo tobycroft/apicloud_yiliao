@@ -1,0 +1,256 @@
+<!doctype html>
+<html class="bgc-white">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bgc-white">
+    <div class="redpacket-main-info">
+        <div class="avatar" style="margin-top: .02rem;" id="avatar">
+            <!-- <img src="../../skin/default/images/default_avatar.png"> -->
+        </div>
+        <div class="name" id="name"></div>
+        <!-- <div class="desc" set-lang="text:received_altogether">一共收到</div> -->
+        <div class="money">
+            <strong id="amount"></strong><em id="unit"></em>
+        </div>
+    </div>
+    <div class="redpacket-count-get">
+        <span>
+            <h3 id="count">0</h3>
+            <p set-lang="text:received_red_envelopes">收到红包</p>
+        </span>
+        <span>
+            <h3 id="best">0</h3>
+            <p set-lang="text:bese_of_luck">手气最佳</p>
+        </span>
+    </div>
+    <div class="redpacket-cell" id="list">
+        <!-- <div class="item">
+            <div class="item-left">
+                <h3>魏老师<em>拼</em></h3>
+                <p>11-28</p>
+            </div>
+            <div class="item-right">
+                200.00 BTC
+            </div>
+        </div>
+        <div class="item">
+            <div class="item-left">
+                <h3>魏老师</h3>
+                <p>11-28</p>
+            </div>
+            <div class="item-right">
+                200.00 BTC
+            </div>
+        </div>
+        <div class="item">
+            <div class="item-left">
+                <h3>魏老师</h3>
+                <p>11-28</p>
+            </div>
+            <div class="item-right">
+                200.00 BTC
+            </div>
+        </div>
+        <div class="item">
+            <div class="item-left">
+                <h3>魏老师</h3>
+                <p>11-28</p>
+            </div>
+            <div class="item-right">
+                200.00 BTC
+            </div>
+        </div>
+        <div class="item">
+            <div class="item-left">
+                <h3>魏老师</h3>
+                <p>11-28</p>
+            </div>
+            <div class="item-right">
+                200.00 BTC
+            </div>
+        </div>
+        <div class="item">
+            <div class="item-left">
+                <h3>魏老师</h3>
+                <p>11-28</p>
+            </div>
+            <div class="item-right">
+                200.00 BTC
+            </div>
+        </div>
+        <div class="item">
+            <div class="item-left">
+                <h3>魏老师</h3>
+                <p>11-28</p>
+            </div>
+            <div class="item-right">
+                200.00 BTC
+            </div>
+        </div> -->
+    </div>
+    <script type="text/html" id="list_html">
+        {{if data.length > 0}}
+            {{each data}}
+            <div class="item">
+                <div class="item-left">
+                    <h3>{{$value.user_info.uname}}</h3>
+                    <p class="time">{{$value.start_time}}</p>
+                </div>
+                <div class="item-right">
+                    {{$value.amount}} {{$value.coin_info.name}}
+                </div>
+            </div>
+            {{/each}}
+        {{/if}}
+    </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var page = 0, listObj = {}, listData = [];
+    var coinId = '', year = '', uid = '';
+    apiready = function(){
+        api.parseTapmode();
+        Pub.eventListen('redpacket_record_param', function(ret){
+          console.log('红包记录的参数:' + JSON.stringify(ret));
+          coinId = ret.value.coinId;
+          year = ret.value.year;
+          uid = $api.getStorage('uid');
+          getCount();
+          page = 0;
+          listData = [];
+          getData(true);
+        });
+    }
+    function getCount(){
+        if($api.getStorage(uid + "_user_info")){
+          var data = $api.getStorage(uid + "_user_info");
+          var avatar = '';
+          if(data.face){
+              if(data.face.indexOf('http') == -1){
+                  avatar = Pub.imgHost + data.face;
+              }else{
+                  avatar = data.face;
+              }
+              $('#avatar').html('<img src="'+avatar+'">');
+          }else{
+            $('#avatar').html('<img src="../../icon/logo.png">');
+          }
+          $('#name').text(data.uname || '');
+        }
+        var params = {
+          coin_id: coinId,
+          year: year,
+          tkey: 'test1936'
+        }
+        Pub.post(Pub.apiChat +'pack/log/all_recv_count', params, function(res){
+            if(res.code == 0){
+                var data = res.data;
+                //$('#amount').text(data);
+                // $('#unit').text(data.coin_type.cname);
+                // $('#best').text(data.best_count);
+                $('#count').text(data);
+            }
+        });
+        Pub.post(Pub.apiChat +'pack/log/sum_recv', params, function(res){
+            if(res.code == 0){
+                var data = res.data;
+                $('#amount').text(data[0].sum);
+                if($api.getStorage(data[0].cid + "_coin_info")){
+                  $('#unit').text($api.getStorage(data[0].cid + "_coin_info").name)
+                }
+            }
+        });
+        Pub.post(Pub.apiChat +'pack/log/lucky_recv_count', params, function(res){
+            if(res.code == 0){
+                var data = res.data;
+                $('#best').text(data);
+            }
+        });
+    }
+    function getData(isEmpty, callback){
+        var params = {
+            page: page,
+            coin_id: coinId,
+            year: year,
+            tkey: 'test1936'
+        }
+        Pub.post(Pub.apiChat +'pack/log/recv', params, function(res){
+          console.log('红包' + JSON.stringify(res))
+
+            if(res.code == 0){
+                if(isEmpty){
+                    listData = res.data;
+                } else {
+                    listData = listData.concat(res.data);
+                }
+                if(res.data.length == 0 || res.data.length < 30){
+                    listObj.isDown = true;
+                    Pub.pullUpDone();
+                }else{
+                    pullUp();
+                }
+                for(var i = 0;i<listData.length;i++){
+                  console.log(JSON.stringify($api.getStorage(listData[i].cid + "_coin_info")));
+                  if($api.getStorage(listData[i].cid + "_coin_info")){
+                    listData[i].coin_info = $api.getStorage(listData[i].cid + "_coin_info");
+                  }
+                  if($api.getStorage(listData[i].sender + "_user_info")){
+                    listData[i].user_info = $api.getStorage(listData[i].sender + "_user_info");
+                  }else if($api.getStorage(listData[i].sender + "_anynomous")){
+                    listData[i].user_info = $api.getStorage(listData[i].sender + "_anynomous");
+                  }
+                }
+                //console.log(JSON.stringify(listData));
+                listObj = {
+                    data: listData
+                };
+                var html = template('list_html', listObj);
+                $api.byId('list').innerHTML = html;
+                dataEvent();
+                if(typeof callback == 'function'){
+                    callback();
+                }
+            } else {
+                Pub.msg(res.echo);
+            }
+        })
+    }
+    function dataEvent(){
+      console.log();
+        $('.time').each(function(){
+            var thisTime = $(this).text();
+            if(thisTime){
+                $(this).text(Pub.toTime(thisTime * 1000));
+            }
+        });
+    }
+    function pullDown(){
+        Pub.pullDown(function(){
+            page = 0;
+            listData = [];
+            getData(true, function(){
+                api.refreshHeaderLoadDone();
+            });
+        });
+    }
+    function pullUp(){
+        Pub.pullUp(function(){
+            ++page;
+            getData(false);
+        });
+
+    }
+</script>
+
+</html>

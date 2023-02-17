@@ -1,0 +1,140 @@
+<!doctype html>
+<html class="bg-transparent">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bg-transparent">
+    <div class="redpacket-popup-bg" onclick="closePopup()"></div>
+    <div class="redpacket-popup">
+        <div class="close" onclick="closePopup()"></div>
+        <div class="member-info">
+            <span id="user_avatar"></span>
+            <h3 id="user_name"></h3>
+            <p id="desc"></p>
+        </div>
+        <div class="fonts" id="pack_remark">
+        </div>
+        <div class="coin-icon" id="btn_get">
+            <div class="icon" id="coin_img">
+            </div>
+        </div>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    var id = '', fid = '', red = '';
+    apiready = function() {
+        api.parseTapmode();
+        id = api.pageParam.id;
+        fid = api.pageParam.fid;
+        red = api.pageParam.red;
+        console.log(red);
+        getUserInfo();
+        getData();
+        clickEvent();
+    }
+    function getData(){
+        var params = {
+            packid: red,
+            tkey: 'test1936'
+        }
+        Pub.post(Pub.apiChat +'pack/single/info', params, function(res){
+            console.log('红包详情:' + JSON.stringify(res));
+            if(res.code == 0){
+                var data = res.data;
+                // var avatar = data.user_info.face;
+                // if(avatar){
+                //     if(avatar.indexOf('http') == -1){
+                //         $('#user_avatar').html('<img src="'+Pub.imgHost + avatar+'">');
+                //     }else{
+                //         $('#user_avatar').html('<img src="' + avatar+'">');
+                //     }
+                // }
+                // $('#user_name').text(data.user_info.uname);
+                $('#desc').text(Pub.getLang('give_you_a_redpacket'));
+                $('#pack_remark').text(data.remark);
+                var coinImg = data.img;
+                if(coinImg){
+                  if(coinImg.indexOf('http') == -1){
+                      $('#coin_img').html('<img src="'+Pub.imgHost + coinImg+'">');
+                  }else{
+                      $('#coin_img').html('<img src="' + coinImg+'">');
+                  }
+                }else{
+                  $('#coin_img').html(Pub.getLang('open'));
+                }
+
+            }
+        });
+    }
+    function clickEvent(){
+        $('#btn_get').on('click', function(){
+            getRedpacket(id);
+        });
+    }
+    // 领取红包
+    function getRedpacket(id, pass, remark){
+        var params = {
+            packid: red,
+            pass: pass || '',
+            remark: remark || '',
+            tkey: 'test1936'
+        }
+        Pub.post(Pub.apiChat +'pack/single/recv', params, function(res){
+            console.log('红包领取:' + JSON.stringify(res));
+            if(res.code == 0){
+                $api.setStorage(red + "_pack_status", 1);
+                Pub.eventSend('chat_personal_init');
+                //Pub.eventSend('chat_personal_init');
+                Pub.openView('./get_redpacket_win', {
+                  pageParam: api.pageParam
+                })
+                Pub.msg(res.echo);
+                setTimeout(function(){
+                  closePopup();
+                }, 1000);
+            }
+        });
+    }
+    function getUserInfo(){
+      if($api.getStorage(fid + "_user_info")){
+        var data = $api.getStorage(fid + "_user_info");
+        var avatar = data.face;
+        if(avatar){
+            if(avatar.indexOf('http') == -1){
+                $('#user_avatar').html('<img src="'+Pub.imgHost + avatar+'">');
+            }else{
+                $('#user_avatar').html('<img src="' + avatar+'">');
+            }
+        }else{
+          $('#avatar_receive').html('<img src="../../icon/logo.png">');
+        }
+        $('#user_name').text(data.uname + ' 的红包');
+      }
+      Pub.post(Pub.apiChat+"friend/info/userinfo",{fid:fid},function(res){
+        if(res.code == 0){
+          if(res.data.face.indexOf("http")==-1){
+            $("#user_avatar").attr("src",Pub.imgHost+res.data.face);
+          }else{
+            $("#user_avatar").attr("src",res.data.face);
+          }
+          $("#user_name").html(res.data.uname);
+          $api.setStorage(fid + "_user_info",res.data);
+        }
+      })
+    }
+    function closePopup(){
+        api.closeFrame();
+    }
+</script>
+
+</html>

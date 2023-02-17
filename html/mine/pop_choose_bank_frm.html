@@ -1,0 +1,114 @@
+<!doctype html>
+<html class="bg-transparent">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+<body class="bg-transparent">
+  <div class="pop-choose-bank-container">
+    <div class="title">
+      <p>选择银行卡</p>
+      <p onclick="closePop()">取消</p>
+    </div>
+    <div class="items" id="items">
+      <!-- <div class="item" bank="nongye" name="农业银行" onclick="choose(this)">
+        <img src="../../skin/default/images/bank/icon_nongye.svg" alt="" class="icon">
+        <p class="name">农业银行</p>
+      </div>
+      <div class="item" bank="jianshe" name="建设银行" onclick="choose(this)">
+        <img src="../../skin/default/images/bank/icon_jianshe.svg" alt="" class="icon">
+        <p class="name">建设银行</p>
+      </div>
+      <div class="item" bank="gongshang" name="工商银行" onclick="choose(this)">
+        <img src="../../skin/default/images/bank/icon_gongshang.svg" alt="" class="icon">
+        <p class="name">工商银行</p>
+      </div>
+      <div class="item" bank="zhongguo" name="中国银行" onclick="choose(this)">
+        <img src="../../skin/default/images/bank/icon_zhongguo.svg" alt="" class="icon">
+        <p class="name">中国银行</p>
+      </div>
+      <div class="item" bank="jiaotong" name="交通银行" onclick="choose(this)">
+        <img src="../../skin/default/images/bank/icon_jiaotong.svg" alt="" class="icon">
+        <p class="name">交通银行</p>
+      </div>
+      <div class="item" bank="minsheng" name="民生银行" onclick="choose(this)">
+        <img src="../../skin/default/images/bank/icon_minsheng.svg" alt="" class="icon">
+        <p class="name">民生银行</p>
+      </div>
+      <div class="item" bank="pingan" name="平安银行" onclick="choose(this)">
+        <img src="../../skin/default/images/bank/icon_pingan.svg" alt="" class="icon">
+        <p class="name">平安银行</p>
+      </div>
+      <div class="item" bank="pufa" name="浦发银行" onclick="choose(this)">
+        <img src="../../skin/default/images/bank/icon_pufa.svg" alt="" class="icon">
+        <p class="name">浦发银行</p>
+      </div>
+      <div class="item" bank="xingye" name="兴业银行" onclick="choose(this)">
+        <img src="../../skin/default/images/bank/icon_xingye.svg" alt="" class="icon">
+        <p class="name">兴业银行</p>
+      </div>
+      <div class="item" bank="youzheng" name="邮政银行" onclick="choose(this)">
+        <img src="../../skin/default/images/bank/icon_youzheng.svg" alt="" class="icon">
+        <p class="name">邮政银行</p>
+      </div>
+      <div class="item" bank="zhongxin" name="中信银行" onclick="choose(this)">
+        <img src="../../skin/default/images/bank/icon_zhongxin.svg" alt="" class="icon">
+        <p class="name">中信银行</p>
+      </div>
+      <div class="item" bank="zhaoshang" name="招商银行" onclick="choose(this)">
+        <img src="../../skin/default/images/bank/icon_zhaoshang.svg" alt="" class="icon">
+        <p class="name">招商银行</p>
+      </div>
+      <div class="item" bank="guangda" name="光大银行" onclick="choose(this)">
+        <img src="../../skin/default/images/bank/icon_guangda.svg" alt="" class="icon">
+        <p class="name">光大银行</p>
+      </div>
+      <div class="item" bank="guangfa" name="广发银行" onclick="choose(this)">
+        <img src="../../skin/default/images/bank/icon_guangfa.svg" alt="" class="icon">
+        <p class="name">广发银行</p>
+      </div> -->
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/bank.js"></script>
+<script src="../../nby/script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        getBankData();
+    }
+    function closePop(){
+      api.closeFrame({
+          animation: {subType:"from_top"}
+      });
+
+    }
+    function choose(el){
+      var bank = $(el).attr("bank");
+      var name = $(el).attr("name");
+      Pub.eventSend("add_bank",{
+        bank:bank,
+        name:name,
+      })
+      closePop();
+    }
+    function getBankData(){
+      console.log(JSON.stringify(bankStr));
+      var html="";
+      for(var i = 0;i<bankStr.length;i++){
+        html += '<div class="item" bank="'+bankStr[i].bank+'" name="'+bankStr[i].name+'" onclick="choose(this)">\
+          <img src="'+bankStr[i].icon+'" alt="" class="icon">\
+          <p class="name">'+bankStr[i].name+'</p>\
+        </div>'
+      }
+      $("#items").append(html);
+    }
+</script>
+
+</html>

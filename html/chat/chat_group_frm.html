@@ -1,0 +1,2477 @@
+<!doctype html>
+<html class="bgc-white">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bgc-white">
+    <div class="chat-window-container" id="app">
+        <div class="chat_container">
+            <template>
+      <ul v-for="(item, index) in listData" :key="index">
+        <li class="time" ><span>{{toTime(item.date).time}}</span></li>
+
+        <!-- <li class="redstatus" v-if="item.type == 30"><span>{{item.message}}</span></li>
+        <li class="redstatus" v-if="item.type == 4">
+          <span v-if="item.user_info">{{item.user_info.uname}}发起了语音-通话失败</span>
+          <span v-else>用户 发起了语音-通话失败</span>
+        </li>
+        <li class="redstatus" v-if="item.type == 5">
+          <span v-if="item.user_info">{{item.user_info.uname}}发起了语音-通话成功</span>
+          <span v-else>用户 发起了语音-通话成功</span>
+        </li> -->
+        <li class="redstatus" v-if="item.type == -1"><span>{{item.message}}</span></li>
+        <li class="redstatus" v-if="item.type == -2"><span>{{item.message}}</span></li>
+        <li class="redstatus" v-if="item.uid == uid && (item.type == -50 || item.type == -51)"><span>{{lang.you_get_a_redpaper}}</span></li>
+        <li class="redstatus" v-if="item.uid != uid && (item.type == -50 || item.type == -51)">
+          <span v-if="item.user_info">{{item.user_info.uname}}{{lang.get_a_redpaper}}</span>
+          <span v-else>用户 {{lang.get_a_redpaper}}</span>
+        </li>
+        <li class="explain" v-if="item.type == 20"><span><span class="gray-dark">群公告：</span>{{item.message}}</span></li>
+        <li class="explain" v-if="item.type == 21"><span><span class="gray-dark">群简介：</span>{{item.message}}</span></li>
+        <li class="mine" v-if="item.uid == uid && item.type !=-1 && item.type !=-2 && item.type !=-50 && item.type !=-51 && item.type !=20 && item.type !=21" :style="{'z-index':(touchItemId == item.id)?'101':''}">
+            <div class="li-top">{{uname}}</div>
+            <div class="li-bottom">
+              <div class="info">
+                <div class="info-box message" v-if="item.type == 1" @touchstart="touchElStart(item.id, index, 1, item.type)" @touchend="touchElEnd(item.id, index, 1, item.type)" @touchmove="touchElMove(item.id, index ,1, item.type)">
+                  <div class="msg" :style="{'-webkit-user-select': touchItemId == item.id?'all':''}" v-html="messageCont(item.message)"></div>
+                  <div class="handle-popup" v-show="touchItemId == item.id" :style="{'top': popupTop, 'left': popupLeft, 'bottom': popupBottom, 'right': popupRight}">
+                    <a class="active-primary" @touchstart="copyEvent(item.message)">{{lang.copy}}</a>
+                    <a class="active-primary" @touchstart="shareTo(item.id)">{{lang.send_to_friend}}</a>
+                    <a class="active-primary" @touchstart="deleteEvent(item.id, index)">{{lang.delete}}</a>
+                    <a class="active-primary" @touchstart="withdrawEvent(item.gid,item.ident)">{{lang.recall}}</a>
+                    <a class="active-primary" @touchstart="collect(item)">收藏</a>
+                  </div>
+                </div>
+                <div class="info-box img message" v-else-if="item.type == 2"  @touchstart="touchElStart(item.id, index, 1, item.type)" @touchend="touchElEnd(item.id, index, 1, item.type, item.extra)" @touchmove="touchElMove(item.id, index ,1, item.type)">
+                  <div><img v-lazy="getPhotos(item.extra)" width="120"></div>
+                  <div class="handle-popup" v-show="touchItemId == item.id" :style="{'top': popupTop, 'left': popupLeft, 'bottom': popupBottom, 'right': popupRight}">
+                    <a class="active-primary" @touchstart="shareTo(item.id)">{{lang.send_to_friend}}</a>
+                    <a class="active-primary" @touchstart="deleteEvent(item.id,index)">{{lang.delete}}</a>
+                    <a class="active-primary" @touchstart="withdrawEvent(item.gid,item.ident)">{{lang.recall}}</a>
+                    <a class="active-primary" @touchstart="collect(item)">收藏</a>
+                  </div>
+                </div>
+                <div class="info-box video message" v-else-if="item.type == 5" @click="playVideo(item.extra)" @touchstart="touchElStart(item.id, index, 1, item.type)" @touchend="touchElEnd(item.id, index, 1, item.type, item.extra)" @touchmove="touchElMove(item.id, index ,1, item.type)">
+                  <div>
+                    <img v-lazy="getVideoThumbPath(item.extra)">
+                    <img src="../../skin/default/images/chat/icon_video.png" alt="">
+                  </div>
+                  <div class="handle-popup" v-show="touchItemId == item.id" :style="{'top': popupTop, 'left': popupLeft, 'bottom': popupBottom, 'right': popupRight}">
+                    <a class="active-primary" @touchstart="shareTo(item.id)">{{lang.send_to_friend}}</a>
+                    <a class="active-primary" @touchstart="deleteEvent(item.id,index)">{{lang.delete}}</a>
+                    <a class="active-primary" @touchstart="withdrawEvent(item.gid,item.ident)">{{lang.recall}}</a>
+                    <a class="active-primary" @touchstart="collect(item)">收藏</a>
+                  </div>
+                </div>
+                <div class="info-box file message" v-else-if="item.type == 4" @touchstart="touchElStart(item.id, index, 1, item.type)" @touchend="touchElEnd(item.id, index, 1, item.type, item.extra)" @touchmove="touchElMove(item.id, index ,1, item.type)">
+                  <div class="file-box" @click = "clickFile(getFileType(JSON.parse(item.extra).name),JSON.parse(item.extra).name,JSON.parse(item.extra).url)">
+                     <div class="file-right">
+                       <div class="file-type icon-pdf" v-if="getFileType(JSON.parse(item.extra).name) == 'PDF'">PDF</div>
+                       <div class="file-type icon-doc" v-else-if="getFileType(JSON.parse(item.extra).name) == 'DOC'">DOC</div>
+                       <div class="file-type icon-doc" v-else-if="getFileType(JSON.parse(item.extra).name) == 'DOCX'">DOCX</div>
+                       <div class="file-type icon-xls" v-else-if="getFileType(JSON.parse(item.extra).name) == 'XLS'">XLS</div>
+                       <div class="file-type icon-xls" v-else-if="getFileType(JSON.parse(item.extra).name) == 'XLSX'">XLSX</div>
+                       <div class="file-type icon-other-file" v-else>{{getFileType(JSON.parse(item.extra).name) || ''}}</div>
+                     </div>
+                     <div class="file-left">
+                       <h3>{{JSON.parse(item.extra).name}}</h3>
+                       <p>{{getFileSize(JSON.parse(item.extra).size)}}</p>
+                     </div>
+                   </div>
+                  <div class="handle-popup" v-show="touchItemId == item.id" :style="{'top': popupTop, 'left': popupLeft, 'bottom': popupBottom, 'right': popupRight}">
+                    <a class="active-primary" @touchstart="shareTo(item.id)">{{lang.send_to_friend}}</a>
+                    <a class="active-primary" @touchstart="deleteEvent(item.id,index)">{{lang.delete}}</a>
+                    <a class="active-primary" @touchstart="withdrawEvent(item.gid,item.ident)">{{lang.recall}}</a>
+                    <a class="active-primary" @touchstart="collect(item)">收藏</a>
+                  </div>
+                </div>
+                <div class="info-box card message" v-else-if="item.type == 6 || item.type == 7" @touchstart="touchElStart(item.id, index, 1, item.type)" @touchend="touchElEnd(item.id, index, 1, item.type, item.extra)" @touchmove="touchElMove(item.id, index ,1, item.type)">
+                  <div class="card-top" @click="toInfo(getCardInfo(item.extra))">
+                    <div class="card-avatar">
+                      <div class="card-avatar-box" v-if="getCardInfo(item.extra).headImg">
+                        <img :src="getAvatar(getCardInfo(item.extra).headImg)" v-if="getAvatar(getCardInfo(item.extra).headImg)">
+                        <img :src="getCardInfo(item.extra).headImg" @load="loadAvatar(getCardInfo(item.extra).headImg)" v-else>
+                      </div>
+                      <div class="card-avatar-box" v-else>
+                        <div class="avatar-font" v-if="getCardInfo(item.extra).nickname">{{getCardInfo(item.extra).username.substring(0,1).toUpperCase()}}</div>
+                      </div>
+                    </div>
+                    <div class="card-info">
+                      <div class="card-user-name">{{getCardInfo(item.extra).username}}</div>
+                      <div class="card-user-id" v-if="getCardInfo(item.extra).type=='user'">AIM号:{{getCardInfo(item.extra).id}}</div>
+                      <div class="card-user-id" v-if="getCardInfo(item.extra).type=='group'">群号:{{getCardInfo(item.extra).phone}}</div>
+                    </div>
+                  </div>
+                  <div class="card-bottom" @click="toInfo(getCardInfo(item.extra))">
+                    <span v-if="getCardInfo(item.extra).type=='user'">{{lang.single_card}}</span>
+                    <span v-if="getCardInfo(item.extra).type=='group'">{{lang.group_card}}</span>
+                    <!-- <span>{{toTime(item.create_time)}}</span> -->
+                  </div>
+                  <div class="handle-popup" v-show="touchItemId == item.id" :style="{'top': popupTop, 'left': popupLeft, 'bottom': popupBottom, 'right': popupRight}">
+                    <a class="active-primary" @touchstart="shareTo(item.id)">{{lang.send_to_friend}}</a>
+                    <a class="active-primary" @touchstart="deleteEvent(item.id,index)">{{lang.delete}}</a>
+                    <a class="active-primary" @touchstart="withdrawEvent(item.gid,item.ident)">{{lang.recall}}</a>
+                  </div>
+                </div>
+                <div class="info-box" v-else-if="item.type == 3"  @touchstart="touchElStart(item.id, index, 1, item.type)" @touchend="touchElEnd(item.id, index, 1, item.type, item.extra)" @touchmove="touchElMove(item.id, index ,1, item.type)">
+                    <div :class="['voice', {'active': item.id == voiceChooseId}]" v-bind:style="{width:voiceLength(getVoice(item.extra).duration)}">
+                        <em>{{getVoice(item.extra).duration}}''</em><i></i>
+                    </div>
+                    <div class="handle-popup" v-show="touchItemId == item.id" :style="{'top': popupTop, 'left': popupLeft, 'bottom': popupBottom, 'right': popupRight}">
+                      <a class="active-primary" @touchstart="deleteEvent(item.id,index)">{{lang.delete}}</a>
+                      <a class="active-primary" @touchstart="withdrawEvent(item.gid,item.ident)">{{lang.recall}}</a>
+                      <a class="active-primary" @touchstart="collect(item)">收藏</a>
+                    </div>
+                </div>
+
+                <div class="info-box red" v-else-if="item.type == 50 || item.type == 51" @click="toRedpacket(item.uid, item.id, item.extra, uid, redpackStatus(item.uid, item.date, item.extra).status)">
+                    <div :class="['red-box', 'redpacket-mine', {'yet': redpackStatus(item.uid, item.date, item.extra).status == 1}]">
+                      <div class="icon">
+                        <div class="icon-bg">
+                          <div class="icon-coin">
+                            开
+                          </div>
+                        </div>
+                      </div>
+                      <div class="red-cont">
+                        <h3>{{item.message || lang.congratulations}}</h3>
+                        <p>{{redpackStatus(item.uid, item.date, item.extra).text}}</p>
+                      </div>
+                    </div>
+                    <div class="red-sign">AIM</div>
+                </div>
+                <!-- <div class="info-box red" v-else-if="item.type == 12" @click="toRedpacket(item.sender, item.id, item.pack_info.id, item.pack_info.reciver,redpackStatus(item.pack_info.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time, item.pack_info.max_num, item.pack_info.current_num).status)">
+                    <div :class="['red-box', 'redpacket-mine', {'yet': redpackStatus(item.pack_info.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time, item.pack_info.max_num, item.pack_info.current_num).status == 1}]">
+                      <div class="icon">
+                        <div class="icon-bg">
+                          <div class="icon-coin">
+                            开
+                          </div>
+                        </div>
+                      </div>
+                      <div class="red-cont">
+                        <h3>{{item.pack_info.remark || lang.congratulations}}</h3>
+                        <p>{{redpackStatus(item.pack_info.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time, item.pack_info.max_num, item.pack_info.current_num).text}}</p>
+                      </div>
+                    </div>
+                    <div class="red-sign">AIM</div>
+                </div>
+                <div class="info-box red" v-else-if="item.type == 13" @click="toRedpacket(item.sender, item.id, item.pack_info.id, item.pack_info.reciver,redpackStatus(item.pack_info.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time, item.pack_info.max_num, item.pack_info.current_num).status)">
+                    <div :class="['red-box', 'redpacket-mine', {'yet': redpackStatus(item.pack_info.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time, item.pack_info.max_num, item.pack_info.current_num).status == 1}]">
+                      <div class="icon">
+                        <div class="icon-bg">
+                          <div class="icon-coin">
+                            开
+                          </div>
+                        </div>
+                      </div>
+                      <div class="red-cont">
+                        <h3>{{item.pack_info.remark || lang.congratulations}}</h3>
+                        <p>{{redpackStatus(item.pack_info.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time, item.pack_info.max_num, item.pack_info.current_num).text}}</p>
+                      </div>
+                    </div>
+                    <div class="red-sign">AIM</div>
+                </div> -->
+              </div>
+              <div class="avatar">
+                <div class="avatar-box" v-if="face">
+                  <img :src="getAvatarCache(face)" :key="face" @click="toFriendInfo(uid)" v-if="getAvatarCache(face)">
+                  <img v-lazy="(face.indexOf('http') == -1)?(imgHost + face):face" :key="face" @click="toFriendInfo(uid)" @load="loadImg(face)" v-else>
+                </div>
+                <div class="avatar" v-else tapmode="">
+                  <img src="../../skin/default/images/img_avatar.png">
+                </div>
+              </div>
+            </div>
+        </li>
+        <li v-else-if="item.uid != uid && item.type !=-2 && item.type !=-1 && item.type !=-50 && item.type !=-51 && item.type !=20" :style="{'z-index':(touchItemId == item.id)?'101':''}">
+            <div class="li-top" v-if="item.user_info">{{Pub.showNickname(item.user_info)}}</div>
+            <div class="li-top" v-else>用户</div>
+            <div class="li-bottom">
+              <div class="avatar">
+                <div class="avatar-box" v-if="Pub.imageManage(item.user_info.face)">
+                  <img :src="getAvatarCache(item.user_info.face)" :key="item.user_info.face" @click="toFriendInfo(item.user_info.uid)" v-if="getAvatarCache(item.user_info.face)">
+                  <img v-lazy="(item.user_info.face.indexOf('http') == -1)?(imgHost + item.user_info.face):item.user_info.face" :key="item.user_info.face" @click="toFriendInfo(item.user_info.uid)" @load="loadImg(item.user_info.face)" v-else>
+                </div>
+                <div class="avatar" v-else tapmode="">
+                  <img src="../../skin/default/images/img_avatar.png">
+                </div>
+              </div>
+              <div class="info">
+                <div class="info-box message" v-if="item.type == 1"  @touchstart="touchElStart(item.id, index, 0, item.type)" @touchend="touchElEnd(item.id, index, 0, item.type)" @touchmove="touchElMove(item.id, index ,0, item.type)">
+                  <div :style="{'-webkit-user-select': touchItemId == item.id?'all':''}" v-html="messageCont(item.message)"></div>
+                  <div class="handle-popup" v-show="touchItemId == item.id" :style="{'top': popupTop, 'left': popupLeft, 'bottom': popupBottom, 'right': popupRight}">
+                    <a class="active-primary" @touchstart="copyEvent(item.message)">{{lang.copy}}</a>
+                    <a class="active-primary" @touchstart="shareTo(item.id)">{{lang.send_to_friend}}</a>
+                    <a class="active-primary" @touchstart="deleteEvent(item.id,index)">{{lang.delete}}</a>
+                    <a class="active-primary" @touchstart="collect(item)">收藏</a>
+                  </div>
+                </div>
+                <div class="info-box img message" v-else-if="item.type == 2"  @touchstart="touchElStart(item.id, index, 0, item.type)" @touchend="touchElEnd(item.id, index, 0, item.type, item.extra)" @touchmove="touchElMove(item.id, index ,0, item.type)">
+                  <div><img v-lazy="getPhotos(item.extra)" width="120"></div>
+                  <div class="handle-popup" v-show="touchItemId == item.id" :style="{'top': popupTop, 'left': popupLeft, 'bottom': popupBottom, 'right': popupRight}">
+                    <a class="active-primary" @touchstart="shareTo(item.id)">{{lang.send_to_friend}}</a>
+                    <a class="active-primary" @touchstart="deleteEvent(item.id,index)">{{lang.delete}}</a>
+                    <a class="active-primary" @touchstart="collect(item)">收藏</a>
+                  </div>
+                </div>
+                <div class="info-box video message" v-else-if="item.type == 5" @click="playVideo(item.extra)" @touchstart="touchElStart(item.id, index, 1, item.type)" @touchend="touchElEnd(item.id, index, 1, item.type, item.extra)" @touchmove="touchElMove(item.id, index ,1, item.type)">
+                  <div>
+                    <img v-lazy="getVideoThumbPath(item.extra)">
+                    <img src="../../skin/default/images/chat/icon_video.png" alt="">
+                  </div>
+                  <div class="handle-popup" v-show="touchItemId == item.id" :style="{'top': popupTop, 'left': popupLeft, 'bottom': popupBottom, 'right': popupRight}">
+                    <a class="active-primary" @touchstart="shareTo(item.id)">{{lang.send_to_friend}}</a>
+                    <a class="active-primary" @touchstart="deleteEvent(item.id,index)">{{lang.delete}}</a>
+                    <a class="active-primary" @touchstart="collect(item)">收藏</a>
+                  </div>
+                </div>
+                <div class="info-box file message" v-else-if="item.type == 4" @touchstart="touchElStart(item.id, index, 1, item.type)" @touchend="touchElEnd(item.id, index, 1, item.type, item.extra)" @touchmove="touchElMove(item.id, index ,1, item.type)">
+                  <div class="file-box" @click = "clickFile(getFileType(JSON.parse(item.extra).name),JSON.parse(item.extra).name,JSON.parse(item.extra).url)">
+                     <div class="file-right">
+                       <div class="file-type icon-pdf" v-if="getFileType(JSON.parse(item.extra).name) == 'PDF'">PDF</div>
+                       <div class="file-type icon-doc" v-else-if="getFileType(JSON.parse(item.extra).name) == 'DOC'">DOC</div>
+                       <div class="file-type icon-doc" v-else-if="getFileType(JSON.parse(item.extra).name) == 'DOCX'">DOCX</div>
+                       <div class="file-type icon-xls" v-else-if="getFileType(JSON.parse(item.extra).name) == 'XLS'">XLS</div>
+                       <div class="file-type icon-xls" v-else-if="getFileType(JSON.parse(item.extra).name) == 'XLSX'">XLSX</div>
+                       <div class="file-type icon-other-file" v-else>{{getFileType(JSON.parse(item.extra).name) || ''}}</div>
+                     </div>
+                     <div class="file-left">
+                       <h3>{{JSON.parse(item.extra).name}}</h3>
+                       <p>{{getFileSize(JSON.parse(item.extra).size)}}</p>
+                     </div>
+                   </div>
+                  <div class="handle-popup" v-show="touchItemId == item.id" :style="{'top': popupTop, 'left': popupLeft, 'bottom': popupBottom, 'right': popupRight}">
+                    <a class="active-primary" @touchstart="shareTo(item.id)">{{lang.send_to_friend}}</a>
+                    <a class="active-primary" @touchstart="deleteEvent(item.id,index)">{{lang.delete}}</a>
+                    <a class="active-primary" @touchstart="collect(item)">收藏</a>
+                    <!-- <a class="active-primary" @touchstart="withdrawEvent(item.gid,item.ident)">{{lang.recall}}</a> -->
+                  </div>
+                </div>
+                <div class="info-box card message" v-else-if="item.type == 6 || item.type == 7" @touchstart="touchElStart(item.id, index, 1, item.type)" @touchend="touchElEnd(item.id, index, 1, item.type, item.extra)" @touchmove="touchElMove(item.id, index ,1, item.type)">
+                  <div class="card-top" @click="toInfo(getCardInfo(item.extra))">
+                    <div class="card-avatar">
+                      <div class="card-avatar-box" v-if="getCardInfo(item.extra).headImg">
+                        <img :src="getAvatar(getCardInfo(item.extra).headImg)" v-if="getAvatar(getCardInfo(item.extra).headImg)">
+                        <img :src="getCardInfo(item.extra).headImg" @load="loadAvatar(getCardInfo(item.extra).headImg)" v-else>
+                      </div>
+                      <div class="card-avatar-box" v-else>
+                        <div class="avatar-font" v-if="getCardInfo(item.extra).nickname">{{getCardInfo(item.extra).username.substring(0,1).toUpperCase()}}</div>
+                      </div>
+                    </div>
+                    <div class="card-info">
+                      <div class="card-user-name">{{getCardInfo(item.extra).username}}</div>
+                      <div class="card-user-id" v-if="getCardInfo(item.extra).type=='user'">AIM号:{{getCardInfo(item.extra).id}}</div>
+                      <div class="card-user-id" v-if="getCardInfo(item.extra).type=='group'">群号:{{getCardInfo(item.extra).phone}}</div>
+                    </div>
+                  </div>
+                  <div class="card-bottom" @click="toInfo(getCardInfo(item.extra))">
+                    <span v-if="getCardInfo(item.extra).type=='user'">{{lang.single_card}}</span>
+                    <span v-if="getCardInfo(item.extra).type=='group'">{{lang.group_card}}</span>
+                  </div>
+                  <div class="handle-popup" v-show="touchItemId == item.id" :style="{'top': popupTop, 'left': popupLeft, 'bottom': popupBottom, 'right': popupRight}">
+                    <a class="active-primary" @touchstart="shareTo(item.id)">{{lang.send_to_friend}}</a>
+                    <a class="active-primary" @touchstart="deleteEvent(item.id,index)">{{lang.delete}}</a>
+                  </div>
+                </div>
+                <div class="info-box" v-else-if="item.type == 3" @touchstart="touchElStart(item.id, index, 0, item.type)" @touchend="touchElEnd(item.id, index, 0, item.type, item.extra, item.is_read)" @touchmove="touchElMove(item.id, index ,0, item.type)">
+                    <div :class="['voice', {'active': item.id == voiceChooseId}, {'unread': item.is_read == 0}]" v-bind:style="{width:voiceLength(getVoice(item.extra).duration)}">
+                        <i></i><em>{{getVoice(item.extra).duration}}''</em>
+                    </div>
+                    <div class="handle-popup" v-show="touchItemId == item.id" :style="{'top': popupTop, 'left': popupLeft, 'bottom': popupBottom, 'right': popupRight}">
+                      <a class="active-primary" @touchstart="deleteEvent(item.id,index)">{{lang.delete}}</a>
+                      <a class="active-primary" @touchstart="collect(item)">收藏</a>
+                    </div>
+                </div>
+                <div class="info-box red" v-else-if="item.type == 50 || item.type == 51" @click="toRedpacket(item.uid, item.id, item.extra, item.uid, redpackStatus(item.uid, item.date, item.extra).status)">
+                    <div :class="['red-box', 'redpacket-mine', {'yet': redpackStatus(item.uid, item.date, item.extra).status == 1}]">
+                      <div class="icon">
+                        <div class="icon-bg">
+                          <div class="icon-coin">
+                            开
+                          </div>
+                        </div>
+                      </div>
+                      <div class="red-cont">
+                        <h3>{{item.message || lang.congratulations}}</h3>
+                        <p>{{redpackStatus(item.uid, item.date, item.extra).text}}</p>
+                      </div>
+                    </div>
+                    <div class="red-sign">AIM</div>
+                </div>
+                <!-- <div class="info-box red" v-else-if="item.type == 12" @click="toRedpacket(item.sender, item.id, item.pack_info.id, item.pack_info.reciver, redpackStatus(item.pack_info.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time, item.pack_info.max_num, item.pack_info.current_num).status)">
+                    <div :class="['red-box', 'redpacket-mine', {'yet': redpackStatus(item.pack_info.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time, item.pack_info.max_num, item.pack_info.current_num).status == 1}]">
+                      <div class="icon">
+                        <div class="icon-bg">
+                          <div class="icon-coin">
+                            开
+                          </div>
+                        </div>
+                      </div>
+                      <div class="red-cont">
+                        <h3>{{item.pack_info.remark || lang.congratulations}}</h3>
+                        <p>{{redpackStatus(item.pack_info.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time, item.pack_info.max_num, item.pack_info.current_num).text}}</p>
+                      </div>
+                    </div>
+                    <div class="red-sign">AIM</div>
+                </div>
+                <div class="info-box red" v-else-if="item.type == 13" @click="toRedpacket(item.sender, item.id, item.pack_info.id, item.pack_info.reciver, redpackStatus(item.pack_info.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time, item.pack_info.max_num, item.pack_info.current_num).status)">
+                    <div :class="['red-box', 'redpacket-mine', {'yet': redpackStatus(item.pack_info.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time, item.pack_info.max_num, item.pack_info.current_num).status == 1}]">
+                      <div class="icon">
+                        <div class="icon-bg">
+                          <div class="icon-coin">
+                            开
+                          </div>
+                        </div>
+                      </div>
+                      <div class="red-cont">
+                        <h3>{{item.pack_info.remark || lang.congratulations}}</h3>
+                        <p>{{redpackStatus(item.pack_info.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time, item.pack_info.max_num, item.pack_info.current_num).text}}</p>
+                      </div>
+                    </div>
+                    <div class="red-sign">AIM</div>
+                </div> -->
+
+              </div>
+            </div>
+        </li>
+      </ul>
+
+      <audio ref="myvoice" id="myaudio" controls="controls" hidden="true">
+        <source src="../../res/voice_send.wav"  type="audio/mpeg">
+          {{lang.not_support_video}}
+      </audio>
+    </template>
+        </div>
+    </div>
+
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/info.js"></script>
+<script src="../../script/template.js"></script>
+<script src="../../script/expression.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script src="../../script/vue-lazyload.js"></script>
+<script type="text/javascript">
+    var timer = {};
+    apiready = function() {
+        api.parseTapmode();
+        initEventSocket();
+    }
+
+    function initEventSocket() {
+        Vue.use(VueLazyload, {
+            error: '../../icon/error.png',
+            loading: '../../icon/loading.png',
+            adapter: {
+                loaded: function() {
+                    var container = app.$el.querySelector('.chat_container');
+                    if (container.scrollHeight - app.scrollH < api.winHeight) {
+                        app.scrolltoBottomNew();
+                    }
+                }
+            }
+        });
+        var lastTime = 0;
+        var timeDiff = 0;
+        var app = new Vue({
+            el: '#app',
+            data: {
+                uid: $api.getStorage('uid'),
+                uname: $api.getStorage($api.getStorage('uid') + '_user_info').uname,
+                face: $api.getStorage($api.getStorage('uid') + '_user_info').face,
+                imgHost: Pub.imgHost,
+                gid: '',
+                listData: [],
+                memberList: [],
+                voiceChooseId: '',
+                voiceStatus: false,
+                panelHeight: 0,
+                inputBarHeight: 60,
+                isExtras: false,
+                photoBrowser: {},
+                photosArr: [],
+                isShowPhoto: false,
+                sourcePath: 'widget://expression/emotion',
+                emotionData: {},
+                scrollH: 0,
+                touchItemId: '',
+                popupTop: 0,
+                popupLeft: 0,
+                popupBottom: 0,
+                popupRight: 0,
+                touchTimer: {},
+                touchStartTime: 0,
+                websocket: {},
+                socketParams: {},
+                chatId: '',
+                avatarCache: {},
+                packAvail: Number($api.getStorage('pack_avail')),
+                fs: api.require('fs'),
+                unsendArr: [],
+                recordTime: 0,
+                isStopRecord: false,
+                countReocrd: "",
+                lang: {
+                    you_get_a_redpaper: Pub.getLang('you_get_a_redpaper'),
+                    get_a_redpaper: Pub.getLang('get_a_redpaper'),
+                    copy: Pub.getLang('copy'),
+                    send_to_friend: Pub.getLang('send_to_friend'),
+                    delete: Pub.getLang('delete'),
+                    recall: Pub.getLang('recall'),
+                    congratulations: Pub.getLang('congratulations'),
+                    not_support_video: Pub.getLang('not_support_video'),
+                    mobile: Pub.getLang('mobile'),
+                    single_card: Pub.getLang('single_card'),
+                    group_card: Pub.getLang('group_card'),
+                }
+            },
+            mounted: function() {
+                var _this = this;
+                this.avatarCache = $api.getStorage('avatar_cache') || {};
+                if (this.avatarCache && Object.keys(this.avatarCache).length > 0) {
+                    for (var i in this.avatarCache) {
+                        if (this.avatarCache.hasOwnProperty(i)) {
+                            _this.isExist(i, this.avatarCache[i]);
+                        }
+                    }
+                }
+                this.gid = api.pageParam.id;
+                this.getChatId();
+                //this.clearUnread();
+                this.photoBrowser = api.require("photoBrowser");
+                this.getData();
+                this.pullDown();
+                this.initWebSocket();
+                this.unhandle();
+                this.getImgsPaths(this.sourcePath, function(emotion) {
+                    _this.emotionData = emotion;
+                });
+                this.chat();
+                this.scrollEvent();
+                Pub.eventListen('socket_connect', function() {
+                    _this.getData();
+                });
+                Pub.eventListen('collection_submit',function(ret){
+                  console.log(JSON.stringify(ret.value.item));
+                  var nowTime = Date.parse(new Date()) / 1000;
+                  var ident = (new Date()).valueOf();
+                  var item = ret.value.item.content;
+                  if(item.type == 1){
+                    _this.sendMsg(item.message);
+                  }else if(item.type == 2){
+                    _this.unsendArrAdd(ident, "picture");
+                    var mySendMsg = {
+                        "date": nowTime,
+                        "extra": JSON.stringify({
+                            "img": JSON.parse(item.extra).img,
+                        }),
+                        "ident": ident,
+                        "uid": _this.uid,
+                        "type": 2
+                    };
+                    _this.listData = _this.listData.concat(mySendMsg);
+                    _this.scrolltoBottomNew();
+                    var obj = {
+                      ident: ident,
+                      type: "album",
+                      img: JSON.parse(item.extra).img,
+                    }
+                    _this.sendImg("upload",obj);
+                  }else if(item.type == 3){
+                    _this.unsendArrAdd(ident, "record");
+                    var mySendMsg = {
+                        "date": nowTime,
+                        "extra": JSON.stringify({
+                            "path": JSON.parse(item.extra).path,
+                            "duration": JSON.parse(item.extra).duration,
+                            "type": 'amr'
+                        }),
+                        "ident": ident,
+                        "uid": _this.uid,
+                        "sender": _this.uid,
+                        "type": 3,
+                        "uid": _this.uid,
+                    };
+                    console.log(JSON.stringify(mySendMsg));
+                    _this.listData = _this.listData.concat(mySendMsg);
+                    _this.scrolltoBottomNew();
+                    var param = {
+                        type: 'amr',
+                        path: JSON.parse(item.extra).path,
+                        duration: JSON.parse(item.extra).duration,
+                        ident: ident,
+                    }
+                    _this.sendAudio('upload', param);
+                  }else if(item.type == 4){
+                    _this.unsendArrAdd(ident, "file");
+                    var mySendMsg = {
+                        "date": nowTime,
+                        "extra": JSON.stringify({
+                            "url": JSON.parse(item.extra).url,
+                            "name": JSON.parse(item.extra).name,
+                            "size": JSON.parse(item.extra).size
+                        }),
+                        "ident": ident,
+                        "sender": _this.uid,
+                        "uid": _this.uid,
+                        "type": 4
+                    };
+                    _this.listData = _this.listData.concat(mySendMsg);
+                    _this.scrolltoBottomNew();
+                    var params = {
+                        gid: _this.gid,
+                        extra: {
+                            url: JSON.parse(item.extra).url,
+                            name: JSON.parse(item.extra).name,
+                            size: JSON.parse(item.extra).size
+                        },
+                        ident: ident,
+                    }
+                    Pub.post(Pub.apiChat + 'chat/group/file', params, function(res) {
+                        if (res.code == 0) {}
+                    });
+                  }else if(item.type == 5){
+                    _this.unsendArrAdd(ident, "video");
+                    var mySendMsg = {
+                        "date": nowTime,
+                        "extra": JSON.stringify({
+                            thumbPath: JSON.parse(item.extra).thumbPath,
+                            videoPath: JSON.parse(item.extra).videoPath,
+                        }),
+                        "ident": ident,
+                        "sender": _this.uid,
+                        "uid": _this.uid,
+                        "type": 5
+                    };
+                    _this.listData = _this.listData.concat(mySendMsg);
+                    _this.scrolltoBottomNew();
+                    var params = {
+                        gid: _this.gid,
+                        extra: {
+                            thumbPath: JSON.parse(item.extra).thumbPath,
+                            videoPath: JSON.parse(item.extra).videoPath,                        },
+                        ident: ident,
+                    }
+                    Pub.post(Pub.apiChat + 'chat/group/video', params, function(res2) {
+                        if (res2.code == 0) {
+                            //Pub.msg(Pub.getLang("send_successfully"));
+                        }
+                    });
+                  }
+                })
+                // timer = setInterval(function() {
+                //     _this.getMsg();
+                // }, 2000);
+                Pub.eventListen('group_window_load', function() {
+                    // clearInterval(timer);
+                    // _this.getMsg();
+                    // timer = setInterval(function() {
+                    //     _this.getMsg()
+                    // }, 2000);
+                });
+                Pub.eventListen('chat_group_init', function() {
+                    _this.getData();
+                });
+                Pub.eventListen('group_window_end', function() {
+                    // clearInterval(timer);
+                });
+                Pub.eventListen('group_photo_close', function() {
+                    _this.photoBrowser.close();
+                });
+                Pub.eventListen('group_voice_connent', function(ret) {
+                    console.log('监听到了通话成功');
+                    if (ret) {
+                        _this.changeVoice(ret.value.msgId, 5);
+                    }
+                });
+                Pub.eventListen("clear_chat_input", function() {
+                    var UIChatBox = api.require('UIChatBox');
+                    //设置输入框的值
+                    UIChatBox.value({
+                        msg: ''
+                    });
+
+                    //获取输入框的值
+                    UIChatBox.value(function(ret, err) {
+                        if (ret) {
+                            //alert(JSON.stringify(ret));
+                        } else {
+                            //alert(JSON.stringify(err));
+                        }
+                    });
+                });
+                Pub.eventListen("send_card_to_group", function(ret) {
+                    var nowTime = Date.parse(new Date()) / 1000;
+                    var ident = (new Date()).valueOf();
+                    var mySendMsg = ret.value;
+                    mySendMsg.ident = ident;
+                    mySendMsg.date = nowTime;
+                    mySendMsg.uid = _this.uid;
+                    if (mySendMsg.extra.type == "user") {
+                        mySendMsg.type = 6;
+                    } else {
+                        mySendMsg.type = 7;
+                    };
+                    mySendMsg.extra = JSON.stringify(mySendMsg.extra);
+                    _this.listData = _this.listData.concat(mySendMsg);
+                    _this.scrolltoBottomNew();
+                    if (ret.value.extra.type == "user") {
+                        Pub.post(Pub.apiChat + 'chat/group/share_user', ret.value, function(res) {
+                            if (res.code == 0) {
+                                //Pub.msg(res.echo || Pub.getLang('send_succcess'));
+                            }
+                        });
+                    } else {
+                        Pub.post(Pub.apiChat + 'chat/group/share_group', ret.value, function(res) {
+                            if (res.code == 0) {
+                                //Pub.msg(res.echo || Pub.getLang('send_succcess'));
+                            }
+                        });
+                    }
+                })
+                Pub.eventListen("send_group_msg_at", function(ret) {
+                    var nowTime = Date.parse(new Date()) / 1000;
+                    var ident = (new Date()).valueOf();
+                    var mySendMsg = ret.value;
+                    mySendMsg.ident = ident;
+                    mySendMsg.date = nowTime;
+                    mySendMsg.uid = _this.uid;
+                    mySendMsg.msg = return2Br(mySendMsg.message);
+                    mySendMsg.type = 1;
+                    console.log(JSON.stringify(mySendMsg));
+                    //mySendMsg.extra = JSON.stringify(mySendMsg.extra);
+                    _this.listData = _this.listData.concat(mySendMsg);
+                    _this.scrolltoBottomNew();
+                    Pub.post(Pub.apiChat + 'chat/group/text', ret.value, function(res) {
+                        console.log('@成员:' + JSON.stringify(res));
+                        if (res.code == 0) {
+                            //Pub.msg(res.echo);
+                            //Pub.eventSend('group_info');
+                            Pub.eventSend("clear_chat_input");
+                        }
+                    });
+                })
+                window.openLink = this.openLink;
+            },
+            destroyed: function() {
+                this.exitRoom();　　　　
+            },
+            methods: {
+                loadImg: function(img) {
+                    var _this = this;
+                    var imgUrl = img.indexOf('http') == -1 ? (Pub.imgHost + img) : img;
+                    if (!this.avatarCache) {
+                        this.avatarCache = {};
+                    }
+                    api.imageCache({
+                        url: imgUrl
+                    }, function(ret, err) {
+                        var url = ret.url;
+                        if (JSON.stringify(_this.avatarCache).indexOf(window.btoa(img)) == -1 || !_this.avatarCache[window.btoa(img)]) {
+                            _this.avatarCache[window.btoa(img)] = url;
+                            $api.setStorage('avatar_cache', _this.avatarCache);
+                        }
+                    });
+
+                },
+                getAvatarCache: function(img) {
+                    var _this = this;
+                    var imgName = window.btoa(img);
+                    if (this.avatarCache.hasOwnProperty(imgName)) {
+                        return _this.avatarCache[imgName];
+                    } else {
+                        return false;
+                    }
+                },
+                isExist: function(i, img) {
+                    var _this = this;
+                    this.fs.exist({
+                        path: img
+                    }, function(ret, err) {
+                        if (!ret.exist) {
+                            _this.avatarCache[i] = '';
+                        }
+                    })
+                },
+                getChatId: function() {
+                    this.chatId = this.gid;
+                },
+                initWebSocket: function() { //初始化weosocket
+                    var _this = this;
+                    Pub.eventSend('join_room', {
+                        type: 'group',
+                        id: _this.chatId
+                    });
+                    Pub.eventListen('close_chat_group', function() {
+                        Pub.eventSend('exit_room', {
+                            type: 'group',
+                            id: _this.chatId
+                        });
+                    });　　　　　　
+                    Pub.eventListen('group_socket', function(ret) {
+                        if (ret && ret.value.data.gid == _this.gid) {
+                            lastTime = 0;
+                            timeDiff = 0;
+                            var data = ret.value.data;
+                            if (data.uid == _this.uid) {
+                                if (data.type == 50) {
+                                    _this.listData = _this.listData.concat(data);
+                                    _this.scrolltoBottomNew();
+                                } else {
+                                  for(var i = 0;i<_this.unsendArr.length;i++){
+                                    if(_this.unsendArr[i].ident == data.ident){
+                                      _this.unsendArr.splice(i,1);
+                                      Pub.eventSend("unsendArr",{
+                                          unsendArr: _this.unsendArr
+                                      })
+                                    }
+                                  }
+                                    for (var i = _this.listData.length - 1; i >= 0; i--) {
+                                        if (data.ident == _this.listData[i].ident) {
+                                            _this.listData[i] = data;
+                                            _this.listData[i].user_info = $api.getStorage(_this.uid + '_user_info');
+                                        }
+                                    }
+                                }
+                            } else {
+                                _this.listData = _this.listData.concat(data);
+                                _this.getMemberInfo();
+                                _this.scrolltoBottomNew();
+                            }
+                            //console.log(JSON.stringify(_this.listData));
+                            $api.setStorage(_this.uid + '/message/group/msg' + _this.gid, _this.listData);
+                            //_this.scrolltoBottomNew();
+                        }
+                    });　　　　
+                },
+                changeVoice: function(msgId, type) {
+                    var _this = this;
+                    var params = {
+                        msg_id: msgId,
+                        msg_type: type
+                    }
+                    Pub.post(Pub.apiChat + 'chat/set_group_voice_msg_type', params, function(res) {
+                        console.log('修改语音状态' + JSON.stringify(res));
+                        if (res.code == 0) {
+                            var data = res.data;
+                            for (var i = 0; i < _this.listData.length; i++) {
+                                if (_this.listData[i].id == msgId) {
+                                    _this.listData[i].type = data.type;
+                                    _this.listData[i].extra = data.extra;
+                                }
+                            }
+                        }
+                    }, true);
+                },
+                getData: function() {
+                    this.history_msg();
+                    var _this = this;
+                    var params = {
+                        gid: _this.gid
+                    }
+                    Pub.post(Pub.apiChat + 'message/group/msg', params, function(res) {
+                        console.log('聊天:' + JSON.stringify(res));
+                        if (res.code == 0) {
+                            var uid = $api.getStorage('uid');
+                            lastTime = 0;
+                            timeDiff = 0;
+                            _this.listData = res.data.reverse();
+                            $api.setStorage(uid + '/message/group/msg' + _this.gid, _this.listData);
+                            _this.getMemberInfo();
+                            _this.scrolltoBottom();
+                            // var t = setInterval(function(){
+                            //   _this.scrolltoBottom();
+                            // },20);
+                            // setTimeout(function(){
+                            //   clearInterval(t);
+                            // }, 500);
+                        }
+                    });
+                },
+                history_msg() {
+                    var _this = this;
+                    var uid = $api.getStorage('uid');
+                    var history = $api.getStorage(uid + '/message/group/msg' + _this.gid);
+                    console.log('history聊天:' + JSON.stringify(history));
+                    if (history) {
+                        _this.listData = history;
+                        _this.getMemberInfo();
+                    } else {
+                        _this.listData = [];
+                    }
+                    //console.log(JSON.stringify(_this.listData));
+                    _this.scrolltoBottom();
+                },
+                pullDown: function() {
+                    var _this = this;
+                    Pub.pullDown(function() {
+                        console.log(_this.listData.length);
+                        if (_this.listData.length > 0) {
+                            var id = _this.listData[0].id;
+                            var params = {
+                                gid: _this.gid,
+                                last_id: id
+                            }
+                            var oldHeight = _this.$el.querySelector('.chat_container').scrollHeight;
+                            Pub.post(Pub.apiChat + 'message/group/history', params, function(res) {
+                                console.log('记录' + JSON.stringify(res));
+                                Pub.pullDownDone();
+                                if (res.code == 0 && res.data.length > 0) {
+                                    lastTime = 0;
+                                    timeDiff = 0;
+                                    res.data = res.data.reverse();
+                                    _this.listData = res.data.concat(_this.listData);
+                                    _this.getMemberInfo();
+                                    _this.$nextTick(() => {
+                                            var newHeight = _this.$el.querySelector('.chat_container').scrollHeight;
+                                            console.log(oldHeight);
+                                            console.log(newHeight);
+                                            window.scrollTo(0, newHeight - oldHeight);
+                                        })
+                                        // console.log(JSON.stringify(_this.listData));
+                                } else {}
+                            }, true);
+                        }
+                    }, 'up', 'rgba(255,255,255,0)');
+                },
+                getMsg: function() {
+                    var _this = this;
+                    var params = {
+                        gid: _this.gid
+                    }
+                    Pub.post(Pub.apiChat + 'message/group_msg_new', params, function(res) {
+                        console.log('新消息' + JSON.stringify(res));
+                        if (res.code == 0) {
+                            if (res.data.length > 0) {
+                                if (Pub.arrIndexOf(_this.listData, JSON.stringify(res.data)) == -1) {
+                                    _this.listData = _this.listData.concat(res.data);
+                                    console.log(_this.$el.querySelector('.chat_container').scrollHeight)
+                                    console.log(_this.scrollH);
+                                    _this.scrolltoBottomNew();
+                                }
+
+                            }
+                        }
+                    }, true);
+                },
+                voiceLength: function(time) {
+                    var st = time < 60 ? (.1 + time * 0.006 + 'rem') : '0.46rem';
+                    return st;
+                },
+                toTime: function(time) {
+                    var curTime = new Date().getTime() / 1000;
+                    var timeObj = {};
+                    if (lastTime != 0) {
+                        // console.log(lastTime);
+                        timeDiff += time - lastTime;
+                        // console.log(timeDiff);
+                    }
+
+
+                    if (time) {
+                        // console.log(timeDif);
+                        //  var timeDif = curTime - thisTime;
+                        if (lastTime == 0 || timeDiff > 300) {
+                            timeDiff = 0;
+                            var showTxt = new Date(time * 1000).toWeiXinString();
+                            timeObj.time = showTxt;
+                            // console.log(showTxt);
+
+                        } else {
+                            timeObj.time = '';
+                        }
+                        timeObj.isShow = true;
+                    } else {
+                        timeObj.isShow = true;
+                    }
+                    lastTime = time;
+                    //console.log(JSON.stringify(timeObj));
+                    return timeObj;
+                },
+                toFriendInfo: function(id) {
+                    var _this = this;
+                    _this.isGroupMaster(id, function(val) {
+                        if (val == true) {
+                            Pub.openView('./personal_info_win', {
+                                pageParam: {
+                                    fid: id,
+                                    isChat: false
+                                }
+                            });
+                        } else {
+                            _this.isCanAdd(function(val2) {
+                                if (val2 == true) {
+                                    Pub.openView('./personal_info_win', {
+                                        pageParam: {
+                                            fid: id,
+                                            isChat: false
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                },
+                isCanAdd: function(callback) {
+                    var params = {
+                        gid: this.gid,
+                    }
+                    Pub.post('group/admin/can_add', params, function(res) {
+                        if (res.code == 0) {
+                            if (callback && typeof callback == 'function') {
+                                callback(res.data);
+                            }
+                        }
+                    }, true);
+                },
+                isGroupMaster: function(id, callback) {
+                    var params = {
+                        member_id: id,
+                        gid: this.gid,
+                    }
+                    Pub.post('group/info/isgroupmaster', params, function(res) {
+                        if (res.code == 0) {
+                            if (callback && typeof callback == 'function') {
+                                callback(res.data);
+                            }
+                        }
+                    }, true);
+                },
+                isFriend: function(fid, callback) {
+                    var params = {
+                        fid: fid
+                    }
+                    Pub.post(Pub.apiChat + 'friend/friend/is_friend', params, function(res) {
+                        console.log('是否好友:' + JSON.stringify(res));
+                        if (res.code == 0) {
+                            if (callback && typeof callback == 'function') {
+                                callback(res);
+                            }
+                        }
+                    }, true);
+                },
+                getPhotos: function(json) {
+                    console.log(json);
+                    var imgUrl = '';
+                    if (json) {
+                        var img = JSON.parse(json).img;
+                        if (img.indexOf('http') == -1 && img.indexOf('storage/') == -1 && img.indexOf('/var/') == -1) {
+                            imgUrl = Pub.imgHost + img;
+                        } else {
+                            imgUrl = img;
+                        }
+                    }
+                    console.log('图片地址:' + imgUrl)
+                    return imgUrl;
+                },
+                getVideoThumbPath: function(json) {
+                    console.log(json);
+                    var imgUrl = '';
+                    if (json) {
+                        var img = JSON.parse(json).thumbPath;
+                        if (img.indexOf('http') == -1 && img.indexOf('storage/') == -1 && img.indexOf('/var/') == -1) {
+                            imgUrl = Pub.imgHost + img;
+                        } else {
+                            imgUrl = img;
+                        }
+                    }
+                    return imgUrl;
+                },
+                getVoice: function(json) {
+                    if (json) {
+                        return JSON.parse(json);
+                    } else {
+                        return {};
+                    }
+                },
+                playVoice: function(path, id, isRead) {
+                    var _this = this;
+                    console.log('状态' + this.voiceStatus);
+                    if (_this.voiceStatus) {
+                        _this.stopAmr();
+                        _this.voiceChooseId = '';
+                        _this.voiceStatus = false;
+                    } else {
+                        _this.stopAmr();
+                        var curPath = '';
+                        if (path.indexOf('http') == -1 && path.indexOf('storage') == -1 && path.indexOf('var') == -1 ) {
+                            curPath = Pub.imgHost + path;
+                        } else {
+                            curPath = path;
+                        }
+                        if (isRead == 0) {
+                            _this.getRead(id);
+                        }
+                        _this.voiceStatus = true;
+                        if (curPath.indexOf('storage') != -1 || curPath.indexOf('var') != -1) {
+                            var voicePath = curPath;
+                            _this.voiceChooseId = id;
+                            _this.playAmr(voicePath, function() {
+                                _this.voiceChooseId = '';
+                                _this.voiceStatus = false;
+                            });
+                        } else {
+                            _this.downAmr(curPath, function(ret) {
+                                console.log('下载' + JSON.stringify(ret));
+                                var voicePath = ret.savePath;
+                                _this.voiceChooseId = id;
+                                _this.playAmr(voicePath, function() {
+                                    _this.voiceChooseId = '';
+                                    _this.voiceStatus = false;
+                                });
+                            });
+                        }
+                    }
+                },
+                getRead: function(id) {
+                    var _this = this;
+                    var params = {
+                        type: 'group',
+                        gid: id,
+                        read: 1
+                    }
+                    Pub.post(Pub.apiChat + 'message/group/clear_unread', params, function(res) {
+                        console.log('设置已读' + JSON.stringify(res))
+                        if (res.code == 0) {
+                            if (Pub.arrIndexOf(_this.readArr, id) == -1) {
+                                for (var i = 0; i < _this.listData.length; i++) {
+                                    if (_this.listData[i].id == id) {
+                                        _this.listData[i].is_read = 1;
+                                    }
+                                }
+                            }
+                        }
+                    }, true);
+                },
+                touchElStart: function(id, index, isMine, type) {
+                    var _this = this;
+                    _this.touchStartTime = new Date().getTime();
+                    console.log(_this.touchStartTime);
+                    _this.touchItemId = '';
+                    var distanceTop = event.currentTarget.offsetTop - this.scrollH;
+                    var objHeight = event.currentTarget.firstElementChild.offsetHeight + 25 + 'px';
+                    if (type == 2) {
+                        objHeight = event.currentTarget.firstElementChild.offsetHeight + 5 + 'px';
+                    }
+                    console.log('距离顶部' + event.currentTarget.offsetTop);
+                    console.log('offset高度' + event.currentTarget.firstElementChild.offsetHeight);
+                    lastTime = 0;
+                    timeDiff = 0;
+                    this.popupTop = 'auto';
+                    this.popupBottom = objHeight;
+                    if (isMine) {
+                        this.popupLeft = 'auto';
+                        this.popupRight = '5px';
+                    } else {
+                        this.popupRight = 'auto';
+                        this.popupLeft = '5px';
+                    }
+                    if (type == 1) {
+                        var range = document.createRange();
+                        referenceNode = event.currentTarget.firstElementChild;
+                        range.selectNodeContents(referenceNode);
+                        var selection = window.getSelection();
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    } else if (type == 2) {
+
+                    } else if (type == 3) {
+
+                    }
+                    _this.touchTimer = setTimeout(function() {
+                        _this.touchItemId = id;
+                    }, 1000);
+                },
+                touchElMove: function(e) {
+                    this.touchItemId = '';
+                    clearTimeout(this.touchTimer);
+                },
+                touchElEnd: function(id, index, isMine, type, typeData, isRead) {
+                    var nowTime = new Date().getTime();
+                    if (nowTime - this.touchStartTime < 300) {
+                        this.touchItemId = '';
+                        if (type == 2) {
+                            console.log(type)
+                            this.showPhoto(typeData);
+                        } else if (type == 3) {
+                            this.playVoice(this.getVoice(typeData).path, id, isRead);
+                        } else if (type == 8) {
+                            this.playVideo(typeData);
+                        }
+                    }
+                    clearTimeout(this.touchTimer);
+                },
+                copyEvent: function(text) {
+                    event.stopPropagation();
+                    event.currentTarget.blur();
+                    this.touchItemId = '';
+                    console.log(text);
+                    Pub.copy(JSON.parse('"'+text+'"'));
+                },
+                shareTo: function(id) {
+                    var _this = this;
+                    Pub.openView('./share_friends_win', {
+                        pageParam: {
+                            msgId: id,
+                            msgType: 'group',
+                            shareType: "message",
+                            id: _this.gid,
+                        }
+                    });
+                },
+                deleteEvent: function(id, index) {
+                    var _this = this;
+                    event.stopPropagation();
+                    Pub.confirm(Pub.getLang('tips'), Pub.getLang('confirm_delete'), function() {
+                        var params = {
+                            id: id
+                        }
+                        Pub.post(Pub.apiChat + 'message/group/del', params, function(res) {
+                            console.log('删除' + JSON.stringify(res));
+                            if (res.code == 0) {
+                                _this.listData.splice(index, 1);
+                                _this.touchItemId = '';
+                            }
+                        })
+                    });
+                },
+                withdrawEvent: function(id, ident) {
+                    var _this = this;
+                    event.stopPropagation();
+                    Pub.confirm(Pub.getLang('tips'), Pub.getLang('confirm_recall'), function() {
+                        var params = {
+                            gid: id,
+                            ident: ident,
+                        }
+                        Pub.post(Pub.apiChat + 'chat/group/retract', params, function(res) {
+                            console.log('撤回' + JSON.stringify(res));
+                            if (res.code == 0) {
+                                _this.getData();
+                                _this.touchItemId = '';
+                            }
+                        })
+                    });
+                },
+                unhandle: function() {
+                    var _this = this;
+                    document.querySelector('body').style.cursor = 'pointer';
+                    document.querySelector('body').onclick = function(e) {
+                        _this.touchItemId = '';
+                    }
+                },
+                scrollEvent: function() {
+                    var _this = this;
+                    window.onscroll = function(e) {
+                        var e = e || window.event;
+                        var scrolltop = document.documentElement.scrollTop || document.body.scrollTop;
+                        _this.scrollH = scrolltop;
+                    }
+                },
+                scrolltoBottom: function() {
+                    this.$nextTick(() => {
+                        var container = this.$el.querySelector('.chat_container');
+                        if (this.panelHeight > 0) {
+                            document.querySelector('html').style.paddingBottom = this.panelHeight + this.inputBarHeight + 'px';
+                        } else {
+                            document.querySelector('html').style.paddingBottom = 60 + api.safeArea.bottom + 'px'
+                        }
+                        window.scrollTo(0, container.scrollHeight);
+                    })
+                },
+                scrolltoBottomReset: function() {
+                    this.$nextTick(() => {
+                        var container = this.$el.querySelector('.chat_container');
+                        console.log(container.scrollHeight)
+                        if (this.panelHeight > 0) {
+                            if (api.systemType == 'ios') {
+                                document.querySelector('html').style.paddingBottom = this.panelHeight + this.inputBarHeight + 'px';
+                            } else {
+                                document.querySelector('html').style.paddingBottom = this.panelHeight + this.inputBarHeight + api.safeArea.bottom + 'px';
+                            }
+                        } else {
+                            document.querySelector('html').style.paddingBottom = 60 + api.safeArea.bottom + 'px'
+                        }
+                        var scrollHeight = container.scrollHeight;
+                        window.scrollTo(0, scrollHeight);
+                    })
+                },
+                scrolltoBottomNew: function() {
+                    var _this = this;
+                    this.$nextTick(() => {
+                        var container = this.$el.querySelector('.chat_container');
+                        if (container.scrollHeight - _this.scrollH < api.winHeight) {
+                            if (this.isExtras) {
+                                document.querySelector('html').style.paddingBottom = this.panelHeight + this.inputBarHeight + 'px';
+                            } else {
+                                document.querySelector('html').style.paddingBottom = this.inputBarHeight + 'px';
+                            }
+                            var scrollH = container.scrollHeight;
+                            if (api.systemType == 'ios') {
+                                if (this.panelHeight > 0) {
+                                    document.querySelector('html').style.paddingBottom = this.panelHeight + 60 + 'px';
+                                } else {
+                                    document.querySelector('html').style.paddingBottom = this.panelHeight + 60 + api.safeArea.bottom + 'px';
+                                }
+                                scrollH = container.scrollHeight + this.panelHeight + 60 + api.safeArea.bottom;
+                            }
+                            window.scrollTo(0, scrollH);
+                        }
+                    })
+                },
+                getImgsPaths: function(sourcePathOfChatBox, callback) {
+                    var jsonPath = "widget://expression/emotion/emotion.json"; //表情的JSON数组
+                    api.readFile({
+                        path: jsonPath
+                    }, function(ret, err) {
+                        if (ret.status) {
+                            var emotionArray = JSON.parse(ret.data);
+                            var emotion = {};
+                            for (var i = 0; i < emotionArray.length; i++) {
+                                emotion[emotionArray[i]['text']] = '<img src="../../expression/emotion/' + emotionArray[i]['name'] + '.png' + '" width="25" height="25">';
+                            }
+                            /*把emotion对象 回调出去*/
+                            if ("function" === typeof(callback)) {
+                                callback(emotion);
+                            }
+                        }
+                    });
+                },
+                messageCont: function(msg) {
+                    var _this = this;
+                    if (msg) {
+                        var jp = JSON.parse('"' + msg + '"');
+                        var htmlMsg = jp.replace(Pub.regex.rg1Script, function(a, b) {
+                            if (_this.emotionData[a] && _this.emotionData[a] != 'undefined') {
+                                return _this.emotionData[a];
+                            } else {
+                                return a;
+                            }
+                        });
+                        htmlMsg = htmlMsg.replace(Pub.regex.rg2Script, function(a, b) {
+                            if (_this.emotionData[a] && _this.emotionData[a] != 'undefined') {
+                                return _this.emotionData[a];
+                            } else {
+                                return a;
+                            }
+                        });
+                        htmlMsg = htmlMsg.replace(Pub.regex.rgEmotion, function(a, b) {
+                            if (_this.emotionData[a] && _this.emotionData[a] != 'undefined') {
+                                return _this.emotionData[a];
+                            } else {
+                                return a;
+                            }
+                        });
+                        var regexp = /(http:\/\/|https:\/\/)((\w|=|\?|\.|\/|\&|-)+)/g;
+                        htmlMsg = htmlMsg.replace(regexp, function(url) {
+                            return "<a onclick='openLink(\"" + url + "\")'>" + url + "</a>";
+                        });
+                        htmlMsg = htmlMsg.replaceAll('\n', '<br/>');
+                        htmlMsg = htmlMsg.replaceAll('\r', '<br/>');
+                        // htmlMsg = htmlMsg.toHtmlEntities();
+                        return htmlMsg;
+                    } else {
+                        return '';
+                    }
+                },
+                openLink: function(link) {
+                    Pub.confirm(Pub.getLang('tips'), Pub.getLang('Do_you_want_to_open_an_external_link'), function() {
+                        if (api.systemType == 'android') {
+                            api.openApp({
+                                androidPkg: 'android.intent.action.VIEW',
+                                mimeType: 'text/html',
+                                uri: link
+                            }, function(ret, err) {});
+                        } else {
+                            api.openApp({
+                                iosUrl: link, //打开微信的，其中weixin为微信的URL Scheme
+                                appParam: {}
+                            });
+                        }
+                    });
+                    // Pub.openView('../webview/webview_win',{
+                    //   pageParam: {
+                    //     url: link,
+                    //     title: '测试',
+                    //   }
+                    // });
+                },
+                // redpackStatus: function(sender, isOpen, start, end, maxNum, curNum) {
+                //     var _this = this;
+                //     var redStatus = {};
+                //     var curTime = new Date().getTime() / 1000;
+                //     redStatus.status = isOpen;
+                //     if (isOpen == 0) {
+                //         if (sender == _this.uid) {
+                //             redStatus.text = Pub.getLang('see_redpaper');
+                //         } else {
+                //             redStatus.text = Pub.getLang('get_redpaper');
+                //         }
+                //         redStatus.status = 0;
+                //     } else {
+                //         if (sender == _this.uid) {
+                //             redStatus.text = Pub.getLang('see_redpaper_get_yet');
+                //         } else {
+                //             redStatus.text = Pub.getLang('received');
+                //             redStatus.status = 1;
+                //         }
+                //     }
+                //
+                //     if (curTime >= end) {
+                //         redStatus.status = 1;
+                //         redStatus.text = Pub.getLang('expired');
+                //     }
+                //     if (curNum == maxNum) {
+                //         redStatus.text = Pub.getLang('token_over');
+                //         redStatus.status = 1;
+                //     }
+                //     return redStatus;
+                // },
+                redpackStatus: function(sender, date, extra) {
+                    var _this = this;
+                    var redStatus = {};
+                    var curTime = new Date().getTime() / 1000;
+                    redStatus.status = "";
+                    if ($api.getStorage(_this.uid + "_" + extra + "_pack_status")) {
+                        var isOpen = $api.getStorage(_this.uid + "_" + extra + "_pack_status");
+                        if (isOpen == 1) {
+                            if (sender == _this.uid) {
+                                redStatus.text = Pub.getLang('has_been_received');
+                            } else {
+                                redStatus.text = Pub.getLang('received');
+                            }
+                            redStatus.status = 1;
+                        } else if (isOpen == 2) {
+                            redStatus.text = Pub.getLang('token_over');
+                            redStatus.status = 1;
+                        }
+                    } else {
+                        if (sender == _this.uid) {
+                            redStatus.text = Pub.getLang('see_redpaper');
+                        } else {
+                            redStatus.text = Pub.getLang('get_redpaper');
+                        }
+                    }
+                    if (curTime >= date + _this.packAvail) {
+                        redStatus.status = 1;
+                        redStatus.text = Pub.getLang('expired');
+                    }
+
+                    return redStatus;
+                },
+                toRedpacket: function(sender, id, redId, fid, status) {
+                    console.log(status);
+                    var _this = this;
+                    if (status == 1) {
+                        Pub.openView('../redpacket/group_get_redpacket_win', {
+                            pageParam: {
+                                id: id,
+                                red: redId,
+                                gid: _this.gid
+                            }
+                        });
+                    } else {
+                        Pub.eventSend('get_redpacket', {
+                            id: id,
+                            red: redId,
+                            gid: _this.gid,
+                            sender: sender,
+                        })
+                    }
+                },
+                showPhoto: function(json) {
+                    var _this = this;
+                    console.log(json);
+                    var photos = [];
+                    var img = '';
+                    if (json) {
+                        img = JSON.parse(json).img;
+                    }
+                    if (img.indexOf('http') == -1 && img.indexOf('storage/') == -1 && img.indexOf('/var/') == -1) {
+                        img = Pub.imgHost + img;
+                    }
+                    photos.push(img);
+                    _this.photoBrowser.open({
+                        images: photos,
+                        placeholderImg: '',
+                        bgColor: '#000',
+                        activeIndex: 0
+                    }, function(ret, err) {
+                        if (ret) {
+                            console.log('图片展示' + JSON.stringify(ret));
+                            if (ret.eventType == 'show') {
+                                _this.isShowPhoto = true;
+                                api.openFrame({
+                                    name: 'photo_show_frm',
+                                    url: './photo_show_frm.html',
+                                    rect: {
+                                        x: 0,
+                                        y: 0,
+                                        w: 'auto',
+                                        h: 100,
+                                    },
+                                    bgColor: 'transparent',
+                                    pageParam: {
+                                        img: photos[0]
+                                    }
+                                });
+                                setTimeout(function() {
+                                    api.bringFrameToFront({
+                                        from: 'photo_show_frm',
+                                    });
+                                }, 500);
+                            }
+                            if (ret.eventType == 'click') {
+                                api.closeFrame({
+                                    name: 'photo_show_frm'
+                                });
+                                _this.photoBrowser.close();
+                                _this.isShowPhoto = false;
+                            }
+                            Pub.eventSend('group_photo_status', {
+                                isShowPhoto: _this.isShowPhoto
+                            });
+                            // alert(JSON.stringify(ret));
+                        } else {
+                            // alert(JSON.stringify(err));
+                        }
+                    });
+
+                },
+                playVideo: function(json) {
+                    //console.log(JSON.stringify(json));
+                    console.log(json.videoPath);
+                    api.openWin({
+                        name: 'play_video_win',
+                        url: './play_video_win.html',
+                        pageParam: {
+                            path: JSON.parse(json).videoPath
+                        },
+                        animation: {
+                            type: 'ripple'
+                        },
+                        bgColor: 'rgba(0,0,0,1)',
+                        slidBackEnabled: false,
+                    });
+                },
+                getFileType: function(name) {
+                    //console.log(name);
+                    if (name && name.indexOf('.') > -1) {
+                        var nameArr = name.split('.')
+                        var fileType = nameArr[nameArr.length - 1]
+                        return fileType.toUpperCase()
+                    } else {
+                        return ''
+                    }
+                },
+                clickFile: function(type, name, url, isResExpired) {
+                    if (isResExpired == 1) return false;
+                    if (type == 'PDF') {
+                        console.log(url);
+                        var pdfReader = api.require('pdfReader');
+                        pdfReader.open({
+                            path: url,
+                            hidden: {
+                                print: true,
+                                export: true,
+                                bookmark: true,
+                                email: true
+                            },
+                            backBtn: {
+                                size: { //JSON对象；左上角按钮的大小配置
+                                    w: 60, //数字类型；左上角按钮的宽；默认：60
+                                    h: 40 //数字类型；左上角按钮的高；默认：40
+                                },
+                                bg: { //JSON 对象；按钮背景配置
+                                    normal: 'rgba(0,0,0,0)', //字符串类型；常态背景，支持rgb、rgba、#、img（本地图片）；默认：rgba(0,0,0,0)
+                                    highlight: 'rgba(0,0,0,0)' //字符串类型；高亮背景，支持rgb、rgba、#、img（本地图片）；默认：同normal
+                                },
+                                title: { //JSON对象；按钮标题配置
+                                    text: '关闭', //字符串类型；标题文本；默认：‘’
+                                    size: 13, //数字类型；标题文字大小；默认：13
+                                    color: '#888', //字符串类型；标题颜色；默认：#000
+                                    alignment: 'center' //字符串类型；标题位置，取值范围：left、center、right；默认：center
+                                },
+                                corner: 5 //数字类型；左上角按钮圆角大小；默认值：5.0
+                            }
+                        });
+
+                    } else if (type == 'DOC' || type == 'DOCX') {
+                        console.log(url);
+                        api.showProgress({
+                            style: 'default',
+                            animationType: 'fade',
+                            title: '努力加载中...',
+                            modal: true
+                        });
+                        if (url.indexOf("storage") != -1) {
+                            var docReader = api.require('docReader');
+                            docReader.open({
+                                path: url,
+                                autorotation: false
+                            }, function(ret, err) {
+                                if (ret.status) {
+                                    console.log(JSON.stringify(ret));
+                                    api.hideProgress();
+                                } else {
+                                    console.log(JSON.stringify(err));
+                                }
+                            });
+                        } else {
+                            api.download({
+                                url: url,
+                                report: true,
+                                cache: true,
+                                allowResume: true
+                            }, function(ret, err) {
+                                if (ret.state == 1) {
+                                    //下载成功
+                                    var docReader = api.require('docReader');
+                                    docReader.open({
+                                        path: ret.savePath,
+                                        autorotation: false
+                                    }, function(ret, err) {
+                                        if (ret.status) {
+                                            console.log(JSON.stringify(ret));
+                                        } else {
+                                            console.log(JSON.stringify(err));
+                                        }
+                                    });
+                                } else if (ret.state == 2) {
+                                    Pub.msg('打开失败')
+                                }
+                                if (ret.state == 1 || ret.state == 2) {
+                                    api.hideProgress();
+                                }
+                            });
+                        }
+                    } else {
+                        if (api.systemType == 'android') {
+                            api.openApp({
+                                androidPkg: 'android.intent.action.VIEW',
+                                mimeType: 'text/html',
+                                uri: url
+                            }, function(ret, err) {});
+                        } else {
+                            api.openApp({
+                                iosUrl: url, //打开微信的，其中weixin为微信的URL Scheme
+                                appParam: {}
+                            });
+                        }
+                    }
+                },
+                getFileSize: function(data) {
+                    return Pub.changeByte(data)
+                },
+                getCardInfo: function(data) {
+                    if (data) {
+                        data = JSON.parse(decodeURI(data));
+                        return data;
+                    } else {
+                        return {};
+                    }
+                },
+                loadAvatar: function(img) {
+                    var _this = this;
+                    var imgUrl = img.indexOf('http') == -1 ? (Pub.imgHost + img) : img;
+                    if (!this.avatarCache) {
+                        this.avatarCache = {};
+                    }
+                    api.imageCache({
+                        url: imgUrl
+                    }, function(ret, err) {
+                        var url = ret.url;
+                        if (JSON.stringify(_this.avatarCache).indexOf(window.encodeURI(img)) == -1 || !_this.avatarCache[window.encodeURI(img)]) {
+                            _this.avatarCache[window.encodeURI(img)] = url;
+                            $api.setStorage('avatar_cache', _this.avatarCache);
+                        }
+                    });
+                },
+                getAvatar: function(img) {
+                    var _this = this;
+                    var imgName = window.encodeURI(img);
+                    if (this.avatarCache.hasOwnProperty(imgName) && _this.avatarCache[imgName]) {
+                        return _this.avatarCache[imgName];
+                    } else {
+                        return false;
+                    }
+                },
+                toInfo: function(extra) {
+                    if (extra.type == "user") {
+                        Pub.openView('../chat/personal_info_win', {
+                            pageParam: {
+                                id: extra.id,
+                                name: extra.name
+                            }
+                        })
+                    } else {
+                        Pub.post(Pub.apiChat + 'group/info/member2', {
+                            gid: extra.id
+                        }, function(res) {
+                            if (res.code == 0) {
+                                var uid = $api.getStorage('uid');
+                                var is_in = false;
+                                var ownerD = res.data.owner;
+                                var adminD = res.data.admin;
+                                var memberD = res.data.member;
+                                var cardMemberList = ownerD.concat(adminD.concat(memberD));
+                                for (var i = 0; i < cardMemberList.length; i++) {
+                                    if (cardMemberList[i].uid == uid) {
+                                        console.log("在群里");
+                                        is_in = true;
+                                    } else {
+                                        console.log("不在群里");
+                                    }
+                                }
+                                if (is_in) {
+                                    Pub.openView('../chat/group_info_win', {
+                                        pageParam: {
+                                            id: extra.id,
+                                            name: extra.name
+                                        }
+                                    })
+                                } else {
+                                    Pub.openView('../chat/group_verify_win', {
+                                        pageParam: {
+                                            id: extra.id,
+                                            name: extra.name
+                                        }
+                                    })
+                                }
+                            }
+                        })
+
+                    }
+                },
+                chat: function() {
+                    var _this = this;
+                    this.scrolltoBottom();
+                    var UIChatBox = api.require('UIChatBox');
+                    UIChatBox.open({
+                        placeholder: '',
+                        maxRows: 6,
+                        emotionPath: 'widget://expression/emotion',
+                        texts: {
+                            recordBtn: {
+                                normalTitle: Pub.getLang('hold_to_talk'),
+                                activeTitle: Pub.getLang('release_end')
+                            },
+                            sendBtn: {
+                                title: Pub.getLang('send')
+                            }
+                        },
+                        styles: {
+                            topDivider: {
+                                width: 1,
+                                color: '#eaeaea'
+                            },
+                            inputBar: {
+                                borderColor: '#f7f7f7',
+                                bgColor: '#f7f7f7'
+                            },
+                            inputBox: {
+                                borderColor: '#dddddd',
+                                bgColor: '#FFFFFF',
+                                borderColor: '#fff', //（可选项）字符串类型；输入框的边框颜色，支持 rgb，rgba，#；默认：'#B3B3B3'
+                                bgColor: '#fff', //（可选项）字符串类型；输入框的背景色，支持 rgb，rgba，#；默认：'#f2f2f2'
+                                boardBgColor: '#fff', //（可选项）字符串类型；面板的背景色(表情面板，附加面板)，支持 rgb，rgba，#；默认：'#f2f2f2'
+                                topMargin: 8, //（可选项）数字类型；输入框距离顶部的边距；默认：10
+                                borderCorner: 5, //(可选项)数字类型；默认：5
+                            },
+                            emotionBtn: {
+                                normalImg: 'widget://skin/default/images/icon/icon_emoji.png'
+                            },
+                            extrasBtn: {
+                                normalImg: 'widget://skin/default/images/icon/icon_extra.png'
+                            },
+                            keyboardBtn: {
+                                normalImg: 'widget://skin/default/images/icon/icon_keyboard.png'
+                            },
+                            speechBtn: {
+                                normalImg: 'widget://skin/default/images/icon/icon_voice.png'
+                            },
+                            recordBtn: {
+                                normalBg: '#ffffff',
+                                activeBg: '#ccc',
+                                color: '#000',
+                                size: 14
+                            },
+                            indicator: {
+                                target: 'both',
+                                color: '#ffffff',
+                                activeColor: '#21b2ff'
+                            },
+                            sendBtn: {
+                                titleColor: '#ffffff',
+                                bg: '#eb5f48',
+                                activeBg: '#e24f37',
+                                titleSize: 14
+                            }
+                        },
+                        extras: {
+                            titleSize: 10,
+                            titleColor: '#a3a3a3',
+                            isAdaptScreenSize: false,
+                            btns: [{
+                                    title: Pub.getLang('album'),
+                                    normalImg: '../../skin/default/images/chat/icon_photo.png',
+                                    activeImg: '../../skin/default/images/chat/icon_chat_pics.png'
+                                }, {
+                                    title: Pub.getLang('shot'),
+                                    normalImg: '../../skin/default/images/chat/icon_shot.png',
+                                    activeImg: '../../skin/default/images/chat/icon_shot.png'
+                                }, {
+                                    title: "双向撤回",
+                                    normalImg: '../../skin/default/images/chat/icon_clear_all.png',
+                                    activeImg: '../../skin/default/images/chat/icon_clear_all.png'
+                                }, {
+                                    title: Pub.getLang('file'),
+                                    normalImg: '../../skin/default/images/chat/icon_file.png',
+                                    activeImg: '../../skin/default/images/chat/icon_file.png'
+                                }, {
+                                    title: Pub.getLang('video'),
+                                    normalImg: '../../skin/default/images/chat/icon_video_chat.png',
+                                    activeImg: '../../skin/default/images/chat/icon_video_chat.png'
+                                }, {
+                                    title: Pub.getLang('name_card'),
+                                    normalImg: '../../skin/default/images/chat/icon_card.png',
+                                    activeImg: '../../skin/default/images/chat/icon_card.png'
+                                }, {
+                                    title: Pub.getLang('red_packet'),
+                                    normalImg: '../../skin/default/images/chat/icon_redpacket.png',
+                                    activeImg: '../../skin/default/images/chat/icon_redpacket.png'
+                                }
+                                // , {
+                                //     title: '语音通话',
+                                //     normalImg: '../../skin/default/images/chat/icon_voice_chat.png',
+                                //     activeImg: '../../skin/default/images/chat/icon_voice_chat.png'
+                                // }
+                            ]
+                        }
+                    }, function(ret, err) {
+                        if (ret) {
+                            console.log(JSON.stringify(ret))
+                            if (ret.eventType == 'send') {
+                                if(ret.msg == 'undefined' || !ret.msg || !/[^\s]/.test(ret.msg)) return Pub.msg("发送内容不能为空！");
+                                _this.sendMsg(ret.msg);
+                            }
+                            // 点击附件功能面板
+                            if (ret.eventType == 'clickExtras') {
+                                _this.isExtras = true;
+                                // ret.index : 0 => 相册；1 => 拍摄；2=> 发红包
+                                if (ret.index == 0) {
+                                    _this.albumEvent(function(data, ident) {
+                                        var params = {
+                                            img: data,
+                                            type: 'album',
+                                            ident: ident,
+                                        }
+                                        _this.sendImg('', params)
+                                    })
+                                }
+                                if (ret.index == 1) {
+                                    _this.cameraEvent(function(data, ident) {
+                                        var params = {
+                                            img: data,
+                                            type: 'camera',
+                                            ident: ident,
+                                        }
+                                        _this.sendImg('', params)
+                                    })
+                                }
+                                if (ret.index == 2) {
+                                    Pub.confirm("提示", "您确定要双向撤回吗？", function() {
+                                        var params = {
+                                            gid: _this.gid,
+                                        }
+                                        Pub.post(Pub.apiChat + 'chat/group/clear', params, function(res) {
+                                            if (res.code == 0) {
+                                                Pub.eventSend('close_chat_group_home', {
+                                                    id: _this.gid
+                                                });
+                                                _this.getData();
+                                            }
+                                        })
+                                    })
+                                }
+                                // if (ret.index == 4) {
+                                //     Pub.eventSend('group_window_end');
+                                //     Pub.openView('../redpacket/group_give_redpacket_win', {
+                                //         pageParam: {
+                                //             gid: _this.gid
+                                //         }
+                                //     });
+                                // }
+                                if (ret.index == 6) {
+                                    Pub.eventSend('group_window_end');
+                                    Pub.openView('../redpacket/group_give_redpacket_win', {
+                                        pageParam: {
+                                            gid: _this.gid
+                                        }
+                                    });
+                                }
+                                if (ret.index == 4) {
+                                    var UIAlbumBrowser = api.require('UIAlbumBrowser');
+                                    UIAlbumBrowser.open({
+                                        max: 1,
+                                        type: "video",
+                                        styles: {
+                                            bg: '#fff',
+                                            mark: {
+                                                icon: '',
+                                                position: 'bottom_left',
+                                                size: 20
+                                            },
+                                            nav: {
+                                                bg: 'rgba(0,0,0,0.6)',
+                                                titleColor: '#fff',
+                                                titleSize: 18,
+                                                cancelColor: '#fff',
+                                                cancelSize: 16,
+                                                finishColor: '#fff',
+                                                finishSize: 16
+                                            }
+                                        },
+                                        rotation: true
+                                    }, function(ret) {
+                                        // alert(ret.list[0].thumbPath);
+                                        // alert(ret.list[0].videoPath);
+                                        if (ret.list[0].videoPath) {
+                                            //alert(ret.list[0].videoPath)
+                                            if(ret.list[0].size>104857600) return Pub.msg("上传视频不能超过100M！");
+                                            var nowTime = Date.parse(new Date()) / 1000;
+                                            var ident = (new Date()).valueOf();
+                                            _this.unsendArrAdd(ident,"video");
+                                            var mySendMsg = {
+                                                "date": nowTime,
+                                                "extra": JSON.stringify({
+                                                    thumbPath: ret.list[0].thumbPath,
+                                                    videoPath: ret.list[0].videoPath
+                                                }),
+                                                "ident": ident,
+                                                "uid": _this.uid,
+                                                "type": 5
+                                            };
+                                            console.log(JSON.stringify(mySendMsg));
+                                            _this.listData = _this.listData.concat(mySendMsg);
+                                            _this.scrolltoBottomNew();
+                                            Pub.uploadImg(ret.list[0].thumbPath, function(path1) {
+                                                thumbPath = path1;
+                                                Pub.uploadImg(ret.list[0].videoPath, function(path2) {
+                                                    videoPath = path2;
+                                                    var params = {
+                                                        gid: _this.gid,
+                                                        extra: {
+                                                            thumbPath: thumbPath,
+                                                            videoPath: videoPath
+                                                        },
+                                                        ident: ident,
+                                                        at: "",
+                                                    }
+                                                    Pub.post(Pub.apiChat + 'chat/group/video', params, function(res2) {
+                                                        if (res2.code == 0) {
+                                                            //Pub.msg(Pub.getLang("upload_successfully"));
+                                                        }
+                                                    });
+                                                });
+                                            });
+
+                                        }else{
+                                            UIAlbumBrowser.transVideoPath({
+                                                path: ret.list[0].path
+                                            }, function(ret1, err) {
+                                                if (ret1) {
+                                                    //alert(JSON.stringify(ret1));
+                                                    if(ret1.fileSize>104857600) return Pub.msg("上传视频不能超过100M！");
+                                                    var nowTime = Date.parse(new Date()) / 1000;
+                                                    var ident = (new Date()).valueOf();
+                                                    _this.unsendArrAdd(ident,"video");
+                                                    var mySendMsg = {
+                                                        "date": nowTime,
+                                                        "extra": JSON.stringify({
+                                                            thumbPath: ret.list[0].thumbPath,
+                                                            videoPath: ret1.albumVideoPath
+                                                        }),
+                                                        "ident": ident,
+                                                        "uid": _this.uid,
+                                                        "type": 5
+                                                    };
+                                                    _this.listData = _this.listData.concat(mySendMsg);
+                                                    _this.scrolltoBottomNew();
+                                                    Pub.uploadImg(ret.list[0].thumbPath, function(path1) {
+                                                        thumbPath = path1;
+                                                        Pub.uploadImg(ret1.albumVideoPath, function(path2) {
+                                                            videoPath = path2;
+                                                            var params = {
+                                                                gid: _this.gid,
+                                                                extra: {
+                                                                    thumbPath: thumbPath,
+                                                                    videoPath: videoPath
+                                                                },
+                                                                ident: ident,
+                                                                at: "",
+                                                            }
+                                                            Pub.post(Pub.apiChat + 'chat/group/video', params, function(res2) {
+                                                                if (res2.code == 0) {
+                                                                    //Pub.msg(Pub.getLang("send_successfully"));
+                                                                }
+                                                            });
+                                                        });
+                                                    });
+
+                                                } else {
+                                                    alert(JSON.stringify(err));
+                                                }
+                                            });
+
+                                        }
+                                    });
+                                }
+                                if (ret.index == 5) {
+                                    Pub.openView('./transmit_win', {
+                                        pageParam: {
+                                            shareType: "group_card",
+                                            gid: _this.gid,
+                                        }
+                                    });
+                                }
+                                if (ret.index == 3) {
+                                    var fileBrowser = api.require('fileBrowser');
+                                    // fileBrowser.skin({
+                                    //     skin: 1
+                                    // });
+                                    fileBrowser.open({
+                                        confirm: true
+                                    }, function(ret) {
+                                        if (ret) {
+                                            console.log(JSON.stringify(ret));
+                                            // var extra = {
+                                            //   name: ret.name,
+                                            //   size: ret.size,
+                                            // }
+                                            //_this.sendFile(ret.url,extra);
+                                            if (ret.size > 26214400) return Pub.msg(Pub.getLang("tip_file_limit"));
+                                            var nowTime = Date.parse(new Date()) / 1000;
+                                            var ident = (new Date()).valueOf();
+                                            _this.unsendArrAdd(ident,"file");
+                                            var mySendMsg = {
+                                                "date": nowTime,
+                                                "extra": JSON.stringify({
+                                                    "url": ret.url,
+                                                    "name": ret.name,
+                                                    "size": ret.size
+                                                }),
+                                                "ident": ident,
+                                                "uid": _this.uid,
+                                                "type": 4
+                                            };
+                                            //alert("文件："+JSON.stringify(mySendMsg));
+                                            _this.listData = _this.listData.concat(mySendMsg);
+                                            _this.scrolltoBottomNew();
+                                            Pub.post(Pub.fileUrl, {
+                                                uploadType: 'file',
+                                                files: ret.url
+                                            }, function(res) {
+                                                if (res.code == 0) {
+                                                    var params = {
+                                                        gid: _this.gid,
+                                                        extra: {
+                                                            url: res.data,
+                                                            name: ret.name,
+                                                            size: ret.size
+                                                        },
+                                                        ident: ident,
+                                                    }
+                                                    Pub.post(Pub.apiChat + 'chat/group/file', params, function(res) {
+                                                        if (res.code == 0) {}
+                                                    });
+                                                } else {
+                                                    Pub.msg(res.data);
+                                                    _this.listData = _this.listData.filter(function(data) {
+                                                        return data.ident != ident;
+                                                    });
+                                                }
+                                            });
+                                            fileBrowser.close();
+                                        }
+                                    });
+                                }
+                                // if(ret.index == 6){
+                                //   Pub.openView('../find/collection_win',{pageParam:{type: "group_chat"}});
+                                // }
+                                // if(ret.index == 6){
+                                //   Pub.openView("./at_friend_win",{pageParam:{gid:_this.gid}});
+                                // }
+                                // if (ret.index == 3) {
+                                //   Pub.post(Pub.apiChat +'chat/isOutside', {}, function(res){
+                                //     console.log('是否在国外' + JSON.stringify(res));
+                                //     var isAbroad = false;
+                                //     if(res.code == 0){
+                                //       if(res.data == 'y'){
+                                //         isAbroad = true;
+                                //       }else{
+                                //         isAbroad = false;
+                                //       }
+                                //       if(isAbroad){
+                                //         return Pub.msg('暂不支持语音通讯');
+                                //       }else{
+                                //         Pub.openView('./chat_voice_group_choose_win', {
+                                //           pageParam: {
+                                //             id: _this.gid,
+                                //           }
+                                //         });
+                                //       }
+                                //     }
+                                //   });
+                                // }
+                            } else {
+                                _this.isExtras = false;
+                            }
+
+                        } else {
+                            console.log(JSON.stringify(err));
+                        }
+                    });
+                    // 监听键盘变化
+                    UIChatBox.addEventListener({
+                        target: 'inputBar',
+                        name: 'move'
+                    }, function(ret, err) {
+                        if (ret) {
+                            console.log(JSON.stringify(ret));
+                            _this.panelHeight = ret.panelHeight + 60;
+                            // _this.inputBarHeight = ret.inputBarHeight;
+                            _this.scrolltoBottomReset();
+                        } else {
+                            // alert(JSON.stringify(err));
+                        }
+                    });
+                    // 监听是否@；
+                    UIChatBox.addEventListener({
+                        target: 'inputBar',
+                        name: 'valueChanged'
+                    }, function(ret, err) {
+                        if (ret) {
+                            var str = ret.value;
+                            if (str.substr(str.length - 1, 1) == "@") {
+                                Pub.openView("./at_friend_win", {
+                                    pageParam: {
+                                        gid: _this.gid,
+                                        msg: str
+                                    }
+                                });
+                            }
+                        } else {}
+                    });
+                    // 监听录音
+                    var UIChatBox = api.require('UIChatBox');
+                    UIChatBox.addEventListener({
+                        target: 'recordBtn',
+                        name: 'press'
+                    }, function(ret, err) {
+                        if (ret) {
+                            _this.stopAmr();
+                            _this.voiceChooseId = '';
+                            _this.audioShow();
+                            api.startRecord();
+                            _this.countReocrd = setInterval(function(){
+                                _this.recordTime++;
+                                console.log(_this.recordTime);
+                                if(_this.recordTime == 50){
+                                    _this.audioHide();
+                                    Pub.msg('发送语音不能超过50秒！');
+                                    _this.recordTime = 0;
+                                    clearInterval(_this.countReocrd);
+                                    _this.isStopRecord = true;
+                                    _this.stopRecord();
+                                }
+                            },1000)
+                            // alert(JSON.stringify(ret));
+                        } else {
+                            alert(JSON.stringify(err));
+                        }
+                    });
+                    UIChatBox.addEventListener({
+                        target: 'recordBtn',
+                        name: 'move_out'
+                    }, function(ret, err) {
+                        _this.audioHide();
+                        _this.recordTime = 0;
+                        clearInterval(_this.countReocrd);
+                        _this.isStopRecord = false;
+                        api.stopRecord();
+                    });
+                    UIChatBox.addEventListener({
+                        target: 'recordBtn',
+                        name: 'press_cancel'
+                    }, function(ret, err) {
+                        _this.audioHide();
+                        if (ret) {
+                            if(_this.isStopRecord){
+                                _this.isStopRecord = false;
+                            }else{
+                                clearInterval(_this.countReocrd);
+                                _this.recordTime = 0;
+                                _this.stopRecord();
+
+                            }
+                        } else {
+                            alert(JSON.stringify(err));
+                        }
+                    });
+                },
+                // 相册
+                albumEvent: function(callback) {
+                    var _this = this;
+                    api.getPicture({
+                        sourceType: 'album',
+                        encodingType: 'jpg',
+                        mediaValue: 'pic',
+                        destinationType: 'url',
+                        allowEdit: false,
+                        quality: 30,
+                        saveToPhotoAlbum: false
+                    }, function(ret, err) {
+                        if (ret) {
+                            if (ret.data) {
+                                var nowTime = Date.parse(new Date()) / 1000;
+                                var ident = (new Date()).valueOf();
+                                _this.unsendArrAdd(ident,"picture");
+                                var mySendMsg = {
+                                    "date": nowTime,
+                                    "extra": JSON.stringify({
+                                        "img": ret.data
+                                    }),
+                                    "ident": ident,
+                                    "uid": _this.uid,
+                                    "type": 2
+                                };
+                                _this.listData = _this.listData.concat(mySendMsg);
+                                _this.scrolltoBottomNew();
+                                Pub.uploadImg(ret.data, function(response) {
+                                    if (callback && typeof callback == 'function') {
+                                        callback(response, ident);
+                                    }
+                                });
+                            }
+                        } else {
+                            console.log(JSON.stringify(ret));
+                        }
+                    });
+                },
+                // 相机
+                cameraEvent: function(callback) {
+                    var _this = this;
+                    api.getPicture({
+                        sourceType: 'camera',
+                        encodingType: 'jpg',
+                        mediaValue: 'pic',
+                        destinationType: 'url',
+                        allowEdit: true,
+                        quality: 30,
+                        saveToPhotoAlbum: true
+                    }, function(ret, err) {
+                        if (ret) {
+                            if (ret.data) {
+                                var nowTime = Date.parse(new Date()) / 1000;
+                                var ident = (new Date()).valueOf();
+                                _this.unsendArrAdd(ident,"image");
+                                var mySendMsg = {
+                                    "date": nowTime,
+                                    "extra": JSON.stringify({
+                                        "img": ret.data
+                                    }),
+                                    "ident": ident,
+                                    "uid": _this.uid,
+                                    "type": 2
+                                };
+                                _this.listData = _this.listData.concat(mySendMsg);
+                                _this.scrolltoBottomNew();
+                                Pub.uploadImg(ret.data, function(response) {
+                                    if (callback && typeof callback == 'function') {
+                                        callback(response, ident);
+                                    }
+                                });
+                            }
+                        } else {
+                            console.log(JSON.stringify(err));
+                        }
+                    });
+                },
+                // 发送消息
+                sendMsg: function(msg, obj) {
+                    var _this = this;
+                    var nowTime = Date.parse(new Date()) / 1000;
+                    var ident = (new Date()).valueOf();
+                    var mySendMsg = {
+                        "date": nowTime,
+                        "extra": "",
+                        "ident": ident,
+                        "message": return2Br(msg),
+                        "uid": _this.uid,
+                        "type": 1,
+                        "user_info": $api.getStorage(_this.uid + '_user_info')
+                    };
+                    _this.listData = _this.listData.concat(mySendMsg);
+                    _this.scrolltoBottomNew();
+                    if (msg) {
+                        var params = {
+                            gid: _this.gid,
+                            msg: msg,
+                            extra: '',
+                            ident: ident,
+                            at: "",
+                        }
+                        Pub.post(Pub.apiChat + 'chat/group/text', params, function(res) {
+                            console.log(JSON.stringify(res));
+                            if (res.code == 0) {
+                                Pub.eventSend('close_chat_group_home', {
+                                    id: _this.gid
+                                });
+                                // _this.getMsg();
+                            }
+                        }, true);
+                    }
+                },
+                // 发送图片
+                sendImg: function(msg, obj) {
+                    var _this = this;
+                    var params = {
+                        gid: _this.gid,
+                        extra: obj,
+                        ident: obj.ident,
+                        at: "",
+                    }
+                    Pub.post(Pub.apiChat + 'chat/group/img', params, function(res) {
+                        console.log(JSON.stringify(res));
+                        if (res.code == 0) {
+                            Pub.eventSend('close_chat_group_home', {
+                                id: _this.gid
+                            });
+                            // _this.getMsg();
+                        }
+                    }, true);
+                },
+                // 语言状态显示
+                audioShow: function() {
+                    api.openFrame({
+                        name: 'record_status_frm',
+                        url: './record_status_frm.html',
+                        rect: {
+                            x: 0,
+                            y: 0,
+                            w: api.winWidth,
+                            h: api.winHeight - 60
+                        },
+                        bounces: false,
+                        bgColor: 'rgba(0,0,0,0)'
+                    });
+                },
+                audioHide: function() {
+                    api.closeFrame({
+                        name: 'record_status_frm'
+                    });
+
+                },
+                // 发送语音
+                sendAudio: function(msg, obj) {
+                    var _this = this;
+                    var params = {
+                        gid: _this.gid,
+                        extra: obj,
+                        ident: obj.ident,
+                    }
+                    Pub.post(Pub.apiChat + 'chat/group/rec', params, function(res) {
+                        console.log(JSON.stringify(res));
+                        if (res.code == 0) {
+                            _this.$refs.myvoice.play();
+                            Pub.eventSend('close_chat_group_home', {
+                                id: _this.gid
+                            });
+                            // _this.getMsg();
+                        }
+                    }, true);
+                },
+                // 播放音频
+                playAmr: function(path, callback) {
+                    console.log(path);
+                    api.startPlay({
+                        path: path
+                    }, function(ret, err) {
+                        if (ret) {
+                            // alert('播放完成');
+                            if (callback && typeof callback == 'function') {
+                                callback();
+                            }
+                        } else {
+                            console.log(JSON.stringify(err));
+                        }
+                    });
+                },
+                // 停止播放音频
+                stopAmr: function() {
+                    api.stopPlay();
+                },
+                // 下载文件
+                downAmr: function(path, callback) {
+                    var randomString = Math.random().toString(36).substr(2);
+                    api.download({
+                        url: path,
+                        savePath: 'fs://record' + randomString + '.amr',
+                        encode: false,
+                        report: false,
+                        cache: false
+                    }, function(ret, err) {
+                        console.log('下载文件：' + JSON.stringify(ret));
+                        if (ret.state == 1) {
+                            //下载成功
+                            if (callback && typeof callback == 'function') {
+                                callback(ret);
+                            }
+                        } else {
+
+                        }
+                    });
+                },
+                getMemberInfo: function() {
+                    var _this = this;
+                    if ($api.getStorage(_this.gid + "_memberList")) {
+                        var ownerD = $api.getStorage(_this.gid + "_memberList").owner;
+                        var adminD = $api.getStorage(_this.gid + "_memberList").admin;
+                        var memberD = $api.getStorage(_this.gid + "_memberList").member;
+                        _this.memberList = ownerD.concat(adminD.concat(memberD));
+                        _this.combineMemberInfo(_this.listData);
+                    } else {
+                        Pub.post(Pub.apiChat + 'group/info/member2', {
+                            gid: _this.gid
+                        }, function(res) {
+                            if (res.code == 0) {
+                                var ownerD = res.data.owner;
+                                var adminD = res.data.admin;
+                                var memberD = res.data.member;
+                                _this.memberList = ownerD.concat(adminD.concat(memberD));
+                                $api.setStorage(_this.gid + "_memberList", res.data);
+                                _this.combineMemberInfo(_this.listData);
+                            }
+                        })
+                    }
+
+                },
+                combineMemberInfo: function(data) {
+                    var _this = this;
+                    for (var i = 0; i < data.length; i++) {
+                        if (!data[i].user_info) {
+                            var uid = data[i].uid;
+                            if ($api.getStorage(data[i].uid + "_user_info")) {
+                                data[i].user_info = $api.getStorage(data[i].uid + "_user_info");
+                            } else if ($api.getStorage(data[i].uid + "_anynomous")) {
+                                data[i].user_info = $api.getStorage(data[i].uid + "_anynomous");
+                            } else {
+                                data[i].user_info = {
+                                    face: null,
+                                    uid: data[i].uid,
+                                    uname: "用户"
+                                };
+                                Pub.post(Pub.apiChat + "friend/info/simple", {
+                                    fid: data[i].uid
+                                }, function(res) {
+                                    if (res.code == 0) {
+                                        //alert(JSON.stringify(data[i]))
+                                        $api.setStorage(res.data.uid + "_anynomous", res.data);
+                                        data[i].user_info = res.data;
+                                        // _this.combineMemberInfo(_this.listData);
+                                        //return;
+                                        //data[i].user_info = res.data;
+                                    }
+                                })
+                            }
+                        }
+                    }
+                    _this.listData = [];
+                    lastTime = 0;
+                    timeDiff = 0;
+                    _this.listData = data;
+                    //console.log(JSON.stringify(_this.listData));
+                },
+                getIdent: function() {
+                    var _this = this;
+                    if ($api.getStorage(_this.uid + "_" + _this.gid + '_chatGroupIdent')) {
+                        _this.ident = $api.getStorage(_this.uid + "_" + _this.gid + '_chatGroupIdent');
+                    };
+                },
+                unsendArrAdd: function(ident,name){
+                  var _this = this;
+                  _this.unsendArr.push({ident:ident,type:name});
+                  Pub.eventSend("unsendArr",{
+                    unsendArr: _this.unsendArr
+                  })
+                },
+                stopRecord: function(){
+                    var _this = this;
+                    api.stopRecord(function(ret, err) {
+                        if (ret) {
+                            console.log(JSON.stringify(ret));
+                            var path = ret.path;
+                            var duration = ret.duration;
+                            if (duration < 1) return Pub.msg('您发送的语音太短');
+                            var nowTime = Date.parse(new Date()) / 1000;
+                            var ident = (new Date()).valueOf();
+                            _this.unsendArrAdd(ident,"record");
+                            var mySendMsg = {
+                                "date": nowTime,
+                                "extra": JSON.stringify({
+                                    "path": ret.path,
+                                    "duration": ret.duration,
+                                    "type": 'amr'
+                                }),
+                                "ident": ident,
+                                "sender": _this.uid,
+                                "type": 3,
+                                "uid": _this.uid,
+                            };
+                            console.log(JSON.stringify(mySendMsg));
+                            _this.listData = _this.listData.concat(mySendMsg);
+                            _this.scrolltoBottomNew();
+                            Pub.uploadImg(path, function(response) {
+                                if (response) {
+                                    var param = {
+                                        type: 'amr',
+                                        path: response,
+                                        duration: duration,
+                                        ident: ident,
+                                    }
+                                    _this.sendAudio('upload', param);
+                                }
+                            });
+                        }
+                    });
+                    // alert(JSON.stringify(ret));
+                },
+                collect: function(item) {
+                    var _this = this;
+                    Pub.post("collect/index/add", {
+                        type: item.type,
+                        content: item,
+                    }, function(res) {
+                        if (res.code == 0) {
+                            Pub.msg(res.echo);
+                        }
+                    })
+                },
+            }
+        });
+    }
+
+
+</script>
+
+</html>

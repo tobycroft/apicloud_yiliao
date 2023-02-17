@@ -1,0 +1,223 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <div class="group-member-remove">
+    <ul id="member_append_list">
+      <!-- <li>
+        <div class="check active"><i></i></div>
+        <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+        <div class="name">阿大葱</div>
+      </li>
+      <li>
+        <div class="check"><i></i></div>
+        <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+        <div class="name">阿大葱</div>
+      </li>
+      <li>
+        <div class="check"><i></i></div>
+        <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+        <div class="name">阿大葱</div>
+      </li>
+      <li>
+        <div class="check"><i></i></div>
+        <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+        <div class="name">阿大葱</div>
+      </li>
+      <li>
+        <div class="check"><i></i></div>
+        <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+        <div class="name">阿大葱</div>
+      </li> -->
+    </ul>
+    <ul  id="member_remove_list">
+
+    </ul>
+  </div>
+  <script type="text/html" id="member_append_list_html">
+    {{if data.length > 0}}
+      {{each data}}
+        {{if $value.uid != data.uid && $value.role=="member"}}
+          <li class="item">
+            <div class="check" data-fid="{{$value.uid}}" data-name="{{$value.uname}}"><i></i></div>
+            <div class="avatar"><img src="{{$value.face}}" class="img_url"></div>
+            <div class="name">{{$value.uname}}</div>
+          </li>
+        {{/if}}
+      {{/each}}
+    {{/if}}
+  </script>
+  <script type="text/html" id="member_remove_list_html">
+    {{if data.length > 0}}
+      {{each data}}
+        {{if $value.uid != data.uid && $value.role=="admin"}}
+          <li class="item">
+            <div class="check" data-fid="{{$value.uid}}" data-name="{{$value.uname}}"><i></i></div>
+            <div class="avatar"><img src="{{$value.face}}" class="img_url"></div>
+            <div class="name">{{$value.uname}}</div>
+          </li>
+        {{/if}}
+      {{/each}}
+    {{/if}}
+  </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var memberData = {}, searchData = {}, setArr = [];
+    var gid = '';
+    var str = '';
+    var type = '';
+    apiready = function() {
+        api.parseTapmode();
+        gid = api.pageParam.gid;
+        type = api.pageParam.type;
+        console.log(gid);
+        getMember();
+        Pub.eventListen('admin_set_search', function(ret){
+            search(ret.value.words)
+        });
+        Pub.eventListen('at_choose_all', function(ret){
+          console.log(ret.value.all);
+            if(ret.value.all == "1"){
+              setArr = [];
+              $('.check').each(function(){
+                $(this).addClass('active');
+                var thisFid = $(this).attr('data-fid');
+                setArr = setArr.concat(thisFid);
+              })
+            }else{
+              $('.check').each(function(){
+                $(this).removeClass('active');
+                var thisFid = $(this).attr('data-fid');
+                setArr = Pub.deleteByValue(setArr, thisFid);
+              })
+            }
+        });
+        Pub.eventListen('group_admin_set', function(){
+          if(setArr.length == 0) return Pub.msg(Pub.getLang('please_select_member'));
+          var params = {
+            gid: gid,
+            admins: JSON.stringify(setArr)
+          }
+          if(type=="add"){
+            Pub.post(Pub.apiChat +'group/admin/set', params, function(res){
+              if(res.code == 0){
+                Pub.msg(res.echo);
+                Pub.eventSend("set_admin_refresh");
+                setTimeout(function(){
+                    api.closeWin();
+                    Pub.setStatusBar();
+                }, 1000);
+              }
+            })
+          }else{
+            Pub.post(Pub.apiChat +'group/admin/revoke', params, function(res){
+              if(res.code == 0){
+                Pub.msg(res.echo);
+                Pub.eventSend("set_admin_refresh");
+                setTimeout(function(){
+                    api.closeWin();
+                    Pub.setStatusBar();
+                }, 1000);
+              }
+            })
+          }
+        })
+    }
+    function getMember(){
+        var params = {
+            gid: gid
+        }
+        Pub.post(Pub.apiChat +'group/info/member2', params, function(res){
+          if(res.code==0){
+            var ownerD = res.data.owner;
+            var adminD = res.data.admin;
+            var memberD = res.data.member;
+            res.data = ownerD.concat(adminD.concat(memberD));
+            console.log(JSON.stringify(res.data));
+            var filterData = res.data.filter(function(data) {return data.uid != $api.getStorage('uid');});
+            memberData = {data:filterData};
+
+            if(type == "add"){
+              var html = template('member_append_list_html', memberData);
+              $('#member_append_list').html(html);
+            }else{
+              var html = template('member_remove_list_html', memberData);
+              $('#member_remove_list').html(html);
+            }
+            $('.img_url').each(function(){
+                var thisSrc = $(this).attr('src');
+                if(thisSrc){
+                    if(thisSrc.indexOf('http') == -1){
+                        $(this).attr('src', Pub.imgHost + thisSrc);
+                    }
+                }else{
+                    $(this).attr('src', '../../skin/default/images/chat/default_avatar.png');
+                }
+            });
+            checkEvent();
+          }
+        })
+    }
+    function search(words){
+        console.log(words);
+        var memberArr = memberData.data;
+        var searchArr = [];
+        if(words){
+            for(var i = 0; i<memberArr.length; i++){
+                if(memberArr[i].uname.indexOf(words) > -1){
+                    searchArr.push(memberArr[i]);
+                }
+            }
+            if(searchArr.length == 0) return Pub.msg(Pub.getLang('search_nothing'));
+            searchData.data = searchArr;
+        }else{
+            searchData = memberData;
+        }
+        if(type == "add"){
+          var html = template('member_append_list_html', searchData);
+          $('#member_append_list').html(html);
+        }else{
+          var html = template('member_remove_list_html', searchData);
+          $('#member_remove_list').html(html);
+        }
+
+        Pub.setLang();
+        $('.img_url').each(function(){
+            var thisSrc = $(this).attr('src');
+            if(thisSrc){
+                if(thisSrc.indexOf('http') == -1){
+                    $(this).attr('src', Pub.imgHost + thisSrc);
+                }
+            }else{
+                $(this).attr('src', '../../skin/default/images/chat/default_avatar.png');
+            }
+        });
+        checkEvent();
+    }
+    function checkEvent(){
+      $('.item').on('click', function(){
+          // e.stopPropagation();
+          var thisFid = $(this).find(".check").attr('data-fid');
+          if($(this).find(".check").hasClass('active')){
+              $(this).find(".check").removeClass('active');
+              setArr = Pub.deleteByValue(setArr, thisFid);
+          }else{
+              $(this).find(".check").addClass('active');
+              setArr = setArr.concat(thisFid);
+          }
+      });
+    }
+</script>
+
+</html>

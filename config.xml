@@ -1,0 +1,88 @@
+ <widget id="A6169217628479"  version="0.0.1">
+
+    <name>易聊</name>
+
+    <description>
+
+        Example For APICloud.
+
+    </description>
+
+    <author email="developer@apicloud.com" href="http://www.apicloud.com">
+
+        Developer
+
+    </author>
+
+    <!-- <content src="html/mall/mall_win.html"/> -->
+
+    <content src="app.json"/>
+    <access origin="*"/>
+
+    <preference name="pageBounce" value="false"/>
+
+    <preference name="appBackground" value="rgba(255,255,255,1)"/>
+
+    <preference name="windowBackground" value="rgba(255,255,255,1)"/>
+
+    <preference name="frameBackgroundColor" value="rgba(255,255,255,1)"/>
+
+    <preference name="hScrollBarEnabled" value="false"/>
+
+    <preference name="vScrollBarEnabled" value="false"/>
+
+    <preference name="autoLaunch" value="true"/>
+
+    <preference name="fullScreen" value="false"/>
+
+    <preference name="autoUpdate" value="true"/>
+
+    <preference name="smartUpdate" value="true"/>
+
+    <preference name="debug" value="false"/>
+
+    <preference name="statusBarAppearance" value="true"/>
+
+    <permission name="readPhoneState"/>
+
+    <permission name="camera"/>
+
+    <preference name="backgroundMode" value="audio"/>
+
+    <permission name="record"/>
+
+    <permission name="location"/>
+
+    <permission name="fileSystem"/>
+
+    <permission name="internet"/>
+
+    <permission name="bootCompleted"/>
+
+    <permission name="hardware"/>
+
+    <preference name="softInputMode" value="auto"/>
+
+    <preference name="iOS7StatusBarAppearance" value="true"/>
+
+    <preference name="statusBarAppearance" value="true"/>
+
+    <preference name="appCertificateVerify" value="false"/>
+
+    <preference name="backgroundMode" value="audio"/>
+
+    <feature name="ajpush">
+      <param name="app_key" value="5e6b0eb96186a085e796993b"/>
+      <param name="channel" value="yiliao"/>
+    </feature>
+
+    <!-- <feature name="wx">
+      		<param name="urlScheme" value="wx95d160c106acdfed" />
+      		<param name="apiKey" value="wx95d160c106acdfed" />
+      		<param name="apiSecret" value="22e7808c1b5158522a1eea606ebd0d37" />
+      	</feature> -->
+
+    <!-- <feature name="aliPayPlus">
+      <param name="urlScheme" value="aliPayPlusA6027393827050" />
+    </feature> -->
+</widget>

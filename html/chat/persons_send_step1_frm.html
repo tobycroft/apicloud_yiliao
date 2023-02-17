@@ -1,0 +1,247 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <div class="group-member-remove">
+    <ul id="member_list">
+      <!-- <li>
+        <div class="check active"><i></i></div>
+        <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+        <div class="name">阿大葱</div>
+      </li>
+      <li>
+        <div class="check"><i></i></div>
+        <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+        <div class="name">阿大葱</div>
+      </li>
+      <li>
+        <div class="check"><i></i></div>
+        <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+        <div class="name">阿大葱</div>
+      </li>
+      <li>
+        <div class="check"><i></i></div>
+        <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+        <div class="name">阿大葱</div>
+      </li>
+      <li>
+        <div class="check"><i></i></div>
+        <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+        <div class="name">阿大葱</div>
+      </li> -->
+    </ul>
+  </div>
+  <script type="text/html" id="member_list_html">
+    {{if data.length > 0}}
+      {{each data}}
+        {{if $value.user_info.is_black != 1}}
+          <li class="item">
+            <div class="check" data-fid="{{$value.user_info.uid}}" data-name="{{$value.user_info.uname}}"><i></i></div>
+            <div class="avatar"><img src="{{$value.user_info.face}}" class="img_url"></div>
+            <div class="name">{{$value.user_info.uname}}</div>
+          </li>
+        {{/if}}
+      {{/each}}
+    {{/if}}
+  </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var memberData = {}, searchData = {}, atArr = [],atNameArr = [];
+    var gid = '';
+    var str = '';
+    apiready = function() {
+        api.parseTapmode();
+        gid = api.pageParam.gid;
+        msg = api.pageParam.msg;
+        console.log(gid);
+        getMember();
+        Pub.eventListen('persons_send_search', function(ret){
+            search(ret.value.words)
+        });
+        Pub.eventListen('persons_send_choose_all', function(ret){
+          console.log(ret.value.all);
+            if(ret.value.all == "1"){
+              atArr = [];atNameArr = [];
+              $('.check').each(function(){
+                $(this).addClass('active');
+                var thisFid = $(this).attr('data-fid');
+                var name = $(this).attr('data-name');
+                atArr = atArr.concat(thisFid);
+                atNameArr = atNameArr.concat(name);
+              })
+            }else{
+              $('.check').each(function(){
+                $(this).removeClass('active');
+                var thisFid = $(this).attr('data-fid');
+                var name = $(this).attr('data-name');
+                atArr = Pub.deleteByValue(atArr, thisFid);
+                atNameArr = Pub.deleteByValue(atNameArr, name);
+              })
+            }
+        });
+        Pub.eventListen('persons_send_next', function(){
+          if(atArr.length == 0) return Pub.msg('请选择好友');
+          console.log(atArr);
+          var personsArr = [];
+          for(var i = 0; i<atArr.length;i++){
+            var obj = {};
+            obj.fid = atArr[i];
+            obj.name = atNameArr[i];
+            personsArr.push(obj);
+          }
+          console.log(JSON.stringify(personsArr));
+          Pub.openView("./persons_send_step2_win",{pageParam:personsArr});
+        })
+    }
+    function getMember(){
+        // if($api.getStorage('member_data')){
+        //     memberData = $api.getStorage('member_data');
+        //     var html = template('member_list_html', memberData);
+        //     $('#member_list').html(html);
+        //     Pub.setLang();
+        //     $('.img_url').each(function(){
+        //         var thisSrc = $(this).attr('src');
+        //         if(thisSrc){
+        //             if(thisSrc.indexOf('http') == -1){
+        //                 $(this).attr('src', Pub.imgHost + thisSrc);
+        //             }
+        //         }else{
+        //             $(this).attr('src', '../../skin/default/images/chat/default_avatar.png');
+        //         }
+        //     });
+        //     $('#member_list').find('.item').on('click', function(){
+        //         var thisFid = $(this).attr('data-fid'),
+        //             thisName = $(this).attr('data-name');
+        //         Pub.openView('./personal_info_win', {
+        //             pageParam:{
+        //                 fid: thisFid,
+        //                 name: thisName,
+        //                 isStatus: true
+        //             }
+        //         });
+        //     });
+        //     checkEvent();
+        // }
+        var params = {
+            gid: gid
+        }
+        Pub.post(Pub.apiChat +'friend/friend/list', params, function(res){
+          if(res.code==0){
+            if(res.data.length>0){
+              var filterData = res.data.filter(function(data) {return data.user_info.uid != $api.getStorage('uid');});
+              memberData = {data:filterData};
+              var html = template('member_list_html', memberData);
+              $('#member_list').html(html);
+              $('.img_url').each(function(){
+                  var thisSrc = $(this).attr('src');
+                  if(thisSrc){
+                      if(thisSrc.indexOf('http') == -1){
+                          $(this).attr('src', Pub.imgHost + thisSrc);
+                      }
+                  }else{
+                      $(this).attr('src', '../../skin/default/images/chat/default_avatar.png');
+                  }
+              });
+              // $('#member_list').find('.item').on('click', function(){
+              //     var thisFid = $(this).attr('data-fid'),
+              //         thisName = $(this).attr('data-name');
+              //     Pub.openView('./personal_info_win', {
+              //         pageParam:{
+              //             fid: thisFid,
+              //             name: thisName,
+              //             isStatus: true
+              //         }
+              //     });
+              // });
+              checkEvent();
+            }
+          }
+        })
+    }
+    function search(words){
+        console.log(words);
+        var memberArr = memberData.data;
+        var searchArr = [];
+        if(words){
+            for(var i = 0; i<memberArr.length; i++){
+                if(memberArr[i].user_info.uname.indexOf(words) > -1){
+                    searchArr.push(memberArr[i]);
+                }
+            }
+            if(searchArr.length == 0) return Pub.msg(Pub.getLang('search_nothing'));
+            searchData.data = searchArr;
+        }else{
+            searchData = memberData;
+        }
+        var html = template('member_list_html', searchData);
+        $('#member_list').html(html);
+        Pub.setLang();
+        $('.img_url').each(function(){
+            var thisSrc = $(this).attr('src');
+            if(thisSrc){
+                if(thisSrc.indexOf('http') == -1){
+                    $(this).attr('src', Pub.imgHost + thisSrc);
+                }
+            }else{
+                $(this).attr('src', '../../skin/default/images/chat/default_avatar.png');
+            }
+        });
+        // $('#member_list').find('.item').on('click', function(){
+        //     var thisFid = $(this).attr('data-fid'),
+        //         thisName = $(this).attr('data-name');
+        //       Pub.openView('./personal_info_win', {
+        //           pageParam:{
+        //               fid: thisFid,
+        //               name: thisName,
+        //               isStatus: true
+        //           }
+        //       });
+        // });
+        checkEvent();
+    }
+    function checkEvent(){
+      $('.item').on('click', function(){
+          // e.stopPropagation();
+          var thisFid = $(this).find(".check").attr('data-fid');
+          var name = $(this).find(".check").attr('data-name');
+          if($(this).find(".check").hasClass('active')){
+              $(this).find(".check").removeClass('active');
+              atArr = Pub.deleteByValue(atArr, thisFid);
+              atNameArr = Pub.deleteByValue(atNameArr, name);
+          }else{
+              $(this).find(".check").addClass('active');
+              atArr = atArr.concat(thisFid);
+              atNameArr = atNameArr.concat(name);
+          }
+      });
+    }
+    // function isFriend(fid, callback){
+    //     var params = {
+    //         fid: fid
+    //     }
+    //     Pub.post(Pub.apiChat +'friend/friend/is_friend', params, function(res){
+    //         console.log('是否好友:' + JSON.stringify(res));
+    //         if(res.code == 0){
+    //             if(callback && typeof callback == 'function'){
+    //                 callback(res);
+    //             }
+    //         }
+    //     });
+    // }
+    function groupInvite(){
+        Pub.openView('./group_invite_win');
+    }
+</script>
+
+</html>

@@ -1,0 +1,1012 @@
+@charset "UTF-8";
+/**
+* 变量
+**/
+/**
+* function
+**/
+html {
+  font-size: 100vw !important;
+}
+@media screen and (max-width: 320px) {
+  html {
+    font-size: 64px;
+  }
+}
+@media screen and (min-width: 540px) {
+  html {
+    font-size: 108px;
+  }
+}
+.border-radius-25 {
+  -webkit-border-radius: 25%;
+  border-radius: 25%;
+}
+.border-radius-50 {
+  -webkit-border-radius: 50%;
+  border-radius: 50%;
+}
+.border-radius-full {
+  -webkit-border-radius: 100%;
+  border-radius: 100%;
+}
+.overflow-hidden {
+  overflow: hidden;
+}
+.shade-black {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+.shade-white {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+.shade-white-light {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+.box-shadow-primary {
+  -webkit-box-shadow: 0 2px 5px rgba(255, 128, 1, 0.5);
+  box-shadow: 0 2px 5px rgba(255, 128, 1, 0.5);
+}
+.box-shadow-primary-mini {
+  -webkit-box-shadow: 0 1px 2px rgba(255, 128, 1, 0.1);
+  box-shadow: 0 1px 2px rgba(255, 128, 1, 0.1);
+}
+.transtion {
+  -webkit-transition: all .3s;
+  transition: all .3s;
+}
+.translateY-50 {
+  -webkit-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+.translate-50 {
+  -webkit-transform: translate3d(-50%, -50%, 0);
+  transform: translate3d(-50%, -50%, 0);
+}
+@keyframes animateScale {
+  0% {
+    transform: scale(1);
+    -webkit-transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+    -webkit-transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    -webkit-transform: scale(1);
+  }
+}
+@keyframes smallToBig {
+  0% {
+    transform: translateY(-100%);
+    -webkit-transform: translateY(-100%);
+    opacity: 0;
+    height: 0;
+  }
+  100% {
+    transform: translateY(0%);
+    -webkit-transform: translateY(0%);
+    opacity: 1;
+    height: auto;
+  }
+}
+@-webkit-keyframes rockLeftRight {
+  0% {
+    -webkit-transform: translateX(-0.015rem);
+    transform: translateX(-0.015rem);
+  }
+  50% {
+    -webkit-transform: translateX(0);
+    transform: translateX(0);
+  }
+  100% {
+    -webkit-transform: translateX(-0.015rem);
+    transform: translateX(-0.015rem);
+  }
+}
+@-webkit-keyframes rockRightLeft {
+  0% {
+    -webkit-transform: translateX(0.015rem);
+    transform: translateX(0.015rem);
+  }
+  50% {
+    -webkit-transform: translateX(0);
+    transform: translateX(0);
+  }
+  100% {
+    -webkit-transform: translateX(0.015rem);
+    transform: translateX(0.02rem);
+  }
+}
+@keyframes rockLeftRight {
+  0% {
+    left: -10px;
+  }
+  50% {
+    left: 0;
+  }
+  100% {
+    left: -10px;
+  }
+}
+@keyframes rockRightLeft {
+  0% {
+    right: -10px;
+  }
+  50% {
+    right: 0;
+  }
+  100% {
+    right: -10px;
+  }
+}
+@keyframes animationShow {
+  0% {
+    height: 0;
+  }
+  100% {
+    height: auto;
+  }
+}
+@keyframes voiceAnimate {
+  0% {
+    background: url(../../images/icon/icon_voice1.png) no-repeat;
+    background-size: 100% 100%;
+  }
+  50% {
+    background: url(../../images/icon/icon_voice2.png) no-repeat;
+    background-size: 100% 100%;
+  }
+  100% {
+    background: url(../../images/icon/icon_voice3.png) no-repeat;
+    background-size: 100% 100%;
+  }
+}
+@keyframes voiceAnimateReverse {
+  0% {
+    background: url(../../images/icon/icon_voice1.png) no-repeat;
+    background-size: 100% 100%;
+    transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+  }
+  50% {
+    background: url(../../images/icon/icon_voice2.png) no-repeat;
+    background-size: 100% 100%;
+    transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+  }
+  100% {
+    background: url(../../images/icon/icon_voice3.png) no-repeat;
+    background-size: 100% 100%;
+    transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+  }
+}
+.redpacket-form {
+  width: 100%;
+  overflow: hidden;
+  padding-left: 0.04666667rem;
+  padding-right: 0.04666667rem;
+}
+.redpacket-form .item {
+  position: relative;
+  display: table;
+  width: 100%;
+  height: 0.13333333rem;
+  background-color: #ffffff;
+  margin-top: 0.04rem;
+  padding-left: 0.06666667rem;
+  padding-right: 0.06666667rem;
+}
+.redpacket-form .item .name {
+  display: table-cell;
+  vertical-align: middle;
+  font-size: 0.04533333rem;
+  color: #000000;
+}
+.redpacket-form .item .input-box {
+  display: table-cell;
+  text-align: right;
+  vertical-align: middle;
+}
+.redpacket-form .item input {
+  width: 100%;
+  font-size: 0.04266667rem;
+  height: 100%;
+  color: #888787;
+  text-align: right;
+}
+.redpacket-form .item select {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  font-size: 0.04266667rem;
+  color: #888787;
+  direction: rtl;
+  padding-right: 0.05333333rem;
+  background: url('../../images/com/icon_triangle_down_gray.png') no-repeat 99% 50%;
+  background-size: .03rem .03rem;
+}
+.redpacket-form .item .icon {
+  position: absolute;
+  right: 0.26666667rem;
+  top: 50%;
+  -webkit-transform: translateY(-50%);
+  transform: translateY(-50%);
+  width: 0.06666667rem;
+  height: 0.06666667rem;
+}
+.redpacket-form .item .icon img {
+  width: 100%;
+  height: 100%;
+}
+.redpacket-form .item .handle {
+  position: absolute;
+  top: 50%;
+  right: 0.02666667rem;
+  -webkit-transform: translateY(-50%);
+  transform: translateY(-50%);
+  display: inline-block;
+  padding: 0.04rem;
+  font-size: 0.04rem;
+  color: #008fff;
+}
+.redpacket-form .tips {
+  width: 100%;
+  margin-top: 0.02rem;
+  padding-left: 0.06666667rem;
+  font-size: 0.032rem;
+  color: #888787;
+}
+.redpacket-form .tips a {
+  color: #008fff;
+}
+.redpacket-form .textarea {
+  width: 100%;
+  margin-top: 0.04rem;
+  position: relative;
+}
+.redpacket-form .textarea textarea {
+  width: 100%;
+  height: 0.26666667rem;
+  padding: 0.02666667rem;
+  background-color: #ffffff;
+  color: #888787;
+  font-size: 0.04266667rem;
+}
+.redpacket-form .textarea span {
+  display: inline-block;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding-right: 0.02666667rem;
+  padding-bottom: 0.02666667rem;
+  font-size: 0.02933333rem;
+  color: #a1adbb;
+}
+.redpacket-form .red-box {
+  width: 100%;
+  margin-top: 0.04rem;
+  overflow: hidden;
+}
+.redpacket-form .red-box .title {
+  width: 100%;
+  padding-left: 0.06666667rem;
+  padding-right: 0.06666667rem;
+  padding-bottom: 0.02666667rem;
+  font-size: 0.04533333rem;
+  color: #000000;
+}
+.redpacket-form .red-box .box {
+  width: 100%;
+  height: 0.46666667rem;
+  background-color: #ffffff;
+  display: flex;
+  display: -webkit-flex;
+  flex-wrap: nowrap;
+  align-content: space-between;
+  overflow-x: scroll;
+  padding-left: 0.06666667rem;
+  padding-right: 0.06666667rem;
+  padding-top: 0.04rem;
+  padding-bottom: 0.01333333rem;
+}
+.redpacket-form .red-box .box .box-item {
+  width: 0.24rem;
+  margin-right: 0.05333333rem;
+  text-align: center;
+}
+.redpacket-form .red-box .box .box-item .redpacket {
+  width: 0.24rem;
+  height: 0.34666667rem;
+  overflow: hidden;
+  background: url(../../images/bg_redpacket.png) no-repeat;
+  background-size: 100% 100%;
+  border-radius: .02rem .02rem .03rem .03rem;
+}
+.redpacket-form .red-box .box .box-item .redpacket .icon {
+  display: inline-block;
+  width: 0.048rem;
+  height: 0.048rem;
+  -webkit-border-radius: 100%;
+  border-radius: 100%;
+  margin-top: 0.06146667rem;
+}
+.redpacket-form .red-box .box .box-item .redpacket .icon img {
+  width: 100%;
+  height: 100%;
+}
+.redpacket-form .red-box .box .box-item .redpacket .font {
+  width: 100%;
+  margin-top: 0.05333333rem;
+  padding-left: 0.01333333rem;
+  padding-right: 0.01333333rem;
+}
+.redpacket-form .red-box .box .box-item .redpacket .font h4 {
+  font-size: 0.03466667rem;
+  color: #edbb8b;
+}
+.redpacket-form .red-box .box .box-item .redpacket .font p {
+  padding-top: 0.01333333rem;
+  font-size: 0.02933333rem;
+  color: #ffffff;
+}
+.redpacket-form .red-box .box .box-item .redpacket.active {
+  border: 3px solid #d9dde3;
+}
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  .redpacket-form .red-box .box .box-item .redpacket.active {
+    border: 1.5px solid #d9dde3;
+  }
+}
+@media screen and (-webkit-min-device-pixel-ratio: 3) {
+  .redpacket-form .red-box .box .box-item .redpacket.active {
+    border: 3px solid #d9dde3;
+  }
+}
+.redpacket-form .red-box .box .box-item h3 {
+  padding-top: 0.01333333rem;
+  font-size: 0.032rem;
+  color: #888787;
+}
+.redpacket-popup-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+.redpacket-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 10001;
+  transform: translate(-50%, -50%) scale(1.2);
+  -webkit-transform: translate(-50%, -50%) scale(1.2);
+  width: 0.66666667rem;
+  height: 0.90133333rem;
+  background: url(../../images/chat/bg_give_redpacket.png) no-repeat;
+  background-size: 100% 100%;
+  -webkit-border-radius: 0.02666667rem;
+  border-radius: 0.02666667rem;
+}
+.redpacket-popup .close {
+  position: absolute;
+  top: 0.05333333rem;
+  right: 0.05333333rem;
+  width: 0.04rem;
+  height: 0.04rem;
+  background: url(../../images/chat/icon_close.png) no-repeat;
+  background-size: 100% 100%;
+}
+.redpacket-popup .member-info {
+  width: 100%;
+  margin-top: 0.12266667rem;
+  text-align: center;
+  padding-left: 0.02666667rem;
+  padding-right: 0.02666667rem;
+}
+.redpacket-popup .member-info img {
+  display: inline-block;
+  width: 0.17333333rem;
+  height: 0.17333333rem;
+  border: 2px solid #f9e000;
+  -webkit-border-radius: 100%;
+  border-radius: 100%;
+}
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  .redpacket-popup .member-info img {
+    border: 1px solid #f9e000;
+  }
+}
+@media screen and (-webkit-min-device-pixel-ratio: 3) {
+  .redpacket-popup .member-info img {
+    border: 2px solid #f9e000;
+  }
+}
+.redpacket-popup .member-info h3 {
+  padding-top: 0.02666667rem;
+  font-size: 0.03466667rem;
+  color: #f9e000;
+}
+.redpacket-popup .member-info p {
+  padding-top: 0.02133333rem;
+  font-size: 0.04266667rem;
+  color: #f9e000;
+}
+.redpacket-popup .coin-icon {
+  position: absolute;
+  bottom: 0.17333333rem;
+  left: 50%;
+  transform: translateX(-50%);
+  -webkit-transform: translateX(-50%);
+  width: 0.2rem;
+  height: 0.2rem;
+  -webkit-border-radius: 100%;
+  border-radius: 100%;
+  background: url(../../images/chat/coin_bg.png) no-repeat;
+  background-size: 100% 100%;
+}
+.redpacket-popup .coin-icon .icon {
+  display: table-cell;
+  width: 0.2rem;
+  height: 0.2rem;
+  text-align: center;
+  vertical-align: middle;
+  padding: 0.02666667rem;
+  font-size: 0.08rem;
+  color: #f9e000;
+  font-weight: bold;
+}
+.redpacket-popup .coin-icon .icon img {
+  width: 0.14666667rem;
+  height: 0.14666667rem;
+}
+.redpacket-popup .fonts {
+  position: absolute;
+  bottom: 0.06rem;
+  left: 50%;
+  transform: translateX(-50%);
+  -webkit-transform: translateX(-50%);
+  width: 100%;
+  font-size: 0.03466667rem;
+  color: #f9e000;
+  padding-left: 0.04rem;
+  padding-right: 0.04rem;
+  text-align: center;
+}
+.redpacket-main-info {
+  width: 100%;
+  overflow: hidden;
+  text-align: center;
+  background-color: #f3f3f3;
+  font-weight: 700;
+}
+.redpacket-main-info .avatar {
+  width: 100%;
+  margin-top: 0.10666667rem;
+  text-align: center;
+}
+.redpacket-main-info .avatar img {
+  width: 0.18666667rem;
+  height: 0.18666667rem;
+  -webkit-border-radius: 100%;
+  border-radius: 100%;
+}
+.redpacket-main-info .name {
+  width: 100%;
+  text-align: center;
+  margin-top: 0.01333333rem;
+  font-size: 0.048rem;
+  color: #000000;
+}
+.redpacket-main-info .desc {
+  width: 100%;
+  margin-top: 0.01333333rem;
+  text-align: center;
+  font-size: 0.032rem;
+  color: #333333;
+}
+.redpacket-main-info .money {
+  width: 100%;
+  margin-top: 0.01333333rem;
+  color: #008fff;
+  font-size: 0.03466667rem;
+}
+.redpacket-main-info .money strong {
+  font-size: 0.08rem;
+}
+.redpacket-main-info .tips {
+  width: 100%;
+  padding-top: 0.04rem;
+  padding-bottom: 0.06666667rem;
+  font-size: 0.032rem;
+  color: #9e9e9f;
+}
+.redpacket-record-filter {
+  display: table;
+  width: 100%;
+  background-color: #f3f3f3;
+}
+.redpacket-record-filter span {
+  display: table-cell;
+  vertical-align: middle;
+  padding: 0.04rem;
+}
+.redpacket-record-filter span:last-child {
+  text-align: right;
+}
+.redpacket-record-filter span select {
+  display: inline-block;
+  padding-right: 0.05333333rem;
+  background: url(../../images/icon/icon_triangle_down_gray.png) no-repeat 100% 48%;
+  background-size: .04rem auto;
+  color: #333333;
+  font-size: 0.04266667rem;
+}
+.redpacket-record-filter span input {
+  position: relative;
+  display: inline-block;
+  width: 0.4rem;
+  text-align: right;
+  padding-right: 0rem;
+}
+.redpacket-record-filter span label {
+  display: inline-block;
+  position: relative;
+}
+.redpacket-record-filter span label::after {
+  position: absolute;
+  top: 0.00666667rem;
+  right: 0.00266667rem;
+  display: block;
+  content: '';
+  width: 0.04rem;
+  height: 0.04rem;
+  background: url(../../images/com/icon_triangle_down_gray.png) no-repeat 100% 48%;
+  background-size: .04rem auto;
+}
+.redpacket-count-give {
+  width: 100%;
+  padding-top: 0.02666667rem;
+  text-align: center;
+  font-size: 0.04rem;
+  color: #888787;
+  padding-bottom: 0.08rem;
+  background-color: #f3f3f3;
+}
+.redpacket-count-give span {
+  font-size: 0.04266667rem;
+  color: #008fff;
+  padding-left: 0.00666667rem;
+  padding-right: 0.00666667rem;
+}
+.redpacket-count-get {
+  display: table;
+  width: 100%;
+  text-align: center;
+  padding-top: 0.04rem;
+  padding-bottom: 0.04rem;
+  padding-left: 0.01333333rem;
+  padding-right: 0.01333333rem;
+  background-color: #f3f3f3;
+}
+.redpacket-count-get span {
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+}
+.redpacket-count-get span h3 {
+  font-size: 0.05333333rem;
+  color: #888787;
+}
+.redpacket-count-get span p {
+  font-size: 0.03466667rem;
+  color: #888787;
+}
+.redpacket-cell {
+  width: 100%;
+  overflow: hidden;
+  padding-left: 0.04666667rem;
+}
+.redpacket-cell .item {
+  display: table;
+  width: 100%;
+  padding-top: 0.03333333rem;
+  padding-bottom: 0.03333333rem;
+  border-bottom: 1px solid #e6e6e6;
+}
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  .redpacket-cell .item {
+    border-bottom: 0.5px solid #e6e6e6;
+  }
+}
+@media screen and (-webkit-min-device-pixel-ratio: 3) {
+  .redpacket-cell .item {
+    border-bottom: 1px solid #e6e6e6;
+  }
+}
+.redpacket-cell .item .item-left {
+  display: table-cell;
+  vertical-align: middle;
+}
+.redpacket-cell .item .item-left h3 {
+  font-size: 0.04rem;
+  color: #000000;
+}
+.redpacket-cell .item .item-left h3 em {
+  display: inline-block;
+  margin-left: 0.01333333rem;
+  padding-top: 0.00533333rem;
+  padding-bottom: 0.00533333rem;
+  padding-left: 0.00533333rem;
+  padding-right: 0.00533333rem;
+  background-color: #f9e000;
+  line-height: 1;
+  -webkit-border-radius: 0.00666667rem;
+  border-radius: 0.00666667rem;
+  font-size: 0.032rem;
+  color: #ffffff;
+  vertical-align: middle;
+  margin-bottom: 0.00666667rem;
+}
+.redpacket-cell .item .item-left p {
+  font-size: 0.032rem;
+  color: #888787;
+}
+.redpacket-cell .item .item-right {
+  display: table-cell;
+  text-align: right;
+  vertical-align: middle;
+  padding-right: 0.05333333rem;
+  font-size: 0.04rem;
+  color: #000000;
+}
+.redpacket-info-header {
+  width: 100%;
+  position: relative;
+  background-color: #f3f3f3;
+  overflow: hidden;
+  font-weight: 700;
+}
+.redpacket-info-header::after {
+  position: absolute;
+  top: -1.33333333rem;
+  left: 50%;
+  margin-left: -0.77333333rem;
+  content: '';
+  width: 1.54666667rem;
+  height: 1.54666667rem;
+  background-color: #f7513a;
+  -webkit-border-radius: 100%;
+  border-radius: 100%;
+}
+.redpacket-info-header .info-header {
+  position: relative;
+  z-index: 6;
+  width: 100%;
+  text-align: center;
+  padding-top: 0.09333333rem;
+  padding-bottom: 0.06666667rem;
+}
+.redpacket-info-header .info-header .avatar {
+  width: 100%;
+  text-align: center;
+  height: 0.18666667rem;
+}
+.redpacket-info-header .info-header .avatar img {
+  width: 0.18666667rem;
+  height: 0.18666667rem;
+  -webkit-border-radius: 100%;
+  border-radius: 100%;
+  -webkit-box-shadow: 0 0 3px #008fff;
+  box-shadow: 0 0 3px #008fff;
+}
+.redpacket-info-header .info-header .name {
+  padding-top: 0.04rem;
+  font-size: 0.048rem;
+  color: #333333;
+}
+.redpacket-info-header .info-header .desc {
+  padding-top: 0.02666667rem;
+  font-size: 0.04rem;
+  color: #333333;
+}
+.redpack-group-get {
+  width: 100%;
+  overflow: hidden;
+  background-color: #ffffff;
+  padding-left: 0.04rem;
+  padding-right: 0.04rem;
+  font-weight: 700;
+}
+.redpack-group-get .count {
+  width: 100%;
+  height: 0.1rem;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.03733333rem;
+  color: #9e9e9f;
+  line-height: 0.1rem;
+}
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  .redpack-group-get .count {
+    border-bottom: 0.5px solid #f0f0f0;
+  }
+}
+@media screen and (-webkit-min-device-pixel-ratio: 3) {
+  .redpack-group-get .count {
+    border-bottom: 1px solid #f0f0f0;
+  }
+}
+.redpack-group-get .item {
+  width: 100%;
+  display: table;
+  padding-top: 0.02666667rem;
+  padding-bottom: 0.02666667rem;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  .redpack-group-get .item {
+    border-bottom: 0.5px solid #f0f0f0;
+  }
+}
+@media screen and (-webkit-min-device-pixel-ratio: 3) {
+  .redpack-group-get .item {
+    border-bottom: 1px solid #f0f0f0;
+  }
+}
+.redpack-group-get .item:last-child {
+  border-bottom: none;
+}
+.redpack-group-get .item .avatar {
+  display: table-cell;
+  width: 0.14666667rem;
+  vertical-align: middle;
+}
+.redpack-group-get .item .avatar img {
+  display: inline-block;
+  vertical-align: middle;
+  width: 0.10666667rem;
+  height: 0.10666667rem;
+  -webkit-border-radius: 0.01333333rem;
+  border-radius: 0.01333333rem;
+}
+.redpack-group-get .item .info {
+  display: table-cell;
+  vertical-align: middle;
+}
+.redpack-group-get .item .info h3 {
+  font-size: 0.04266667rem;
+  color: #333333;
+  line-height: 0.04533333rem;
+}
+.redpack-group-get .item .info p {
+  padding-top: 0.01333333rem;
+  font-size: 0.032rem;
+  color: #9e9e9f;
+}
+.redpack-group-get .item .info p .best {
+  margin-left: 0.01333333rem;
+}
+.redpack-group-get .item .info p .best img {
+  width: 0.04rem;
+}
+.redpack-group-get .item .amount {
+  display: table-cell;
+  text-align: right;
+  vertical-align: middle;
+  font-weight: normal;
+  font-size: 0.04rem;
+  line-height: 0.04533333rem;
+  color: #333333;
+}
+.redpacket-password-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: -webkit-flex;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.redpacket-password-container .redpacket-password-box {
+  width: 90%;
+  overflow: hidden;
+  background-color: #ffffff;
+  -webkit-border-radius: 0.02666667rem;
+  border-radius: 0.02666667rem;
+  margin-top: 40%;
+  padding-left: 0.08rem;
+  padding-right: 0.08rem;
+  padding-bottom: 0.08rem;
+  position: relative;
+  margin-bottom: 0.10666667rem;
+}
+.redpacket-password-container .redpacket-password-box .close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-block;
+  padding: 0.02666667rem;
+}
+.redpacket-password-container .redpacket-password-box .close img {
+  width: 0.08rem;
+}
+.redpacket-password-container .redpacket-password-box .title {
+  width: 100%;
+  height: 0.14666667rem;
+  text-align: center;
+  line-height: 0.14666667rem;
+  font-size: 0.048rem;
+  color: #262649;
+}
+.redpacket-password-container .redpacket-password-box .amount {
+  width: 100%;
+  text-align: center;
+  font-size: 0.05333333rem;
+  color: #000000;
+  font-weight: bold;
+  margin-top: 0.02666667rem;
+}
+.redpacket-password-container .redpacket-password-box .amount strong {
+  font-size: 0.08rem;
+  vertical-align: middle;
+}
+.redpacket-password-container .redpacket-password-box .password-div {
+  width: 100%;
+  height: 0.16rem;
+  border: 1px solid #d9dde3;
+  -webkit-border-radius: 0.01333333rem;
+  border-radius: 0.01333333rem;
+  margin-top: 0.02666667rem;
+}
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  .redpacket-password-container .redpacket-password-box .password-div {
+    border: 0.5px solid #d9dde3;
+  }
+}
+@media screen and (-webkit-min-device-pixel-ratio: 3) {
+  .redpacket-password-container .redpacket-password-box .password-div {
+    border: 1px solid #d9dde3;
+  }
+}
+.redpacket-password-container .redpacket-password-box .password-div input {
+  width: 100%;
+  height: 100%;
+  font-size: 0.04266667rem;
+  color: #262649;
+  padding-left: 0.02666667rem;
+  padding-right: 0.02666667rem;
+}
+.redpacket-password-container .redpacket-password-box .password-box {
+  width: 100%;
+  height: 0.128rem;
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d9dde3;
+  margin-top: 0.08rem;
+  position: relative;
+}
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  .redpacket-password-container .redpacket-password-box .password-box {
+    border: 0.5px solid #d9dde3;
+  }
+}
+@media screen and (-webkit-min-device-pixel-ratio: 3) {
+  .redpacket-password-container .redpacket-password-box .password-box {
+    border: 1px solid #d9dde3;
+  }
+}
+.redpacket-password-container .redpacket-password-box .password-box span {
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  width: 0.128rem;
+  height: 0.128rem;
+  justify-content: center;
+  border-right: 1px solid #d9dde3;
+}
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  .redpacket-password-container .redpacket-password-box .password-box span {
+    border-right: 0.5px solid #d9dde3;
+  }
+}
+@media screen and (-webkit-min-device-pixel-ratio: 3) {
+  .redpacket-password-container .redpacket-password-box .password-box span {
+    border-right: 1px solid #d9dde3;
+  }
+}
+.redpacket-password-container .redpacket-password-box .password-box .secret-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+.redpacket-password-container .redpacket-password-box .password-box .secret-box i {
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  width: 0.12266667rem;
+  height: 0.12266667rem;
+  justify-content: center;
+  overflow: hidden;
+}
+.redpacket-password-container .redpacket-password-box .password-box .secret-box i::after {
+  display: inline-block;
+  content: "";
+  width: 10px;
+  height: 10px;
+  background-color: #000000;
+  -webkit-border-radius: 50%;
+  border-radius: 50%;
+}
+.redpacket-password-container .password-num {
+  width: 100%;
+  overflow: hidden;
+  background-color: #ebebeb;
+  display: -webkit-flex;
+  display: flex;
+  flex-wrap: wrap;
+}
+.redpacket-password-container .password-num a {
+  display: -webkit-flex;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.048rem;
+  color: #000;
+  font-weight: bold;
+  width: 33.3333333%;
+  height: 0.144rem;
+  background-color: #ffffff;
+  border-right: 1px solid #f3f4f8;
+  border-bottom: 1px solid #f3f4f8;
+}
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  .redpacket-password-container .password-num a {
+    border-right: 0.5px solid #f3f4f8;
+  }
+}
+@media screen and (-webkit-min-device-pixel-ratio: 3) {
+  .redpacket-password-container .password-num a {
+    border-right: 1px solid #f3f4f8;
+  }
+}
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  .redpacket-password-container .password-num a {
+    border-bottom: 0.5px solid #f3f4f8;
+  }
+}
+@media screen and (-webkit-min-device-pixel-ratio: 3) {
+  .redpacket-password-container .password-num a {
+    border-bottom: 1px solid #f3f4f8;
+  }
+}
+.redpacket-password-container .password-num a:nth-child(10) {
+  background-color: #ebebeb;
+}
+.redpacket-password-container .password-num a:nth-child(12) {
+  background-color: #ebebeb;
+}
+.redpacket-password-container .password-num a:active {
+  background-color: #efefef;
+}
+.redpacket-password-container .password-num a img {
+  height: 0.05333333rem;
+}

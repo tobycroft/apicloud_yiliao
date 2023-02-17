@@ -1,0 +1,488 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body>
+    <div class="personal-info-container">
+        <div class="info-box">
+            <div class="avatar" id="avatar" style="border-radius: 50%;overflow: hidden" onclick="showPhoto()">
+                <!-- <img src="../../skin/default/images/chat/img_avatar.png"> -->
+            </div>
+            <div class="info">
+                <h3 id="nick"></h3>
+                <p id="nick_name">
+                    <font set-lang="text:nickname">昵称</font>：<em></em></p>
+                <p>AIM号: <span id="account"></span></p>
+            </div>
+        </div>
+        <!-- <div class="personal-sign">
+      <font set-lang="text:autograph">签名</font>：<span id="sign"></span>
+    </div> -->
+        <div class="personal-cell">
+            <div class="item friend_no" onclick="toCircle()">
+                <!-- <div class="item-left"><img src="../../skin/default/images/circle/icon_circle.png"></div> -->
+                <div class="item-middle" set-lang="text:friend_circle">朋友圈</div>
+                <div class="item-right">
+                    <div class="imgs" id="circle_photo">
+                        <!-- <a><img src="../../skin/default/images/chat/img_avatar.png"><i class="photo"></i></a>
+            <a><img src="../../skin/default/images/chat/img_avatar.png"><i class="photo"></i></a>
+            <a><img src="../../skin/default/images/chat/img_avatar.png"><i class="photo"></i></a>
+            <a><img src="../../skin/default/images/chat/img_avatar.png"><i class="photo"></i></a> -->
+                    </div><i></i>
+                </div>
+            </div>
+            <div class="item">
+                <!-- <div class="item-left"><img src="../../skin/default/images/circle/icon_limit.png"></div> -->
+                <div class="item-middle" set-lang="text:">个性签名</div>
+                <div class="item-right"><em id="sign"></em></div>
+            </div>
+            <!-- <div class="item no-mine friend_no" onclick="toSetCircle()">
+        <div class="item-left"><img src="../../skin/default/images/circle/icon_limit.png"></div>
+        <div class="item-middle" set-lang="text:set_friend_circle_permissions">设置朋友圈权限</div>
+        <div class="item-right"><em id="friend_circle"></em><i></i></div>
+      </div> -->
+            <div class="item no-mine friend_no" onclick="toFriend()">
+                <!-- <div class="item-left"><img src="../../skin/default/images/chat/icon_friend_card.png"></div> -->
+                <div class="item-middle" set-lang="text:friends_card">好友名片</div>
+                <div class="item-right"><i></i></div>
+            </div>
+            <div class="item no-mine friend_no" onclick="sendCard()">
+                <!-- <div class="item-left"><img src="../../skin/default/images/chat/icon_friend_card.png"></div> -->
+                <div class="item-middle" set-lang="text:">把Ta推荐给朋友</div>
+                <div class="item-right"><i></i></div>
+            </div>
+            <div class="item no-mine friend_no" onclick="toRemark()">
+                <!-- <div class="item-left"><img src="../../skin/default/images/chat/icon_remark.png"></div> -->
+                <div class="item-middle" set-lang="text:remark">备注</div>
+                <div class="item-right"><em id="remark"></em><i></i></div>
+            </div>
+            <div class="item no-mine friend_no">
+                <!-- <div class="item-left"><img src="../../skin/default/images/chat/icon_com_group.png"></div> -->
+                <div class="item-middle" set-lang="text:common_group">共同群组</div>
+                <div class="item-right"><em id="com_group_num">0</em><i></i></div>
+            </div>
+            <div class="item no-mine friend_no">
+                <!-- <div class="item-left"><img src="../../skin/default/images/chat/icon_add_blacklist.png"></div> -->
+                <div class="item-middle" set-lang="text:join_blacklist">加入黑名单</div>
+                <div class="item-right">
+                    <span class="switch" id="black" data-val="0"></span>
+                </div>
+            </div>
+            <div class="item no-mine friend_no" onclick="deleteFriend()">
+                <!-- <div class="item-left"><img src="../../skin/default/images/chat/icon_remark.png"></div> -->
+                <div class="item-middle" set-lang="text:delete_friend">删除好友</div>
+                <div class="item-right"><i></i></div>
+            </div>
+        </div>
+        <div class="btn-group no-mine">
+            <a class="primary friend_yes" onclick="send()" id="is_friend" style="display: none;" set-lang="text:send_message">发消息</a>
+            <a class="primary friend_no" onclick="add()" id="to_add" style="display: none;" set-lang="text:add_friend">添加好友</a>
+            <a class="primary friend_no" onclick="temporarySend()" id="temporary_send" style="display: none;" set-lang="text:">发临时消息</a>
+            <a class="primary friend_no" onclick="pass()" id="to_verify" style="display: none;" set-lang="text:accept_and_add_friend">接受并添加到通讯录</a>
+        </div>
+    </div>
+    <script type="text/html" id="circle_photo_html">
+        {{if data && data.length > 0}} {{each data}} {{if $value.media.length > 0 && $index
+        < 4}} <a style="background: url({{$value.media[0].thumb}}) no-repeat 50% 50%; background-size: cover;">
+            </a>
+            {{/if}} {{/each}} {{/if}}
+    </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var fid = '',
+        isChat = '',
+        remark = '';
+    apiready = function() {
+        api.parseTapmode();
+        init();
+        Pub.eventListen('personal_info', function() {
+            init();
+        });
+    }
+
+    function init() {
+        console.log(api.pageParam.id);
+        fid = api.pageParam.fid || api.pageParam.id;
+        var uid = $api.getStorage('uid');
+        if (uid == fid) {
+            $('.no-mine').hide();
+        }
+        getData();
+        isChat = api.pageParam.isChat;
+        //alert(isChat)
+        pullDown();
+        if (api.pageParam.isVerify) {
+            $('#to_verify').show();
+            $('#is_friend').hide();
+            $('#to_add').hide();
+            $('#temporary_send').hide();
+        } else {
+            $('#to_add').hide();
+            $('#temporary_send').hide();
+            isFriend(fid, function(res) {
+                console.log('是否好友' + JSON.stringify(res));
+                if (res.data) {
+                    $('#is_friend').show();
+                    $('#to_add').hide();
+                    $('#temporary_send').hide();
+                    Pub.eventSend('is_friend', {
+                        isFriend: true
+                    });
+                } else {
+                    $('.friend_no').hide();
+                    $('#is_friend').hide();
+                    $('#to_add').show();
+                    $('#temporary_send').show();
+                }
+            });
+        }
+        getCircle();
+        Pub.eventListen('circle_update', function() {
+            getCircle();
+        });
+    }
+
+    function getCircle() {
+        var params = {
+                user_id: fid,
+                page: 1
+            }
+            // Pub.post(Pub.apiChat +'friend_circle/history', params, function(res){
+            //   console.log('朋友圈' + JSON.stringify(res));
+            //   if(res.code == 0){
+            //     var html = template('circle_photo_html', res.data.data[0]);
+            //     $('#circle_photo').html(html);
+            //     Pub.setLang();
+            //   }
+            // });
+    }
+
+    function toCircle() {
+        Pub.openView('../circle/circle_personal_win', {
+            pageParam: {
+                userId: fid,
+                isToInfo: true
+            }
+        })
+    }
+
+    function toSetCircle() {
+        Pub.openFrame('./personal_info_circle_set', {}, {
+            bounces: false,
+            pageParam: {
+                userId: fid
+            }
+        });
+    }
+
+    function getData(callback) {
+        if (fid) {
+            var params = {
+                fid: fid
+            }
+            var data = {};
+            if ($api.getStorage(fid + '_user_info')) {
+                data = $api.getStorage(fid + '_user_info');
+                dataManage(data);
+            }
+            Pub.post(Pub.apiChat + 'friend/info/userinfo', params, function(res) {
+                console.log('好友信息:' + JSON.stringify(res));
+                if (res.code == 0) {
+                    data = res.data;
+                    dataManage(data)
+                }
+                if (callback && typeof callback == 'function') {
+                    callback(res);
+                }
+            });
+        }
+    }
+
+    function dataManage(data) {
+        var avatar = '';
+        if (data.face) {
+            if (data.face.indexOf('http') == -1) {
+                avatar = Pub.imgHost + data.face;
+            } else {
+                avatar = data.face;
+            }
+            $('#avatar').html('<img src="' + avatar + '">');
+        } else {
+            $('#avatar').html('<img src="../../icon/logo.png">');
+        }
+        if (data.is_remark) {
+            $('#nick').text(data.nickname);
+            $('#remark').text(data.nickname);
+            $('#nick_name').show();
+            $('#nick_name').find('em').text(data.uname);
+            remark = data.nickname;
+        } else {
+            $('#nick').text(data.uname);
+            $('#nick_name').hide();
+            $('#remark').text('');
+        }
+        if (data.is_black == 0) {
+            $('#black').removeClass('active');
+            $('#black').attr('data-val', 0);
+        } else {
+            $('#black').addClass('active');
+            $('#black').attr('data-val', 1);
+        }
+        var friendCircle = data.priv_for_firend_circle;
+        // if(friendCircle.hidden == 1 && friendCircle.shield == 0){
+        //   $('#friend_circle').text(Pub.getLang('donot_let_him_see_circle'));
+        // }else if(friendCircle.hidden == 0 && friendCircle.shield == 1){
+        //   $('#friend_circle').text(Pub.getLang('donot_look_his_circle'));
+        // }else{
+        //   $('#friend_circle').text('');
+        // }
+        $('#account').text(data.uid);
+        $('#com_group_num').text(data.share_group_count);
+        // var sex = data.sex;
+        // if(sex == 1){
+        //     $('#sex').text('男');
+        // }else if(sex==2){
+        //     $('#sex').text('女');
+        // }else{
+        //     $('#sex').text('');
+        // }
+        // $('#time_reg').text(Pub.toTime(data.date * 1000));
+        // $('#time_live').text(Pub.toTime(data.change_date * 1000));
+        $('#sign').text(data.introduction || Pub.getLang('nothing'));
+        var anynomousData = $api.getStorage(data.uid + "_anynomous");
+        if (anynomousData && (data.uname != anynomousData.uname || data.face != anynomousData.face)) {
+            $api.setStorage(data.uid + "_anynomous", data);
+            Pub.eventSend("update_userinfo");
+        } else {
+            $api.setStorage(data.uid + "_anynomous", data);
+        }
+        switchEvent();
+    }
+
+    function showPhoto() {
+        event.stopPropagation();
+        var _this = this;
+        var photos = [];
+        var img = $('#avatar').find('img').attr('src');
+        photos.push(img);
+        var photoBrowser = api.require("photoBrowser");
+        photoBrowser.open({
+            images: photos,
+            placeholderImg: '',
+            bgColor: '#000',
+            activeIndex: 0
+        }, function(ret, err) {
+            if (ret) {
+                if (ret.eventType == 'show') {}
+                if (ret.eventType == 'click') {
+                    photoBrowser.close();
+                }
+                // alert(JSON.stringify(ret));
+            } else {
+                // alert(JSON.stringify(err));
+            }
+        });
+
+    }
+
+    function isFriend(fid, callback) {
+        var params = {
+            fid: fid
+        }
+        Pub.post(Pub.apiChat + 'friend/friend/is_friend', params, function(res) {
+            console.log('是否好友:' + JSON.stringify(res));
+            if (res.code == 0) {
+                if (callback && typeof callback == 'function') {
+                    callback(res);
+                }
+            }
+        });
+    }
+
+    function toRemark() {
+        Pub.openView('./personal_remark_win', {
+            pageParam: {
+                fid: fid,
+                remark: remark
+            }
+        });
+    }
+
+    function toFriend() {
+        Pub.openView('./personal_qrcode_win', {
+            pageParam: {
+                fid: fid,
+                isStatus: true
+            }
+        });
+    }
+
+    function add() {
+        Pub.openView('./personal_add_verify_win', {
+            pageParam: {
+                fid: fid
+            }
+        });
+    }
+
+    function send() {
+        console.log(isChat);
+        if (isChat) {
+            api.closeWin();
+            Pub.setStatusBar();
+        } else {
+            var thisName = $('#nick').text();
+            var thisFid = fid;
+            Pub.eventSend('chat_window_load');
+            api.closeWin({
+                name: "chat_personal_win"
+            });
+            Pub.openView('./chat_personal_win', {
+                pageParam: {
+                    fid: thisFid,
+                    name: thisName,
+                    isStatus: true
+                }
+            });
+        }
+    }
+
+    function temporarySend() {
+        console.log(isChat);
+        if (isChat) {
+            api.closeWin();
+            Pub.setStatusBar();
+        } else {
+            var thisName = $('#nick').text();
+            var thisFid = fid;
+            Pub.eventSend('chat_window_load');
+            Pub.openView('./chat_personal_win', {
+                pageParam: {
+                    fid: thisFid,
+                    name: thisName,
+                    isStatus: true
+                }
+            });
+        }
+    }
+
+    function pass() {
+        var params = {
+            id: api.pageParam.passId,
+            approve: 1,
+            comment: ''
+        }
+        Pub.post(Pub.apiChat + 'request/request/operation', params, function(res) {
+            if (res.code == 0) {
+                Pub.msg(res.data || Pub.getLang('already_add_to_book'));
+                setTimeout(function() {
+                    api.closeWin();
+                    if (!api.pageParam.isStatus) {
+                        Pub.setStatusBar();
+                    }
+                }, 1000);
+            }
+        });
+    }
+
+    function deleteFriend() {
+        Pub.confirm(Pub.getLang('tips'), Pub.getLang('confirm_delete_friend'), function() {
+            var params = {
+                fid: fid
+            }
+            Pub.post(Pub.apiChat + 'friend/friend/delete', params, function(res) {
+                console.log(JSON.stringify(res));
+                if (res.code == 0) {
+                    Pub.msg(res.data || Pub.getLang('delete_success'));
+                    Pub.eventSend('book_load');
+                    Pub.openView('./personal_info_win', {
+                        pageParam: {
+                            fid: fid
+                        }
+                    });
+
+                }
+            });
+        });
+    }
+
+    function pullDown() {
+        Pub.pullDown(function() {
+            getData(function() {
+                Pub.pullDownDone();
+            });
+        });
+    }
+
+    function switchEvent() {
+        $('#black').off("click").on('click', function() {
+            //alert("cccccccccccccc");
+            var thisVal = $(this).attr('data-val');
+            var val = '';
+            if (thisVal == 0) {
+                val = 1;
+            } else {
+                val = 0;
+            }
+            $(this).attr('data-val', val);
+            console.log(thisVal);
+            var _this = this;
+            var params = {
+                fid: fid,
+                black: val
+            }
+            Pub.post(Pub.apiChat + 'friend/black/add', params, function(res) {
+                if (res.code == 0) {
+                    if ($(_this).hasClass('active')) {
+                        $(_this).removeClass('active');
+                    } else {
+                        $(_this).addClass('active');
+                    }
+                    Pub.eventSend("black_list_refresh");
+                }
+            });
+
+        });
+    }
+
+    function sendCard() {
+        Pub.openView('./transmit_win', {
+            pageParam: {
+                fid: fid,
+                shareType: "send_user_card"
+            }
+        });
+    }
+
+    function deleteFriend() {
+        event.stopPropagation();
+        Pub.confirm(Pub.getLang('tips'), Pub.getLang('confirm_delete_friend'), function() {
+            var params = {
+                fid: fid
+            }
+            Pub.post(Pub.apiChat + 'friend/friend/delete', params, function(res) {
+                console.log(JSON.stringify(res));
+                if (res.code == 0) {
+                    Pub.msg(res.data || Pub.getLang('delete_success'));
+                    Pub.eventSend('book_load');
+                    Pub.eventSend('personal_info');
+                    api.closeWin();
+                }
+            });
+        });
+    }
+</script>
+
+</html>

@@ -1,0 +1,85 @@
+<!doctype html>
+<html class="bg-transparent">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bg-transparent">
+    <div class="shade-black" style="display: block;" onclick="api.closeFrame()" tapmode></div>
+    <div class="circle-popup">
+      <a onclick="toSend()" set-lang="text:send_friendship_circle">发朋友圈</a>
+      <a onclick="changeBg()" set-lang="text:change_background">更换背景</a>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        Pub.eventListen('circle_info_update', function(){
+          api.closeFrame();
+
+        });
+    }
+    function toSend(){
+      Pub.openView('./circle_send_win', {
+        pageParam: api.pageParam
+      });
+      setTimeout(function(){
+        api.closeFrame();
+      }, 1000);
+    }
+    function changeBg(){
+      api.actionSheet({
+        title: Pub.getLang('choose_picture'),
+        cancelTitle: Pub.getLang('cancel'),
+        buttons: [Pub.getLang('image_library'), Pub.getLang('camera'), Pub.getLang('album')]
+        }, function(ret, err) {
+            console.log(JSON.stringify(ret))
+            console.log(JSON.stringify(err))
+            var index = ret.buttonIndex;
+            var sourceType =['library' , 'camera' ,'album'];
+            var btnIndex = index - 1;
+            if(index>3){
+              return;
+            }else{
+              api.getPicture({
+                sourceType: sourceType[btnIndex],
+                encodingType: 'jpg',
+                mediaValue: 'pic',
+                destinationType: 'url',
+                allowEdit: false,
+                quality: 100,
+                saveToPhotoAlbum: false
+            }, function(ret, err) {
+                if(ret.data){
+                  var param = api.pageParam;
+                  param.url = ret.data
+                    Pub.openView('./circle_clipper_win', {
+                        pageParam: param
+                    });
+                }
+            });
+            }
+        });
+    }
+    function updateAvatar(img){
+        var params = {
+            face: img
+        }
+        Pub.post(Pub.apiChat +'user/edit/edit_face', params, function(res){
+            if(res.code == 0){
+                Pub.msg(res.data || Pub.getLang('modify_successfully'));
+            }
+        });
+    }
+</script>
+
+</html>

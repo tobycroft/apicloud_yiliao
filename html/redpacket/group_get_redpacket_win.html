@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body>
+  <header class="redpacket white-mode" id="header">
+      <div class="header">
+          <div class="header-left">
+            <a onclick="closeWin()" set-lang="text:close">关闭<a>
+          </div>
+          <div class="header-middle" set-lang="text:red_envelopes">红包</div>
+          <div class="header-right" onclick="Pub.openView('./redpacket_record_win')">
+              <a set-lang="text:red_pack_received">收到的红包</a>
+          </div>
+      </div>
+  </header>
+
+
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    var isFilter = false;
+    apiready = function() {
+        api.parseTapmode();
+        Pub.setStatusBar();
+        var header = $api.byId('header');
+        $api.fixStatusBar(header);
+        var headerPos = $api.offset(header);
+        openFrame(headerPos);
+    }
+
+    function openFrame(headerPos) {
+        Pub.openFrame('./group_get_redpacket_frm', {
+            headerPos: headerPos
+        }, {
+            bounces: false,
+            pageParam: api.pageParam
+        })
+    }
+    function closeWin() {
+        api.closeWin();
+    }
+</script>
+
+</html>

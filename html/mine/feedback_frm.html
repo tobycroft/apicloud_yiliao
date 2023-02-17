@@ -1,0 +1,79 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-white">
+  <div id="app">
+    <template>
+      <div class="feedback-container">
+          <div class="title">
+              <div class="aui-list-item-input">
+                      <input type="text" :placeholder="lang.title" v-model="title">
+              </div>
+          </div>
+          <div class="textarea">
+              <textarea :placeholder="lang.please_describe_your_problem" v-model="content"></textarea>
+          </div>
+          <!-- <div class="review">
+              客服回答：
+          </div> -->
+          <div class="btn-lg-primary my-btn" @click="clickSubmit">{{lang.submit}}</div>
+      </div>
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      var app = new Vue({
+        el: '#app',
+        data: {
+          title: '',
+          content: '',
+          lang: {
+            title: Pub.getLang('title'),
+            please_describe_your_problem: Pub.getLang('please_describe_your_problem'),
+            submit: Pub.getLang('submit'),
+
+          }
+        },
+        mounted: function(){
+
+        },
+        methods: {
+          clickSubmit: function(){
+            var _this = this;
+            if(!this.title) return Pub.msg(Pub.getLang('please_enter_title'));
+            if(!this.content) return Pub.msg(Pub.getLang('please_describe_your_problem'));
+            var params = {
+              t: this.title,
+              q: this.content,
+            }
+            Pub.post('report/question', params, function(res){
+              if(res.code == 0){
+                Pub.msg(res.data);
+                _this.title = '';
+                _this.content = '';
+              }
+            });
+          }
+        }
+      });
+    }
+
+</script>
+
+</html>

@@ -1,0 +1,38 @@
+<!doctype html>
+<html class="bg-transparent">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bg-transparent">
+    <div class="index-popup-bg" onclick="closePopup()"></div>
+    <div class="index-popup" style="top: 0; right: 0;">
+        <div class="item open-view" href="./get_redpacket_record_win">
+            <div class="name" set-lang="text:red_pack_received">收到的红包</div>
+        </div>
+        <div class="item open-view" href="./give_redpacket_record_win">
+            <div class="name" set-lang="text:send_red_envelop">发出的红包</div>
+        </div>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        Pub.setStatusBar('dark');
+        Pub.openHref();
+    }
+    function closePopup(){
+        api.closeFrame();
+    }
+</script>
+
+</html>

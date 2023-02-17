@@ -1,0 +1,94 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-white">
+  <header id="header">
+    <div class="header">
+      <div class="header-left">
+        <a onclick="closeWin()"><i class="return"></i></a>
+      </div>
+      <div class="header-middle" id="name"></div>
+      <div class="header-right" onclick="toInfo()"><img src="../../skin/default/images/circle/icon_omit_black.png" alt=""></div>
+    </div>
+  </header>
+
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+var isShowPhoto = false;
+var unsendArr = [];
+apiready = function() {
+    api.parseTapmode();
+    Pub.setStatusBar();
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    var headerPos = $api.offset(header);
+    openFrame(headerPos);
+    if(api.pageParam.name){
+        $('#name').text(api.pageParam.name);
+    }
+    Pub.eventListen('get_redpacket', function(data){
+        openRedpacket(data.value);
+    });
+    Pub.eventListen("unsendArr",function(ret){
+      unsendArr = ret.value.unsendArr;
+    });
+    Pub.eventListen("personal_info",function(ret){
+      if(ret.value.uid == api.pageParam.fid){
+        $('#name').text(ret.value.nickname);
+      }
+    })
+    Pub.eventListen('keyback', function(){
+      if(isShowPhoto){
+        api.closeFrame({
+            name: 'photo_show_frm'
+        });
+        Pub.eventSend('personal_photo_close');
+      }else{
+        closeWin();
+      }
+    });
+    Pub.eventListen('personal_photo_status', function(ret){
+      isShowPhoto = ret.value.isShowPhoto;
+    });
+}
+function openFrame(headerPos){
+    Pub.openFrame('./chat_personal_frm',{headerPos:headerPos},{bounces:true, reload: false, allowEdit: true, pageParam: api.pageParam});
+}
+function openRedpacket(params){
+     Pub.openFrame('../redpacket/redpacket_popup',{},{bounces:false, bgColor:'transparent', pageParam: params})
+}
+function closeWin() {
+    if(unsendArr.length>0){
+      Pub.confirm('提示','有数据正在传输，如果此时关闭页面有可能导致数据传输失败！',function(){
+        exit();
+      })
+    }else{
+      exit();
+    }
+}
+function exit(){
+  Pub.eventSend('close_chat_personal');
+  Pub.eventSend('close_chat_personal_home', {
+    id: api.pageParam.fid
+  });
+  if(api.pageParam.isStatus){
+    Pub.setStatusBar();
+  }
+  api.closeWin();
+}
+function toInfo(){
+  Pub.eventSend("to_personal_info");
+}
+</script>
+
+</html>

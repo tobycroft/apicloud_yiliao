@@ -1,0 +1,105 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-white">
+  <header id="header">
+    <div class="header">
+      <div class="header-left">
+        <a onclick="closeWin()"><i class="return"></i></a>
+      </div>
+      <div class="header-middle" id="name"></div>
+      <div class="header-right">
+        <a onclick="toGroupInfo()" tapmode><img src="../../skin/default/images/icon/icon_more.png"/></a>
+      </div>
+    </div>
+  </header>
+
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+var isShowPhoto = false;
+var unsendArr = [];
+apiready = function() {
+    api.parseTapmode();
+    Pub.setStatusBar();
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    var headerPos = $api.offset(header);
+    openFrame(headerPos);
+    if(api.pageParam.name){
+        $('#name').text(api.pageParam.name);
+        if(api.pageParam.memberNum){
+          $('#name').text(api.pageParam.name + "("+api.pageParam.memberNum+")");
+        }
+    }
+    // var imgAvatar = api.pageParam.img;
+    // if(imgAvatar){
+    //   var avatar = '';
+    //   if(imgAvatar.indexOf('http') == -1){
+    //     avatar = Pub.imgHost + imgAvatar;
+    //   }else{
+    //     avatar = imgAvatar;
+    //   }
+    //   $('#avatar').attr('src', avatar);
+    // }
+    Pub.eventListen('get_redpacket', function(data){
+        openRedpacket(data.value);
+    });
+    Pub.eventListen("unsendArr",function(ret){
+      unsendArr = ret.value.unsendArr;
+    });
+    Pub.eventListen('keyback', function(){
+      if(isShowPhoto){
+        api.closeFrame({
+            name: 'photo_show_frm'
+        });
+        Pub.eventSend('group_photo_close');
+      }else{
+        closeWin();
+      }
+    });
+    Pub.eventListen('group_photo_status', function(ret){
+      isShowPhoto = ret.value.isShowPhoto;
+    });
+}
+function openFrame(headerPos, footerPos, isSafe){
+     Pub.openFrame('./chat_group_frm',{headerPos:headerPos},{bounces:true, reload: false, bgColor:'transparent', pageParam: api.pageParam});
+}
+function openRedpacket(params){
+     Pub.openFrame('../redpacket/group_redpacket_popup',{},{bounces:false, bgColor:'transparent', pageParam: params})
+}
+function toGroupInfo(){
+    api.pageParam.hasFrame = true;
+    console.log(JSON.stringify(api.pageParam));
+    Pub.openView('./group_info_win', {
+        pageParam: api.pageParam
+    });
+}
+function closeWin() {
+    if(unsendArr.length>0){
+      Pub.confirm('提示','有数据正在传输，如果此时关闭页面有可能导致数据传输失败！',function(){
+        exit();
+      })
+    }else{
+      exit();
+    }
+}
+function exit(){
+  Pub.eventSend('close_chat_group');
+  Pub.eventSend('close_chat_group_home', {
+    id: api.pageParam.id
+  });
+  api.closeWin();
+}
+</script>
+
+</html>

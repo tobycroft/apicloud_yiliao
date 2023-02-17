@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-box" id="header">
+          <div class="header">
+              <div class="header-left">
+                  <i class="return" onclick="closeWin()"></i>
+              </div>
+              <div class="header-middle" set-lang="text:change_background">更换背景</div>
+            <div class="header-right" onclick="save()"><a set-lang="text:save">保存</a></div>
+          </div>
+        </div>
+    </header>
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+apiready = function() {
+    api.parseTapmode();
+    Pub.changeStatusBar();
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    var headerPos = $api.offset(header);
+    openFrame(headerPos);
+    if(api.pageParam.headerStatus == 2){
+      Pub.keybackClose();
+    }else{
+      Pub.keybackClose(true);
+    }
+}
+function openFrame(headerPos){
+     Pub.openFrame('./circle_clipper_frm',{headerPos:headerPos},{bounces:false, pageParam: api.pageParam})
+}
+function save(){
+    Pub.eventSend('circle_bg_clip');
+}
+function closeWin() {
+  var headerStatus = api.pageParam.headerStatus;
+  if(headerStatus){
+    if(headerStatus == 2){
+      Pub.setStatusBar();
+    }else{
+      Pub.changeStatusBar();
+    }
+  }else{
+    Pub.setStatusBar();
+  }
+    api.closeWin();
+}
+</script>
+</html>

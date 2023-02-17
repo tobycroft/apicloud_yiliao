@@ -1,0 +1,353 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <div class="group-member-remove">
+    <ul id="member_list">
+      <!-- <li>
+        <div class="check active"><i></i></div>
+        <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+        <div class="name">阿大葱</div>
+      </li>
+      <li>
+        <div class="check"><i></i></div>
+        <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+        <div class="name">阿大葱</div>
+      </li>
+      <li>
+        <div class="check"><i></i></div>
+        <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+        <div class="name">阿大葱</div>
+      </li>
+      <li>
+        <div class="check"><i></i></div>
+        <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+        <div class="name">阿大葱</div>
+      </li>
+      <li>
+        <div class="check"><i></i></div>
+        <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+        <div class="name">阿大葱</div>
+      </li> -->
+    </ul>
+  </div>
+  <!-- <script type="text/html" id="member_list_html">
+    {{if data.length > 0}}
+      {{each data}}
+        {{if data.type == "private"}}
+          <li>
+            <div class="check" data-fid="{{$value.user_info.uid}}" data-name="{{$value.user_info.uname}}"><i></i></div>
+            <div class="avatar"><img src="{{$value.user_info.face}}" class="img_url"></div>
+            <div class="name">{{$value.user_info.uname}}</div>
+          </li>
+        {{/if}}
+      {{/each}}
+    {{/if}}
+  </script>
+  <script type="text/html" id="member_list_html2">
+    {{if data.length > 0}}
+      {{each data}}
+        <li>
+          <div class="check" data-gid="{{$value.gid}}" data-name="{{$value.group_info.group_name}}"><i></i></div>
+          <div class="avatar"><img src="{{$value.group_info.img}}" class="img_url"></div>
+          <div class="name">{{$value.group_info.group_name}}</div>
+        </li>
+      {{/each}}
+    {{/if}}
+  </script> -->
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var memberData = {}, searchData = {}, fidArr = [],gidArr = [];
+    var msgId, msgType, uid, friendData = {}, groupData = {};
+    var id = '';
+    apiready = function() {
+        api.parseTapmode();
+        uid = $api.getStorage('uid');
+        if(api.pageParam.shareType == "message"){
+          msgId = api.pageParam.msgId;
+          msgType = api.pageParam.msgType;
+          id = api.pageParam.id;
+        }
+        getMember();
+        Pub.eventListen('member_share_search', function(ret){
+            search(ret.value.words)
+        });
+        Pub.eventListen('share_choose_all', function(ret){
+          console.log(ret.value.all);
+            if(ret.value.all == "1"){
+              fidArr = [];gidArr = [];
+              $('.check').each(function(){
+                $(this).addClass('active');
+                var thisFid = $(this).attr('data-fid');
+                var thisGid = $(this).attr('data-gid');
+                var name = $(this).attr('data-name');
+                var type = $(this).attr('data-type');
+                if(type == "private"){
+                  fidArr = fidArr.concat(thisFid);
+                }else{
+                  gidArr = gidArr.concat(thisGid);
+                }
+              })
+            }else{
+              $('.check').each(function(){
+                $(this).removeClass('active');
+                var thisFid = $(this).attr('data-fid');
+                var thisGid = $(this).attr('data-gid');
+                var name = $(this).attr('data-name');
+                var type = $(this).attr('data-type');
+                if(type == "private"){
+                  fidArr = Pub.deleteByValue(fidArr, thisFid);
+                }else{
+                  gidArr = Pub.deleteByValue(gidArr, thisGid);
+                }
+              })
+            }
+        });
+        Pub.eventListen('group_member_share', function(){
+          if(gidArr.length == 0 && fidArr.length == 0) return Pub.msg("请选择好友或群！");
+          if(fidArr.length > 0){
+            shareFriend(fidArr,"single",msgId,msgType);
+          }
+          if(gidArr.length>0){
+            shareFriend(gidArr,"group",msgId,msgType);
+          }
+        })
+    }
+    function getFriendData(){
+      if($api.getStorage(uid+"_friendList")){
+        friendData = $api.getStorage(uid+"_friendList");
+      }
+      Pub.post(Pub.apiChat +'friend/friend/list2', {}, function(res){
+        console.log('好友列表:' + JSON.stringify(res));
+          if(res.code == 0){
+            friendData = res.data;
+            $api.setStorage(uid+"_friendList", res.data);
+          }
+      })
+    };
+    function getGroupData(){
+      if($api.getStorage(uid+"_groupList")){
+        var data = $api.getStorage(uid+"_groupList");
+        var ownerD = data.owner;
+        var adminD = data.admin;
+        var memberD = data.member;
+        groupData = ownerD.concat(adminD.concat(memberD));
+        for(var i = 0;i < groupData.length;i++){
+          if($api.getStorage(groupData[i].id + "_group_members")){
+            var data = $api.getStorage(groupData[i].id + "_group_members");
+            groupData[i].member_count = data.length;
+          }
+        }
+      }
+      Pub.post('group/info/list2', {}, function(res) {
+        if (res.code == 0) {
+          //_this.groupData = res.data;
+          var ownerD = res.data.owner;
+          var adminD = res.data.admin;
+          var memberD = res.data.member;
+          groupData = ownerD.concat(adminD.concat(memberD));
+          $api.setStorage(uid+"_groupList", res.data);
+          for(var i = 0;i < groupData.length;i++){
+            if($api.getStorage(groupData[i].id + "_group_members")){
+              var data = $api.getStorage(groupData[i].id + "_group_members");
+              groupData[i].member_count = data.length;
+            }
+          }
+        }
+      });
+      console.log(JSON.stringify(groupData));
+    };
+    function getMember(){
+      getFriendData();
+      getGroupData();
+      memberData = friendData.concat(groupData);
+      //memberData = res.data
+      getData(memberData)
+      checkEvent();
+
+    }
+    function search(words){
+        console.log(words);
+        var memberArr = memberData;
+        var searchArr = [];
+        if(words){
+            for(var i = 0; i<memberArr.length; i++){
+                if(memberArr[i].type == "private"){
+                  if(memberArr[i].uname.indexOf(words) > -1){
+                      searchArr.push(memberArr[i]);
+                  }
+                }else{
+                  if(memberArr[i].group_name.indexOf(words) > -1){
+                      searchArr.push(memberArr[i]);
+                  }
+                }
+            }
+            if(searchArr.length == 0) return Pub.msg(Pub.getLang('search_nothing'));
+            searchData = searchArr;
+        }else{
+            searchData = memberData;
+        }
+        // var html = template('member_list_html', searchData);
+        // $('#member_list').html(html);
+        // Pub.setLang();
+        // $('.img_url').each(function(){
+        //     var thisSrc = $(this).attr('src');
+        //     if(thisSrc){
+        //         if(thisSrc.indexOf('http') == -1){
+        //             $(this).attr('src', Pub.imgHost + thisSrc);
+        //         }
+        //     }else{
+        //         $(this).attr('src', '../../skin/default/images/chat/default_avatar.png');
+        //     }
+        // });
+        getData(searchData);
+        checkEvent();
+    }
+    function checkEvent(){
+      $('.item').on('click', function(e){
+          e.stopPropagation();
+          var thisFid = $(this).find(".check").attr('data-fid');
+          var thisGid = $(this).find(".check").attr('data-gid');
+          var name = $(this).find(".check").attr('data-name');
+          var type = $(this).find(".check").attr('data-type');
+          if($(this).find(".check").hasClass('active')){
+              $(this).find(".check").removeClass('active');
+              if(type == "private"){
+                fidArr = Pub.deleteByValue(fidArr, thisFid);
+              }else{
+                gidArr = Pub.deleteByValue(gidArr, thisGid);
+              }
+          }else{
+              $(this).find(".check").addClass('active');
+              if(type == "private"){
+                fidArr = fidArr.concat(thisFid);
+              }else{
+                gidArr = gidArr.concat(thisGid);
+              }
+
+          }
+      });
+    }
+    // function isFriend(fid, callback){
+    //     var params = {
+    //         fid: fid
+    //     }
+    //     Pub.post(Pub.apiChat +'friend/friend/is_friend', params, function(res){
+    //         console.log('是否好友:' + JSON.stringify(res));
+    //         if(res.code == 0){
+    //             if(callback && typeof callback == 'function'){
+    //                 callback(res);
+    //             }
+    //         }
+    //     });
+    // }
+    function groupInvite(){
+        Pub.openView('./group_invite_win');
+    }
+    function getData(data) {
+      var html = "";
+      console.log(JSON.stringify(data));
+      for(var i = 0; i<data.length;i++){
+          if(data[i].gid){
+            html +='<li class="item">\
+              <div class="check" data-gid="'+data[i].gid+'" data-name="'+data[i].group_name+'" data-type="group"><i></i></div>\
+              <div class="avatar"><img src="'+data[i].img+'" class="img_url"></div>\
+              <div class="name">'+data[i].group_name+'</div>\
+            </li>'
+          }else{
+            html += '<li class="item">\
+              <div class="check" data-fid="'+data[i].uid+'" data-name="'+data[i].uname+'" data-type="private"><i></i></div>\
+              <div class="avatar"><img src="'+data[i].face+'" class="img_url"></div>\
+              <div class="name">'+data[i].uname+'</div>\
+            </li>'
+          }
+      }
+      $("#member_list").html(html);
+      $('.img_url').each(function(){
+          var thisSrc = $(this).attr('src');
+          if(thisSrc){
+              if(thisSrc.indexOf('http') == -1){
+                  $(this).attr('src', Pub.imgHost + thisSrc);
+              }
+          }else{
+              $(this).attr('src', '../../skin/default/images/chat/default_avatar.png');
+          }
+      });
+    }
+    function shareFriend(arr, type, msgId, msgType){
+      console.log(arr);
+      for(var i = 0;i<arr.length;i++){
+        var params = {
+          //forward_type: type,
+          //forward_id: arr[i],
+          //msg_type: msgType,
+          msg_id: msgId,
+          ident: (new Date()).valueOf(),
+          dest_type: type,
+          dest: arr[i],
+        }
+        if(i<arr.length-1){
+          if(msgType == "group"){
+            params.gid = id;
+            Pub.post(Pub.apiChat +'chat/group/transfer', params, function(res){
+              if(res.code == 0){
+                if(params.dest == id){
+                  Pub.eventSend("chat_group_init");
+                }
+              }
+            });
+          }else{
+            params.fid = id;
+            Pub.post(Pub.apiChat +'chat/single/transfer', params, function(res){
+              if(res.code == 0){
+                if(params.dest == id){
+                  Pub.eventSend("chat_personal_init");
+                }
+              }
+            });
+          }
+        }else{
+          if(msgType == "group"){
+            params.gid = id;
+            Pub.post(Pub.apiChat +'chat/group/transfer', params, function(res){
+              if(res.code == 0){
+                if(params.dest == id){
+                  Pub.eventSend("chat_group_init");
+                }
+                Pub.msg("发送成功！");
+                setTimeout(function(){
+                  api.closeWin();
+                },1000)
+              }
+            });
+          }else{
+            params.fid = id;
+            Pub.post(Pub.apiChat +'chat/single/transfer', params, function(res){
+              if(res.code == 0){
+                if(params.dest == id){
+                  Pub.eventSend("chat_personal_init");
+                }
+                Pub.msg("发送成功！");
+                setTimeout(function(){
+                  api.closeWin();
+                },1000)
+              }
+            });
+          }
+        }
+      }
+    }
+</script>
+
+</html>

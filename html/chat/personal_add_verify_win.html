@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <header id="header">
+    <div class="header">
+      <div class="header-left">
+        <a onclick="closeWin()"><i class="return"></i></a>
+      </div>
+      <div class="header-middle" set-lang="text:friend_verification">好友验证</div>
+    </div>
+  </header>
+
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+apiready = function() {
+    api.parseTapmode();
+    Pub.setStatusBar();
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    var headerPos = $api.offset(header);
+    openFrame(headerPos);
+}
+function openFrame(headerPos){
+    Pub.openFrame('./personal_add_verify_frm',{headerPos:headerPos},{bounces:false, pageParam: api.pageParam, bgColor: '#fff'});
+}
+function closeWin() {
+    api.closeWin();
+}
+</script>
+
+</html>

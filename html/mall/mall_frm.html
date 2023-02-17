@@ -1,0 +1,187 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="" class="bgc-white">
+  <div id="app">
+    <template>
+      <div class="mall-home-container">
+        <div class="find-banner" @touchstart="touchstartBanner" @touchend="touchendBanner">
+          <div class="swiper-container">
+            <div class="swiper-wrapper">
+              <div class="swiper-slide" v-for="(item,index) in bannerData" :key="index">
+                <!-- <img :src="(item.pic.indexOf('http') == -1)?(imgHost + item.pic):item.pic"> -->
+                <img :src="item.pic">
+              </div>
+            </div>
+            <div class="swiper-pagination"></div>
+          </div>
+        </div>
+        <div class="goods-type" v-for="(item,index) in goodsTypeData" :key="index">
+          <span class="ele" @click="toGoodsType(item.cata_id,item.cname)">
+            <img :src="item.img" alt="">
+            <br/>
+            <span>{{item.cname}}</span>
+          </span>
+        </div>
+        <div class="mall-lists-container">
+          <div class="list-content">
+            <div class="item" v-for="(item,index) in goodsData" :key="index" @click="toDetail(item.id,item.cata_id)">
+              <div class="img">
+                <img :src="item.img" alt="">
+              </div>
+              <div class="info">
+                <p class="name"><span>{{item.cname}}</span></p>
+                <p class="price">￥{{item.price}}</p>
+              </div>
+            </div>
+            <div class="tip" set-lang="text:All_items_loaded" v-show="isAll">已加载所有商品</div>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/swiper.min.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script src="../../script/vue-lazyload.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      Vue.use(VueLazyload, {
+        error: '../../icon/error.png',
+        loading: '../../icon/loading.gif'
+      });
+      var app = new Vue({
+        el: "#app",
+        data: {
+          imgHost: Pub.imgHost,
+          bannerData: [],
+          goodsTypeData: [],
+          goodsData:[],
+          page: 1,
+          limit: 10,
+          isAll: false,
+        },
+        mounted: function(){
+          var _this = this;
+          this.getBanner();
+          this.getGoodsType();
+          this.getGoodsList();
+          this.pullDown();
+          this.pullUp();
+        },
+        methods:{
+          getBanner: function() {
+              var _this = this;
+              _this.bannerData = [{"pic":"../../skin/default/images/mall/banner1.png"},{"pic":"../../skin/default/images/mall/banner2.png"},{"pic":"../../skin/default/images/mall/banner3.png"}]
+              _this.$nextTick(function() {
+                  _this.swiperEvent();
+              });
+              // Pub.post('community/index/get_slideshow', {}, function(res) {
+              //     if (res.code == 0) {
+              //         _this.bannerData = res.data;
+              //         _this.$nextTick(function() {
+              //             _this.swiperEvent();
+              //         });
+              //     }
+              // });
+          },
+          swiperEvent: function() {
+              var swiper = new Swiper('.swiper-container', {
+                  centeredSlides: true,
+                  spaceBetween: 0,
+                  slidesPerView: 'auto',
+                  loop: true,
+                  autoplay: true,
+                  observer: true,
+                  observeParents: true,
+                  pagination: {
+                      el: '.swiper-pagination',
+                  },
+              })
+          },
+          touchstartBanner: function(e) {
+              e.preventDefault();
+              api.setFrameAttr({
+                  name: 'find_frm',
+                  bounces: false,
+              });
+          },
+          touchendBanner: function(e) {
+              e.preventDefault();
+              api.setFrameAttr({
+                  name: 'find_frm',
+                  bounces: true,
+              });
+          },
+          getGoodsType:function(){
+            var _this = this;
+            Pub.post(Pub.imgHost + 'shop/cata/index/list', {}, function(res) {
+                if (res.code == 0) {
+                    _this.goodsTypeData = res.data;
+                }
+            });
+          },
+          getGoodsList:function(callback){
+            var _this = this;
+            Pub.post(Pub.imgHost + 'shop/item/index/list', {page:_this.page,limit:_this.limit}, function(res) {
+                if (res.code == 0) {
+                    if(res.data.length == 0){
+                      _this.isAll = true;
+                    }else{
+                      _this.goodsData = _this.goodsData.concat(res.data);
+
+                    }
+                    if(typeof callback == 'function'){
+                        callback();
+                    }
+                }
+            });
+          },
+          toDetail:function(id,cata_id){
+            var _this = this;
+            Pub.openView("./goods_detail_win",{pageParam:{id:id,cata_id:cata_id}});
+          },
+          pullDown: function() {
+              var _this = this;
+              Pub.pullDown(function() {
+                _this.page = 1;
+                _this.isAll = false;
+                  _this.goodsData = [];
+                  _this.getGoodsList();
+                  Pub.pullDownDone();
+              });
+          },
+          pullUp: function(){
+            var _this = this;
+            Pub.pullUp(function(){
+              if(!_this.isAll){
+                _this.page++;
+                _this.getGoodsList();
+              }
+            });
+          },
+          toGoodsType: function(cata_id,cname){
+            var _this = this;
+            Pub.openView("./goods_type_win",{pageParam:{cata_id:cata_id,cname:cname}});
+          }
+        }
+      })
+    }
+</script>
+
+</html>

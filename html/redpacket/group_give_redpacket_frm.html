@@ -1,0 +1,356 @@
+<!doctype html>
+<html class="bgc-white-dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bgc-white-dark">
+    <div class="redpacket-form">
+        <div class="item">
+            <div class="name" set-lang="text:send_out">发送</div>
+            <div class="input-box">
+                <select id="coin_list">
+                </select>
+            </div>
+            <div class="icon" id="coin_img" style="display:none;">
+
+            </div>
+        </div>
+        <!-- <div class="tips">手续费：<span id="service">0.00</span></div> -->
+        <div class="item">
+            <div class="name" set-lang="text:" id="amountText">总金额</div>
+            <div class="input-box">
+                <input type="number" placeholder="请填写金额" id="amount" set-lang="placeholder:Amount" onkeyup="clearNoNum(this)">
+            </div>
+        </div>
+        <div class="tips"><font set-lang="text:currently_for">当前为</font><span id="cur_name">拼手气红包</span>，<a id="change_name">改为普通红包</a></div>
+        <div class="item">
+            <div class="name" set-lang="text:">红包个数</div>
+            <div class="input-box">
+                <input type="tel" onkeyup='this.value=this.value.replace(/\D/gi,"")' placeholder="请填写个数" set-lang="placeholder:please_fill_in_number" id="number">
+            </div>
+        </div>
+        <div class="tips"><font set-lang="text:this_group">本群共</font><span id="group_num">1</span><font set-lang="text:people">人</font></div>
+        <!-- <div class="item">
+            <div class="name">短信验证码</div>
+            <div class="input-box">
+                <input type="tel" placeholder="请短信验证码" id="code" style="text-align: left;">
+            </div>
+            <div class="handle" onclick="getSms(this)">获取验证码</div>
+        </div> -->
+        <!-- <div class="red-box">
+            <div class="title">热门封皮</div>
+            <div class="box">
+                <div class="box-item">
+                    <div class="redpacket active">
+                        <div class="icon" id="coin_img">
+
+                        </div>
+                        <div class="font">
+                            <h4 id="pack_font">恭喜发财</h4>
+                            <p>查看红包</p>
+                        </div>
+                    </div>
+                    <h3>默认封面</h3>
+                </div>
+            </div>
+        </div> -->
+        <!-- <div class="item">
+            <div class="name">备注</div>
+            <div class="input-box">
+                <input type="text" maxlength="12" placeholder="恭喜发财" id="pack_text">
+            </div>
+        </div> -->
+        <div class="textarea">
+          <textarea id="pack_text" placeholder="恭喜发财，大吉大利" set-lang="placeholder:congratulations"></textarea>
+          <span style="display: none"><em id="textarea_num">0</em>/25</span>
+        </div>
+        <div class="tips">未领取的红包，将于24小时后自动退回账户</div>
+    </div><br />
+    <div class="btn-group">
+      <a class="redpacket my-btn" onclick="clickSubmit()" set-lang="text:stuff_red_packet">塞入红包</a>
+    </div><br />
+    <script type="text/html" id="coin_list_html">
+        {{if data.length > 0}}
+            {{each data}}
+                <option value="{{$value.cid}}" data-img="{{$value.img}}" data-balance="{{$value.balance}}">{{$value.coin_info.cname}}</option>
+            {{/each}}
+        {{/if}}
+    </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var gid = '', coinId = '', coinBalance = '', coinImg = '', type = "lucky", mobile = '';
+    var isWaiting = false;
+    var smsCode = null;
+    apiready = function() {
+        api.parseTapmode();
+        gid = api.pageParam.gid;
+        getGroupData();
+        inputEvent();
+        changeType();
+        // getMemberInfo();
+        getData();
+    }
+    function changeType(){
+      $('#change_name').on('click', function(){
+        if(type == "common"){
+          type = "lucky";
+          $(this).text(Pub.getLang('change_normal_red_envelope'));
+          $('#cur_name').text(Pub.getLang('lucky_red_envelop'));
+          $("#amountText").text("总金额");
+        }else{
+          type = "common";
+          $(this).text(Pub.getLang('change_lucky_red_evelope'));
+          $('#cur_name').text(Pub.getLang('normal_red_evelop'));
+          $("#amountText").text("单个金额");
+        }
+      });
+    }
+    function getSms(el){
+        // if ( !$api.regex.rgMobile.test(mobile) ) return $api.apitoast($api.getLang('msg_true_mobile'));
+        // if(!mobile){
+        //   return Pub.alert('提示', '您没有绑定手机号码，无法使用此功能', function(){
+        //     api.closeWin();
+        //   });
+        // }
+        if (isWaiting) return;
+        var _el=el;
+        var telephone = {
+          uid: $api.getStorage('uid'),
+          // phone: mobile,
+          type: 'group',
+          tkey: 'test1936'
+        }
+        console.log(JSON.stringify(telephone))
+        Pub.post(Pub.apiChat +'packs/sms_code', telephone, function(ret,err){
+            console.log(JSON.stringify(ret))
+            if (parseInt(ret.code) === 0) {
+                $api.apitoast(ret.data || Pub.getLang('msg_sended'));
+                isWaiting = true;
+                remainTime(_el);
+            }else{
+              setTimeout(function(){
+                return Pub.getLang('msg_send_fail');
+              }, 1);
+            }
+        })
+    }
+    function remainTime(el){
+        var time = 60;
+        var interval = setInterval(function(){
+            $api.text(el,  (time--) +'s');
+            if ( time < 0 ) {
+                clearInterval(interval);
+                $api.text(el, '获取验证码');
+                isWaiting = false;
+            }
+        },1000)
+    }
+    function getMemberInfo() {
+      var params = {
+        uid: $api.getStorage('uid')
+      }
+      $api.ajax('/v1/user/user_info', params, function (res) {
+        console.log('用户信息' + JSON.stringify(res))
+        if (res.code == 0) {
+          mobile = res.data.phone;
+        }else{
+          Pub.alert('提示', '您没有绑定手机号码，无法使用此功能', function(){
+            api.closeWin();
+          });
+        }
+      })
+    }
+    function getData(){
+        var params = {
+          tkey: 'test1936'
+        }
+        Pub.post(Pub.apiChat + 'user/balance/balance', params, function(res){
+            console.log(JSON.stringify(res));
+            if(res.code == 0){
+                if(res.data.length == 0){
+                    Pub.alert(Pub.getLang('tips'),Pub.getLang('no_available_balance'),function(){
+                        api.closeWin();
+                    });
+                }
+                var html = template('coin_list_html', res);
+                $('#coin_list').html(html);
+                dataEvent();
+
+            }else{
+                Pub.alert(Pub.getLang('tips'),Pub.getLang('no_available_balance'),function(){
+                    api.closeWin();
+                });
+            }
+        });
+    }
+    function getGroupData(){
+        if($api.getStorage(gid + "_group_members")){
+          var data = $api.getStorage(gid + "_group_members");
+          console.log(data);
+          console.log(data.length);
+          $('#group_num').text(data.length);
+        }
+        Pub.post("group/info/member",{gid:gid},function(res){
+          if(res.code == 0){
+            $('#group_num').text(res.data.length);
+          }
+        })
+    }
+    function dataEvent(){
+        coinId = $('#coin_list').find('option').eq(0).val();
+        coinBalance = $('#coin_list').find('option').eq(0).attr('data-balance');
+        coinImg = $('#coin_list').find('option').eq(0).attr('data-img');
+        if(coinImg && coinImg.indexOf('http') == -1){
+            coinImg = Pub.imgHost + coinImg;
+        }
+        $('#coin_img').html('<img src="'+coinImg+'">');
+        $('#coin_list').change(function(){
+            coinId = $(this).val();
+            coinBalance = $(this).find('option:selected').attr('data-balance');
+            coinImg = $(this).find('option:selected').attr('data-img');
+            if(coinImg.indexOf('http') == -1){
+                coinImg = Pub.imgHost + coinImg;
+            }
+            $('#coin_img').html('<img src="'+coinImg+'">');
+        });
+    }
+    //控制只能输入小数点后2位
+    function clearNoNum(obj) {
+        obj.value = obj.value.replace(/[^\d.]/g, "");  //清除“数字”和“.”以外的字符
+        obj.value = obj.value.replace(/\.{2,}/g, "."); //只保留第一个. 清除多余的
+        obj.value = obj.value.replace(".", "$#$").replace(/\./g, "").replace("$#$", ".");
+        obj.value = obj.value.replace(/^(\-)*(\d+)\.(\d\d).*$/, '$1$2.$3');//只能输入两个小数
+        if (obj.value.indexOf(".") < 0 && obj.value != "") {//以上已经过滤，此处控制的是如果没有小数点，首位不能为类似于 01、02的金额
+            obj.value = parseFloat(obj.value);
+        }
+    }
+    function inputEvent(){
+        $('#amount').on('keyup', function(){
+            var thisVal = $(this).val();
+            if(!thisVal){
+                $(this).val('');
+            }
+        });
+        $('#textarea_num').text($('#pack_text').val().length);
+        $('#pack_text').on('input prototype', function(){
+          var thisVal = $(this).val();
+          $('#textarea_num').text(thisVal.length);
+          console.log(thisVal);
+          if(thisVal.length >= 25){
+            $('#textarea_num').text('25');
+            $('#pack_text').val(thisVal.substring(0, 25));
+          }
+        });
+    }
+    // 发送红包
+    function clickSubmit(){
+        var amount = $('#amount').val(),
+            number = $('#number').val(),
+            code = $('#code').val(),
+            remark = $('#pack_text').val();
+        if(!amount) return Pub.msg(Pub.getLang('please_enter_amount'));
+        if(amount <=0){
+          $('#amount').val('');
+          Pub.msg(Pub.getLang('please_enter_right_amount'));
+        }
+        if(!number) return Pub.msg(Pub.getLang('please_fill_in_number'));
+        // if(!code) return Pub.msg('请输入短信验证码');
+        if(!remark){
+          remark = $('#pack_text').attr('placeholder');
+        }
+        if(type=="common"){
+          amount = Number(amount)*Number(number);
+        }
+        console.log(coinBalance);
+
+        var params = {
+          gid: gid,
+          cid: coinId,
+          amount: new Number(amount).toFixed(2),
+          num: number,
+          pass: '',
+          remark: remark || Pub.getLang("congratulations"),
+          type: type,
+          // phone: mobile,
+          // sms_code: code,
+          tkey: "test1936"
+        }
+        api.openFrame({
+            name: 'redpacket_password_frm',
+            url: './redpacket_password_frm.html',
+            rect: {
+                x: 0,
+                y: 0,
+                w: 'auto',
+                h: 'auto'
+            },
+            pageParam: params,
+            bounces: false,
+            progress: {type: ''},
+            bgColor: 'rgba(0,0,0,0)',
+            vScrollBarEnabled: true,
+            hScrollBarEnabled: true
+        });
+        // if(parseFloat(amount) > parseFloat(coinBalance)) return Pub.msg('您当前余额不足');
+        // var params = {
+        //     gid: gid,
+        //     coin_id: coinId,
+        //     amount: amount,
+        //     // password: text,
+        //     num: number,
+        //     pass: '',
+        //     remark: remark,
+        //     type: type,
+        //     // phone: mobile,
+        //     // sms_code: code,
+        //     tkey: "test1936"
+        // }
+        // Pub.post(Pub.apiChat +'packs/create_group_pack', params, function(res){
+        //     if(res.code == 0){
+        //       Pub.eventSend('chat_group_init');
+        //       Pub.eventSend('close_chat_group_home', {
+        //         id: gid
+        //       });
+        //         api.closeWin();
+        //     }
+        // });
+        // Pub.prompt('请输入交易密码', '', '', 'password', function(text){
+        //     var params = {
+        //         gid: gid,
+        //         coin_id: coinId,
+        //         amount: amount,
+        //         password: text,
+        //         num: number,
+        //         pass: '',
+        //         remark: remark,
+        //         type: type,
+        //         // phone: mobile,
+        //         // sms_code: code,
+        //         tkey: "test1936"
+        //     }
+        //     Pub.post(Pub.apiChat +'packs/create_group_pack', params, function(res){
+        //         if(res.code == 0){
+        //           Pub.eventSend('chat_group_init');
+        //           Pub.eventSend('close_chat_group_home', {
+        //             id: gid
+        //           });
+        //             api.closeWin();
+        //         }
+        //     });
+        // });
+
+    }
+</script>
+
+</html>

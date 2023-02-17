@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <div class="group-name-edit">
+    <div class="title" set-lang="text:group_brief">群聊简介</div>
+    <div class="textarea">
+      <textarea placeholder="请设置群简介" set-lang="placeholder:please_fill_in_group_brief" id="cont"></textarea>
+      <div class="close" onclick="clearName()" set-lang="text:reset">重置</div>
+      <div class="font-num"><span id="cont_num">0</span>/100</div>
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var gid = '';
+    apiready = function() {
+        api.parseTapmode();
+        if(api.pageParam.gid){
+          gid = api.pageParam.gid
+        }
+        if(api.pageParam.cont){
+          $('#cont').val(api.pageParam.cont);
+          $('#cont_num').text(api.pageParam.cont.length);
+        }
+        inputEvent();
+        Pub.eventListen('group_desc_edit', function(){
+          var cont = $('#cont').val();
+          if(!cont) return Pub.msg(Pub.getLang('please_fill_in_group_brief'));
+          var params = {
+            gid: gid,
+            intro: cont
+          }
+          Pub.post(Pub.apiChat +'group/admin/introduction_set', params, function(res){
+            if(res.code == 0){
+              Pub.eventSend('group_info');
+              setTimeout(function(){
+                api.closeWin();
+              }, 1000);
+            }
+          });
+        });
+
+    }
+    function inputEvent () {
+      $('#cont_num').text($('#cont_num').val().length);
+      $('#cont').on('input prototype', function(){
+        var thisVal = $(this).val();
+        $('#cont_num').text(thisVal.length);
+        if(thisVal.length >= 100){
+          $('#cont_num').text('100');
+          $('#cont').val(thisVal.substring(0, 100));
+        }
+      });
+    }
+    function clearName(){
+      $('#notice').val('');
+    }
+</script>
+
+</html>

@@ -1,0 +1,56 @@
+{
+    "name": "root",
+    "bgColor": "#ffffff",
+    "navigationBar": {
+      "shadow": "#f9f9f9",
+      "leftButtons": [{
+      }]
+    },
+    "tabBar": {
+        "animated": false,
+        "color": "#000000",
+        "selectedColor": "#07C160",
+        "textOffset": "5",
+        "fontSize": "14",
+        "scrollEnabled": false,
+        "hideBackButton": true,
+        "list": [
+            {
+                "text": "聊天",
+                "iconPath": "widget://image/tabbar/icon_chat.png",
+                "selectedIconPath": "widget://image/tabbar/icon_chat_active.png"
+            }, {
+                "text": "通讯录",
+                "iconPath": "widget://image/tabbar/icon_book.png",
+                "selectedIconPath": "widget://image/tabbar/icon_book_active.png"
+            }, {
+                "text": "发现",
+                "iconPath": "widget://image/tabbar/icon_find.png",
+                "selectedIconPath": "widget://image/tabbar/icon_find_active.png"
+            }, {
+                "text": "我的",
+                "iconPath": "widget://image/tabbar/icon_mine.png",
+                "selectedIconPath": "widget://image/tabbar/icon_mine_active.png"
+            }
+        ],
+        "frames": [
+            {
+                "title": "",
+                "name": "chat_frm",
+                "url": "widget://html/index/chat_frm.html"
+            }, {
+                "title": "",
+                "name": "book_frm",
+                "url": "widget://html/index/book_frm.html"
+            }, {
+                "title": "",
+                "name": "find_frm",
+                "url": "widget://html/index/find_frm.html"
+            }, {
+                "title": "",
+                "name": "mine_frm",
+                "url": "widget://html/index/mine_frm.html"
+            }
+        ]
+    }
+}

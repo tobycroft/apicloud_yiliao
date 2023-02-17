@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="">
+  <!-- <div id="app">
+    <template> -->
+      <div class="login-form">
+        <!-- <div class="form-logo"><img src="../../icon/logo.png"></div> -->
+        <div class="form-box">
+          <div class="item">
+            <div class="input"><input type="tel" set-lang="placeholder:please_enter_mobile_number" id="phone"></div>
+          </div>
+          <div class="item">
+            <div class="input"><input type="tel" set-lang="placeholder:verification_code" id="verify"></div>
+            <div class="handle"><a onclick="getSms(this)" set-lang="text:get_verify_code">发送验证码</a></div>
+          </div>
+          <!-- <div class="item">
+            <div class="input"><input type="password" placeholder="请设置8-20位字母数字组合密码" v-model="password"></div>
+          </div>
+          <div class="item">
+            <div class="input"><input type="password" placeholder="请确认登录密码" v-model="passwordConfirm"></div>
+          </div> -->
+          <div class="btn" onclick="clickSubmit()" set-lang="text:confirm">确定</div>
+        </div>
+      </div>
+    <!-- </template>
+  </div> -->
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script src="../../script/intlTelInput.js"></script>
+<script type="text/javascript">
+var uid = '';
+var isWaiting = false;
+var smsCode = null;
+var phone;
+//var wxCode;
+var openid = '';
+//var access_token;
+var countryCode = '86';
+apiready = function(){
+    uid = $api.getStorage('uid');
+    console.log(api.pageParam.openId);
+    //console.log(api.pageParam.accessToken);
+    openid = api.pageParam.openId;
+    //access_token = api.pageParam.accessToken;
+    api.parseTapmode();
+
+}
+$("#phone").intlTelInput({
+    preferredCountries: ['cn'],
+  // allowDropdown: false,
+  // autoHideDialCode: false,
+  // autoPlaceholder: "off",
+  // dropdownContainer: "body",
+  // excludeCountries: ["us"],
+  // formatOnDisplay: false,
+   geoIpLookup: function(callback) {
+     console.log(333)
+   },
+  // initialCountry: "auto",
+  // nationalMode: false,
+  // onlyCountries: ['us', 'gb', 'ch', 'ca', 'do'],
+  // placeholderNumberType: "MOBILE",
+  // preferredCountries: ['cn', 'jp'],
+  // separateDialCode: true,
+  utilsScript: ""
+});
+
+$("#phone").on("countrychange", function(e, countryData) {
+  console.log(JSON.stringify(countryData))
+  countryCode = countryData.dialCode;
+  // do something with countryData
+});
+function getSms(el){
+    var phone =$("#phone").val();
+    if ( !phone ) return Pub.msg(Pub.getLang('please_enter_mobile_number'));
+    if (isWaiting) return;
+    var params = {
+        phone: phone,
+        quhao: countryCode,
+    }
+    console.log(JSON.stringify(params))
+    Pub.post('index/send_code', params, function(ret,err){
+        console.log(JSON.stringify(ret))
+        if (parseInt(ret.code) === 0) {
+            isWaiting = true;
+            remainTime(el);
+            return Pub.msg(ret.data);
+        }else{
+            return Pub.msg(ret.data);
+        }
+        return Pub.msg(ret.data);
+    })
+
+}
+function remainTime(el){
+    var time = 60;
+    var interval = setInterval(function(){
+        $api.text(el,  (time--) +'s');
+        if ( time < 0 ) {
+            clearInterval(interval);
+            $api.text(el, Pub.getLang('get_verify_code'));
+            isWaiting = false;
+        }
+    },1000)
+}
+function clickSubmit(){
+    var phone = $('#phone').val(),
+        code = $('#verify').val();
+    if ( !phone ) return Pub.msg(Pub.getLang("please_enter_mobile_number"));
+    if(!code) return Pub.msg(Pub.getLang("please_enter_verification_code"));
+    console.log("ccccccc");
+    //if(!username) return Pub.msg("请输入昵称");
+    setTimeout(function(){
+      var params = {
+          phone: phone,
+          code: code,
+          username: api.pageParam.nickname,
+          open_id: api.pageParam.openId,
+          quhao: countryCode,
+          head:api.pageParam.headimgurl,
+      }
+      Pub.post('index/register/wxregister', params, function(res){
+          Pub.msg(res.data);
+          if(res.code == 0) {
+              $api.rmStorage('uid');
+              $api.rmStorage('_PASSPORT');
+              setTimeout(function(){
+                  Pub.openView('../login/login_win');
+              }, 1000);
+          }else{
+            Pub.msg(res.data);
+          }
+      })
+    }, 1000);
+
+}
+
+</script>
+
+</html>

@@ -1,0 +1,142 @@
+<!doctype html>
+<html class="bg-transparent">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../nby/script/language.js"></script>
+</head>
+
+<body class="bg-transparent">
+    <div class="index-popup-bg"></div>
+    <div class="index-popup" id="header" onclick="closePopup()">
+        <div class="index-popup-container">
+          <div class="item" onclick="addFriend()">
+              <div class="icon"><img src="../../skin/default/images/home/icon_friend_add.png"></div>
+              <div class="name">添加好友</div>
+          </div>
+          <div class="item" onclick="scan()">
+              <div class="icon"><img src="../../skin/default/images/home/icon_scan.png"></div>
+              <div class="name">扫一扫</div>
+          </div>
+          <div class="item" onclick="toCreateGroup()">
+              <div class="icon"><img src="../../skin/default/images/home/icon_group_create.png"></div>
+              <div class="name">创建群聊</div>
+          </div>
+          <!-- <div class="item" onclick="toReceipt()">
+              <div class="icon"><img src="../../skin/default/images/home/icon_receipt.png"></div>
+              <div class="name">收款码</div>
+          </div> -->
+        </div>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../nby/script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        var header = $api.byId('header');
+        $api.fixStatusBar(header);
+    }
+    function closePopup(){
+        api.closeFrame();
+    }
+    function scan(){
+      event.stopPropagation();
+        var FNScanner = api.require('FNScanner');
+       FNScanner.open({
+           autorotation: false,
+           hintText: $api.getLang('hintText'),
+           albumText: $api.getLang('albumText'),
+           lightText: $api.getLang('lightText'),
+           closeText: $api.getLang('closeText')
+       }, function(ret, err) {
+           if (ret) {
+               var content = ret.content;
+               if(content){
+                 var contentParam = Pub.getUrlParams(content).add_options;
+                 if(contentParam){
+                   var data = window.atob(Pub.getUrlParams(content).add_options);
+                   if(data){
+                     var dataParams = JSON.parse(data);
+                     if(dataParams.type == 'group'){
+                       var id  = dataParams.id;
+                       isIngroup($api.getStorage('uid'), id, function(data){
+                         if(data == 0){
+                           Pub.openView('./group_verify_win', {
+                             pageParam:{
+                               id: id
+                             }
+                           });
+                         }else{
+                           Pub.openView('./group_info_win', {
+                             pageParam:{
+                               id: id
+                             }
+                           });
+                         }
+                       });
+
+                     }else if(dataParams.type == 'private'){
+                       var id  = dataParams.id;
+                       Pub.openView('./personal_info_win', {
+                         pageParam:{
+                           fid: id
+                         }
+                       });
+                     }else{
+                       Pub.msg('请扫描本平台个人或群聊二维码!');
+                     }
+                   }
+                 }else{
+                   Pub.msg('请扫描本平台个人或群聊二维码!');
+                 }
+
+
+               }
+           } else {
+               console.log(JSON.stringify(err));
+           }
+       });
+    }
+    function isIngroup(userId, groupId, callback){
+      var params = {
+        member_id: userId,
+        gid: groupId
+      }
+      Pub.post(Pub.apiChat + 'group/in_group', params, function(res){
+        if(res.code == 0){
+          if(callback && typeof callback == 'function'){
+            callback(res.data);
+          }
+        }
+      });
+    }
+    function addFriend(){
+      event.stopPropagation();
+        Pub.openView('./personal_add_win');
+        setTimeout(function(){
+          closePopup();
+        }, 1000);
+    }
+    function toCreateGroup(){
+      event.stopPropagation();
+      Pub.openView('./group_create_win');
+      setTimeout(function(){
+        closePopup();
+      }, 1000);
+    }
+    function toReceipt(){
+      event.stopPropagation();
+        Pub.openView('../../nby/html/wallet/receipt_win');
+        setTimeout(function(){
+          closePopup();
+        }, 1000);
+    }
+</script>
+
+</html>

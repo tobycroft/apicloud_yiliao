@@ -1,0 +1,133 @@
+<!doctype html>
+<html class="bgc-primary">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart=""  class="bgc-primary">
+  <!-- <div class="add-bank-card-container">
+    <div class="input">
+      <p>银行卡卡号：</p>
+      <input type="number" placeholder="请输入" id="number">
+    </div>
+    <div class="input" onclick="chooseBank()">
+      <p>开户行名称：</p>
+      <input type="text" placeholder="请选择" readonly="readonly" id="bankname">
+    </div>
+    <div class="input">
+      <p>开户人姓名：</p>
+      <input type="text" placeholder="请输入" id="name">
+    </div>
+    <div class="input">
+      <p>开户人电话：</p>
+      <input type="number" placeholder="请输入" id="phone">
+    </div>
+    <div class="btn" onclick="addCard()">确认</div>
+  </div> -->
+  <div class="add-bank-card-container">
+    <div class="top">
+      <p class="blue">！温馨提示</p>
+      <p>· 请绑定在银行柜面实名开户的银行卡；</p>
+      <p>· 储蓄卡开户人需与如下“户名”相同。</p>
+    </div>
+    <div class="items">
+      <div class="input">
+        <p>户名</p>
+        <input type="text" id="name">
+      </div>
+      <div class="input">
+        <p>身份证号</p>
+        <input type="text" id="cardNo">
+      </div>
+    </div>
+    <div class="items mt-20">
+      <div class="title">银行卡信息</div>
+      <div class="input" onclick="chooseBank()">
+        <p>开户银行</p>
+        <input type="text" readonly="readonly" id="bankname" placeholder="请选择开户银行">
+        <!-- <p class="handle">
+          <span>请选择开户银行</span>
+          <img src="../../skin/default/images/icon/icon_arrow_right_gray.png" alt="">
+        </p> -->
+      </div>
+      <div class="input">
+        <p>银行卡号</p>
+        <input type="text" placeholder="请输入银行卡号" id="number">
+      </div>
+    </div>
+    <div class="items mt-20">
+      <div class="input">
+        <p>手机号</p>
+        <input type="text" id="phone">
+      </div>
+      <!-- <div class="input">
+        <p>验证码</p>
+        <input type="text" placeholder="请输入银行卡号">
+      </div> -->
+    </div>
+    <div class="btn-lg-primary" onclick="addCard()">确认</div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+
+        Pub.eventListen("add_bank",function(res){
+          console.log(JSON.stringify(res));
+          console.log(res.value.name);
+          $("#bankname").val(res.value.name);
+          $("#bankname").attr("bank",res.value.bank);
+        })
+        getData();
+    }
+    function getData(){
+      Pub.post('user/cert/get',{},function(res){
+        if(res.code==0){
+          $("#name").val(res.data.name);
+          $("#cardNo").val(res.data.cert);
+        }
+      })
+      Pub.post(Pub.apiChat + 'user/info/myinfo',{},function(res){
+        if(res.code==0){
+          $("#phone").val(res.data.telephone);
+        }
+      })
+    }
+    function chooseBank(){
+      Pub.openFrame('./pop_choose_bank_frm',{},{bgColor: 'rgba(0,0,0,0.5)',bounces: false})
+    }
+    function addCard(){
+      var number = $("#number").val();
+      var bankname = $("#bankname").val();
+      var name = $("#name").val();
+      var phone = $("#phone").val();
+      if(!number||!bankname||!name||!phone) return Pub.msg("请填写完整资料！");
+      if(number.toString().length<16) return Pub.msg("请填写正确的银行卡号！")
+      var params={
+        bank: bankname,
+        name: name,
+        number: number,
+        phone: phone,
+        extra: "",
+      }
+      Pub.post('user/card/add',params,function(res){
+        if(res.code==0){
+          Pub.msg("添加成功！");
+          Pub.eventSend("refresh_bank");
+          setTimeout(function(){
+            api.closeWin();
+          },1000)
+        }
+      })
+    }
+</script>
+
+</html>

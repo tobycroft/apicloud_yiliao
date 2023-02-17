@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <header id="header">
+        <div class="header">
+            <div class="header-left">
+                <i class="return" onclick="backOrClose()"></i>
+            </div>
+            <div class="header-middle" id="name"></div>
+        </div>
+    </header>
+
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+apiready = function() {
+    api.parseTapmode();
+    Pub.setStatusBar();
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    var headerPos = $api.offset(header);
+    var name = api.pageParam.title;
+    var url = api.pageParam.url;
+    $('#name').text(name);
+    console.log(url);
+    var h = api.winHeight - headerPos.h;
+    if(api.deviceModel.indexOf('iPhone10') > -1){
+      h = api.winHeight - headerPos.h - 15;
+    }
+    api.openFrame({
+        name: 'webview_frm',
+        url: url,
+        bounces: false,
+        rect: {
+            x: 0,
+            y: headerPos.h,
+            w: 'auto',
+            h: h
+        }
+    });
+    api.addEventListener({
+        name: 'keyback'
+    }, function(ret, err){
+        if( ret ){
+          api.execScript({///在指定页面中执行srcipt中脚本
+              name:api.winName,	///打开外部网页的Win名
+              // frameName: 'webview_frm',  ///呈现外部网页的frame名
+              script:'api.historyBack(function(ret, err) {if (ret.status) {} else {api.closeWin();}});'
+          });
+        }else{
+             console.log( JSON.stringify( err ) );
+        }
+    });
+
+}
+function backOrClose(){
+  api.execScript({///在指定页面中执行srcipt中脚本
+      name:api.winName,	///打开外部网页的Win名
+      // frameName: 'webview_frm',  ///呈现外部网页的frame名
+      script:'api.historyBack(function(ret, err) { if (ret.status) {} else {api.closeWin(); }});'
+  });
+}
+function closeWin() {
+  api.closeWin();
+  if(!api.pageParam.isStatus){
+    Pub.setStatusBar();
+  }
+}
+</script>
+
+</html>

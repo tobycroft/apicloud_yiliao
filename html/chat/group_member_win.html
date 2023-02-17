@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+    <header id="header">
+        <div class="header-box" id="header_box">
+          <div class="header">
+              <div class="header-left">
+                  <i class="return" onclick="closeWin()"></i>
+              </div>
+              <div class="header-middle"><font set-lang="text:group_member">群成员</font>(<em id="total">0</em>)</div>
+          </div>
+        </div>
+        <div class="bgc-primary-container">
+            <div class="book-search">
+                <div class="icon"></div>
+                <div class="input-box">
+                    <input type="text" placeholder="请输入用户名" set-lang="placeholder:please_enter_username" id="words"/>
+                </div>
+                <div class="btn-search" onclick="search()"><a set-lang="text:search">搜索</a></div>
+            </div>
+        </div>
+    </header>
+
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        Pub.setStatusBar();
+        var headerBox = $api.byId('header_box');
+        $api.fixStatusBar(headerBox);
+        var header = $api.byId('header');
+        var headerPos = $api.offset(header);
+        $('#total').text(api.pageParam.total);
+        openFrame(headerPos);
+        inputEvent();
+    }
+    function openFrame(headerPos){
+         Pub.openFrame('./group_member_frm',{headerPos:headerPos},{bounces:false, pageParam: api.pageParam})
+    }
+    function inputEvent(){
+        $('#words').on('keyup', function(){
+            var thisVal  = $(this).val();
+            if(!thisVal){
+                Pub.eventSend('member_search', {
+                    words: ''
+                });
+            }
+        });
+    }
+    function search(){
+        var words = $('#words').val();
+        Pub.eventSend('member_search', {
+            words: words
+        });
+    }
+    function closeWin() {
+      api.closeWin();
+      Pub.setStatusBar();
+    }
+</script>
+
+</html>

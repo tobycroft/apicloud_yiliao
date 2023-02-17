@@ -1,0 +1,852 @@
+<!doctype html>
+<html class="bgc-primary">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-primary">
+  <div class="group-info-header" id="header">
+    <div class="info-box">
+      <div class="avatar" id="avatar" onclick="chooseImg()">
+      <!-- <div class="avatar" id="avatar"> -->
+      </div>
+      <div class="info">
+        <h3 id="name_header"></h3>
+        <p><font set-lang="text:group_number">群号</font>: <span id="account_header"></span></p>
+      </div>
+    </div>
+    <div class="group-desc">
+      <font set-lang="text:group_brief">群简介</font>：<span id="desc_header"></span>
+    </div>
+  </div>
+  <div class="group-info-container">
+    <!-- <div class="group-title">
+      <div class="name">管理员</div>
+      <div class="desc">(2人)</div>
+    </div>
+    <div class="group-member">
+      <div class="item">
+            <img src="../../skin/default/images/chat/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/chat/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+    </div> -->
+    <div class="group-title link" id="to_member">
+      <div class="name" set-lang="text:group_member">群成员</div>
+      <div class="desc">(<span id="group_member_num">0</span><font set-lang="text:people">人</font>)</div>
+    </div>
+    <div class="group-member" id="member_list">
+      <!-- <div class="item">
+            <img src="../../skin/default/images/chat/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/chat/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/chat/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/chat/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/chat/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/chat/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/chat/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/chat/img_avatar.png">
+            <p>离别的离别的人</p>
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/chat/icon_plus.png">
+        </div>
+        <div class="item">
+            <img src="../../skin/default/images/chat/icon_reduce.png">
+        </div> -->
+    </div>
+    <div class="group-cell-font mt-20">
+      <ul>
+        <li class="link bd-gray-light" onclick="setName()" tapmode>
+          <div class="name" set-lang="text:group_chat_name">群聊名称</div>
+          <div class="desc"><span id="name"></span></div>
+        </li>
+        <li class="link bd-gray-light" onclick="onwerChange()" tapmode>
+          <div class="name" set-lang="text:">群主转让</div>
+        </li>
+        <li class="link bd-gray-light" onclick="setAdmin()" tapmode>
+          <div class="name" set-lang="text:">设置群管理员</div>
+        </li>
+        <li class="bd-gray-light">
+          <div class="name" set-lang="text:">开启群二维码</div>
+          <div class="desc"><span class="switch" id="can_recommend" data-val="0"></span></div>
+        </li>
+        <li class="link bd-gray-light" onclick="toGroupQrcode()" id="groupQrcode">
+          <div class="name" set-lang="text:group_qrcode">群二维码</div>
+          <div class="desc"><img src="../../skin/default/images/icon/img_qrcode.png"></div>
+        </li>
+        <li class="link bd-gray-light" onclick="setDesc()" tapmode>
+          <div class="name" set-lang="text:group_brief">群简介</div>
+          <div class="desc"><span id="desc" set-lang="text:">设置</span></div>
+        </li>
+        <li class="link bd-gray-light" onclick="setNotice()" tapmode>
+          <div class="name" set-lang="text:group_notice">群公告</div>
+          <div class="desc"><span id="notice" set-lang="text:">未设置</span></div>
+        </li>
+        <li class="bd-gray-light" id="expire_box" style="display: none;">
+          <div class="name" set-lang="text:group_validity_period">群有效期</div>
+          <div class="desc"><span id="expire"></span></div>
+        </li>
+        <li class="bd-gray-light">
+          <div class="name" set-lang="text:group_verification">群验证</div>
+          <div class="desc"><span class="switch" id="verify" data-val="0"></span></div>
+          <div class="tip">默认入群无需验证,开启需设置</div>
+        </li>
+      </ul>
+    </div>
+    <div class="group-cell-font mt-20">
+      <ul>
+        <li class="link bd-gray-light" onclick="toRedpacketAuthority()" tapmode>
+          <div class="name" set-lang="text:">管理红包权限</div>
+          <div class="tip">指定成员可以领取群红包</div>
+        </li>
+      </ul>
+    </div>
+    <!-- <div class="group-cell-index" style="color: #bbb; background-color:#f5f5f8;" set-lang="text:group_confirm_invite">
+      启用后，群成员需群主确认后才能邀请朋友进群。
+    </div> -->
+    <!-- <div class="group-title bd-top link">
+      <div class="name">群公告</div>
+      <div class="desc"></div>
+    </div>
+    <div class="group-notice">
+      介绍：本群是官方群二群，写下你的签名让更多小伙伴了解你。请勿发广告！谢谢
+    </div>
+    <div class="group-title bd-top">
+      <div class="name">群地点</div>
+      <div class="desc">石门营新3区</div>
+    </div> -->
+    <div class="group-cell-font mt-20">
+      <ul>
+        <li class="bd-gray-light">
+          <div class="name" set-lang="text:members_add_friends_to_each_other">群成员互加好友</div>
+          <div class="desc"><span class="switch" id="can_add" data-val="0"></span></div>
+        </li>
+        <li class="bd-gray-light">
+          <div class="name" set-lang="text:message_free">消息免打扰</div>
+          <div class="desc"><span class="switch" id="disturb" data-val="0"></span></div>
+        </li>
+        <li class="bd-gray-light">
+          <div class="name" set-lang="text:place_group_to_top">设为置顶群聊</div>
+          <div class="desc"><span class="switch" id="stick" data-val="0"></span></div>
+        </li>
+      </ul>
+    </div>
+    <div class="group-cell-font">
+      <ul>
+        <li class="bd-gray-light">
+          <div class="name" set-lang="text:total_ban">全体禁言</div>
+          <div class="desc"><span class="switch" id="ban_all" data-val="0"></span></div>
+        </li>
+        <!-- <li class="link bd-gray-light" onclick="banMsg()" tapmode>
+          <div class="name" set-lang="text:">群成员禁言</div>
+        </li> -->
+      </ul>
+    </div>
+    <div class="btn-group">
+      <a class="primary" onclick="toChat()" set-lang="text:send_message">发消息</a>
+      <a class="red" id="quit" onclick="quitGroup()" style="display: none;" set-lang="text:exit_group_chat">退出群聊</a>
+      <a class="red" id="dissolve" onclick="dissolveGroup()" style="display: none;" set-lang="text:ungroup">解散群组</a>
+    </div>
+  </div>
+  <script type="text/html" id="member_list_html">
+      {{if data.length > 0}}
+          {{each data}}
+              {{if $index <= 9}}
+              <div class="item to_personal" data-fid="{{$value.uid}}" data-name="{{$value.uname}}">
+                  <img src="{{$value.face}}" class="avatar">
+                  <p>{{$value.uname}}</p>
+              </div>
+              {{/if}}
+          {{/each}}
+          <div class="item" id="member_invite" onclick="toAppend()">
+              <img src="../../skin/default/images/chat/icon_plus.png">
+          </div>
+          <div class="item" id="member_remove" onclick="toRemove()">
+              <img src="../../skin/default/images/chat/icon_reduce.png">
+          </div>
+      {{/if}}
+  </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var gid = '', memberData = {}, groupUid = '', imgAvatar = '', groupInfoData={},isGroupMaster;
+    apiready = function() {
+        api.parseTapmode();
+        init();
+        Pub.eventListen("update_groupinfo",function(){
+          window.location.reload();
+        })
+    }
+    function init(){
+        gid = api.pageParam.id;
+        getData();
+        getGroupInfo();
+        clickEvent();
+        checkGroupMaster(gid, $api.getStorage('uid'));
+        Pub.eventListen('group_info', function(){
+          getData();
+          getGroupInfo();
+          checkGroupMaster(gid, $api.getStorage('uid'));
+        });
+    }
+    function getData(){
+      var params = {
+          gid: api.pageParam.id || ''
+      }
+      Pub.post(Pub.apiChat +'group/info/get', params, function(res){
+          console.log('群资料:' + JSON.stringify(res));
+          if(res.code == 0){
+              var data = res.data;
+              var avatar = '';
+              if(data.img){
+                if(data.img.indexOf('http') == -1){
+                  avatar = Pub.imgHost + data.img;
+                }else{
+                  avatar = data.img;
+                }
+                $('#avatar').html('<img src="'+avatar+'">');
+              }else{
+                $('#avatar').html('<img src="../../icon/logo.png">');
+              }
+              $('#name_header').text(data.group_name);
+              $('#account_header').text(data.id);
+              $('#desc_header').text(data.introduction);
+          }
+      });
+    }
+    function getGroupInfo(){
+      var params = {
+          gid: api.pageParam.id || ''
+      }
+      Pub.post(Pub.apiChat +'group/info/get', params, function(res){
+        console.log('群资料'+ JSON.stringify(res));
+          if(res.code == 0){
+              var data = res.data;
+              groupInfoData = data;
+              var ownerId = data.owner_id;
+              $('#name').text(data.group_name);
+              imgAvatar = data.img;
+              if(data.announcement){
+                $('#notice').text(Pub.getLang('set_yet'));
+              }else{
+                $('#notice').text(Pub.getLang('set_not'));
+              }
+              if(data.introduction){
+                $('#desc').text(Pub.getLang('set_yet'));
+              }else{
+                $('#desc').text(Pub.getLang('set_not'));
+              }
+              if($api.getStorage('uid') == ownerId){
+                  $('#quit').hide();
+                  $('#dissolve').show();
+              }else{
+                  $('#quit').show();
+                  $('#dissolve').hide();
+              }
+              if(data.disturb == 1){
+                $('#disturb').addClass('active');
+                $('#disturb').attr('data-val', 1);
+              }else{
+                $('#disturb').removeClass('active');
+                $('#disturb').attr('data-val', 0);
+              }
+              if(data.can_add == 1){
+                $('#can_add').addClass('active');
+                $('#can_add').attr('data-val', 1);
+              }else{
+                $('#can_add').removeClass('active');
+                $('#can_add').attr('data-val', 0);
+              }
+              if(data.direct_join_group == 1){
+                $('#verify').removeClass('active');
+                $('#verify').attr('data-val', 1);
+              }else{
+                $('#verify').addClass('active');
+                $('#verify').attr('data-val', 0);
+              }
+              if(data.is_top == 1){
+                $('#stick').addClass('active');
+                $('#stick').attr('data-val', 1);
+              }else{
+                $('#stick').removeClass('active');
+                $('#stick').attr('data-val', 0);
+              }
+              if(data.ban_all == 1){
+                $('#ban_all').addClass('active');
+                $('#ban_all').attr('data-val', 1);
+              }else{
+                $('#ban_all').removeClass('active');
+                $('#ban_all').attr('data-val', 0);
+              }
+              if(data.can_recommend == 1){
+                $('#can_recommend').addClass('active');
+                $('#can_recommend').attr('data-val', 1);
+                $("#groupQrcode").show();
+              }else{
+                $('#can_recommend').removeClass('active');
+                $('#can_recommend').attr('data-val', 0);
+                $("#groupQrcode").hide();
+              }
+              if(data.expire && data.expire != 'null'){
+                $('#expire_box').css('display','table');
+                $('#expire').text(data.expire);
+              }else{
+                $('#expire_box').hide();
+              }
+              getMember();
+          }
+      });
+    }
+    function getMember(){
+        //getMemberInit();
+        var params = {
+            gid: gid
+        }
+        Pub.post(Pub.apiChat +'group/info/member2', params, function(res){
+            console.log('群成员:' + JSON.stringify(res));
+            if(res.code == 0){
+                var ownerD = res.data.owner;
+                var adminD = res.data.admin;
+                var memberD = res.data.member;
+                memberData.data = ownerD.concat(adminD.concat(memberD));
+                var html = template('member_list_html', memberData);
+                $('#member_list').html(html);
+                console.log(memberData.length);
+                $('#group_member_num').text(memberData.data.length);
+                Pub.setLang();
+                console.log($api.getStorage('uid'));
+                console.log(groupInfoData.owner_id);
+                if($api.getStorage('uid') == groupInfoData.owner_id){
+                  $('#member_remove').show();
+                }else{
+                  $('#member_remove').hide();
+                }
+                $('.img_url').each(function(){
+                    var thisSrc = $(this).attr('src');
+                    if(thisSrc){
+                        if(thisSrc.indexOf('http') == -1){
+                            $(this).attr('src', Pub.imgHost + thisSrc);
+                        }
+                    }else{
+                        $(this).attr('src', '../../skin/default/images/default_avatar.png');
+                    }
+                });
+                $('#member_list').find('.to_personal').on('click', function(){
+                    var thisFid = $(this).attr('data-fid'),
+                        thisName = $(this).attr('data-name');
+                        checkGroupMaster(gid, $api.getStorage('uid'), function(t){
+                          if(t == true){
+                            Pub.openView('./personal_info_win', {
+                                pageParam: {
+                                  fid: thisFid,
+                                  name: thisName
+                                }
+                            });
+                          }else{
+                            isCanAdd(function(canData){
+                              if(canData == true){
+                                Pub.openView('./personal_info_win', {
+                                    pageParam: {
+                                      fid: thisFid,
+                                      name: thisName
+                                    }
+                                });
+                              }
+                            })
+                          }
+                        });
+                        // if(thisFid == $api.getStorage('uid')){
+                        //   Pub.openView('./personal_info_win', {
+                        //       pageParam: {
+                        //         fid: thisFid,
+                        //         name: thisName
+                        //       }
+                        //   });
+                        // }else{
+                        //   checkGroupMaster(gid, $api.getStorage('uid'), function(t){
+                        //     if(t == 'y'){
+                        //       Pub.openView('./personal_info_win', {
+                        //           pageParam: {
+                        //             fid: thisFid,
+                        //             name: thisName
+                        //           }
+                        //       });
+                        //     }
+                        //   });
+                        // }
+
+                });
+                // $('#member_list').find('.item').each(function(){
+                //     var thisFid = $(this).attr('data-fid');
+                //     var thisHam = new Hammer(this);
+                //     if($api.getStorage('uid') == groupUid && $api.getStorage('uid') != thisFid){
+                //         thisHam.on('press', function(){
+                //             kickPeople(thisFid);
+                //             Pub.eventSend('group_update');
+                //         });
+                //     }
+                // });
+            }
+        });
+    }
+    function getMemberInit(){
+      var uid = $api.getStorage('uid');
+      console.log(JSON.stringify($api.getStorage(uid + 'all_group_member')));
+      if($api.getStorage(uid + 'all_group_member')){
+        var data = $api.getStorage(uid + 'all_group_member');
+        var length = $api.getStorage(uid + 'all_group_member').length;
+        for(var i = 0; i<length;i++){
+          if(data[i].gid = gid){
+            memberData.data = memberData.data.concat(data[i]);
+          }
+        }
+        var html = template('member_list_html', memberData);
+        $('#member_list').html(html);
+        $('#group_member_num').text(memberData.length);
+        Pub.setLang();
+        console.log($api.getStorage('uid'));
+        console.log(groupInfoData.owner_id);
+        if($api.getStorage('uid') == groupInfoData.owner_id){
+          $('#member_remove').show();
+        }else{
+          $('#member_remove').hide();
+        }
+        $('.img_url').each(function(){
+            var thisSrc = $(this).attr('src');
+            if(thisSrc){
+                if(thisSrc.indexOf('http') == -1){
+                    $(this).attr('src', Pub.imgHost + thisSrc);
+                }
+            }else{
+                $(this).attr('src', '../../skin/default/images/default_avatar.png');
+            }
+        });
+        $('#member_list').find('.to_personal').on('click', function(){
+            var thisFid = $(this).attr('data-fid'),
+                thisName = $(this).attr('data-name');
+            checkGroupMaster(gid, $api.getStorage('uid'), function(t){
+              if(t == 'y'){
+                Pub.openView('./personal_info_win', {
+                    pageParam: {
+                      fid: thisFid,
+                      name: thisName
+                    }
+                });
+              }else{
+                isCanAdd(function(canData){
+                  if(canData == true){
+                    Pub.openView('./personal_info_win', {
+                        pageParam: {
+                          fid: thisFid,
+                          name: thisName
+                        }
+                    });
+                  }
+                })
+              }
+            });
+        });
+
+      }
+    }
+    function isCanAdd(callback){
+      var params = {
+        gid: gid,
+      }
+      Pub.post('group/admin/can_add', params, function(res){
+        if(res.code == 0){
+          if(callback && typeof callback == 'function'){
+            callback(res.data);
+          }
+        }
+      },true);
+    }
+    function checkGroupMaster(gid,fid,callback){
+      var params = {
+        member_id: fid,
+        gid: gid
+      }
+      Pub.post(Pub.apiChat + 'group/info/isgroupmaster', params, function(res){
+        if(res.code == 0){
+          isGroupMaster = res.data;
+          if(callback && typeof callback == 'function'){
+            callback(res.data)
+          }
+        }
+      }, true);
+    }
+    function toGroupQrcode(){
+      Pub.openView('./group_qrcode_win', {
+        pageParam: {
+          id: gid
+        }
+      });
+    }
+    function toChat(){
+        if(api.pageParam.hasFrame){
+          api.closeWin();
+        }else{
+          Pub.openView('./chat_group_win',{
+              pageParam:{
+                  id: gid,
+                  name: $('#name').text(),
+                  img: imgAvatar
+              }
+          });
+        }
+
+    }
+    function toAppend(){
+      Pub.openView('./group_member_append_win', {
+        pageParam: {
+          id: gid
+        }
+      });
+    }
+    function toRemove(){
+      $api.setStorage('member_data', memberData);
+      Pub.openView('./group_member_remove_win', {
+        pageParam: {
+          id: gid
+        }
+      });
+    }
+    function setName(){
+      var thisTxt = $('#name').text();
+      if($api.getStorage('uid') == groupInfoData.owner_id){
+        Pub.openView('./group_name_edit_win',{
+          pageParam:{
+            name: thisTxt,
+            gid: gid
+          }
+        });
+      }
+    }
+    function setDesc(){
+      if($api.getStorage('uid') == groupInfoData.owner_id){
+        Pub.openView('./group_desc_edit_win',{
+          pageParam:{
+            cont: groupInfoData.introduction,
+            gid: gid
+          }
+        });
+      }else{
+        // if(groupInfoData.introduction){
+        //   Pub.alert(Pub.getLang('group_brief'), groupInfoData.introduction);
+        // }else{
+        //   Pub.alert(Pub.getLang('tips'), Pub.getLang('only_admin_can_set_grief'));
+        // }
+        Pub.msg("您并非群主，无权限设置");
+      }
+    }
+    function setNotice(){
+      if($api.getStorage('uid') == groupInfoData.owner_id){
+        Pub.openView('./group_notice_edit_win',{
+          pageParam:{
+            cont: groupInfoData.announcement,
+            gid: gid
+          }
+        });
+      }else{
+        if(groupInfoData.announcement){
+          Pub.alert(Pub.getLang('group_notice'), groupInfoData.announcement);
+        }else{
+          Pub.msg("您并非群主，无权限设置");
+        }
+      }
+    }
+    function clickEvent(){
+        $('#to_member').on('click', function(){
+            var total = $(this).find('span').text();
+            $api.setStorage('member_data', memberData);
+            Pub.openView('./group_member_win', {
+                pageParam: {
+                    total: total
+                }
+            });
+        });
+        $('#can_add').on('click', function(){
+          var thisVal = $(this).attr('data-val');
+          var val = '';
+          if(thisVal == 0){
+            val = 1;
+          }else{
+            val = 0;
+          }
+          $(this).attr('data-val', val);
+          var _this = this;
+          var params = {
+            gid: gid,
+            open: val
+          }
+          Pub.post(Pub.apiChat +'group/admin/set_add', params, function(res){
+            if(res.code == 0){
+              if($(_this).hasClass('active')){
+                $(_this).removeClass('active');
+              }else{
+                $(_this).addClass('active');
+              }
+            }
+          });
+        });
+        $('#disturb').on('click', function(){
+          var thisVal = $(this).attr('data-val');
+          var val = '';
+          if(thisVal == 0){
+            val = 1;
+          }else{
+            val = 0;
+          }
+          $(this).attr('data-val', val);
+          var _this = this;
+          var params = {
+            gid: gid,
+            disturb: val
+          }
+          Pub.post(Pub.apiChat +'group/operation/disturb', params, function(res){
+            if(res.code == 0){
+              if($(_this).hasClass('active')){
+                $(_this).removeClass('active');
+              }else{
+                $(_this).addClass('active');
+              }
+            }
+          });
+        });
+        $('#ban_all').on('click', function(){
+          var thisVal = $(this).attr('data-val');
+          var val = '';
+          if(thisVal == 0){
+            val = 1;
+          }else{
+            val = 0;
+          }
+          $(this).attr('data-val', val);
+          var _this = this;
+          var params = {
+            gid: gid,
+            ban_all: val
+          }
+          Pub.post(Pub.apiChat +'group/admin/ban_all', params, function(res){
+            if(res.code == 0){
+              if($(_this).hasClass('active')){
+                $(_this).removeClass('active');
+              }else{
+                $(_this).addClass('active');
+              }
+            }
+          });
+        });
+        $('#verify').on('click', function(){
+          var thisVal = $(this).attr('data-val');
+          var val = '';
+          if(thisVal == 0){
+            val = 1;
+          }else{
+            val = 0;
+          }
+          $(this).attr('data-val', val);
+          console.log(thisVal);
+          var _this = this;
+          var params = {
+            gid: gid,
+            direct_join: val
+          }
+          Pub.post(Pub.apiChat +'group/admin/verify', params, function(res){
+            if(res.code == 0){
+              if($(_this).hasClass('active')){
+                $(_this).removeClass('active');
+              }else{
+                $(_this).addClass('active');
+              }
+            }
+          });
+        });
+        $('#stick').on('click', function(){
+          var thisVal = $(this).attr('data-val');
+          var val = '';
+          if(thisVal == 0){
+            val = 1;
+          }else{
+            val = 0;
+          }
+          $(this).attr('data-val', val);
+          console.log(thisVal);
+          var _this = this;
+          var params = {
+            gid: gid,
+            is_top: val
+          }
+          Pub.post(Pub.apiChat +'group/operation/top_set', params, function(res){
+            if(res.code == 0){
+              if($(_this).hasClass('active')){
+                $(_this).removeClass('active');
+              }else{
+                $(_this).addClass('active');
+              }
+            }
+          });
+        });
+        $('#can_recommend').on('click', function(){
+          var thisVal = $(this).attr('data-val');
+          var val = '';
+          if(thisVal == 0){
+            val = 1;
+          }else{
+            val = 0;
+          }
+          $(this).attr('data-val', val);
+          console.log(thisVal);
+          var _this = this;
+          var params = {
+            gid: gid,
+            recommend: val
+          }
+          Pub.post(Pub.apiChat +'group/admin/recommend_set', params, function(res){
+            if(res.code == 0){
+              if($(_this).hasClass('active')){
+                $(_this).removeClass('active');
+                $("#groupQrcode").hide();
+              }else{
+                $(_this).addClass('active');
+                $("#groupQrcode").show();
+              }
+            }
+          });
+        });
+    }
+    // 退出群组
+    function quitGroup(){
+        Pub.confirm(Pub.getLang('tips'), Pub.getLang('confirm_exit_group'), function(){
+            var params = {
+                gid: gid
+            }
+            Pub.post(Pub.apiChat +'group/operation/exit', params, function(res){
+                if(res.code == 0){
+                    Pub.msg(res.data);
+                    Pub.eventSend('group_update');
+                    Pub.eventSend('update_groupinfo');
+
+                    setTimeout(function(){
+                        api.closeWin();
+
+                    }, 1000);
+                }
+            });
+        });
+
+    }
+    // 解散群组
+    function dissolveGroup(){
+        Pub.confirm(Pub.getLang('tips'), Pub.getLang('confirm_ungroup'), function(){
+            var params = {
+                gid: gid
+            }
+            Pub.post(Pub.apiChat +'group/admin/vanish', params, function(res){
+                if(res.code == 0){
+                    Pub.msg(res.echo);
+                    Pub.eventSend('group_update');
+                    Pub.eventSend('update_groupinfo');
+                    setTimeout(function(){
+                        api.closeWin();
+                    }, 1000);
+                }
+            });
+        });
+    }
+    function groupInvite(){
+        Pub.openView('./group_invite_win', {
+            pageParam: api.pageParam
+        });
+    }
+    function chooseImg(){
+        if($api.getStorage('uid') != groupInfoData.owner_id) return Pub.msg(Pub.getLang("Only_the_group_leader_can_modify_the_Avatar"))
+        api.actionSheet({
+            title: Pub.getLang("choose_picture"),
+            cancelTitle: Pub.getLang("cancel"),
+            buttons: [Pub.getLang("image_library"), Pub.getLang("camera"), Pub.getLang("albumText")]
+        }, function(ret, err) {
+            console.log(JSON.stringify(ret))
+            console.log(JSON.stringify(err))
+            var index = ret.buttonIndex;
+            var sourceType = ['library', 'camera', 'album'];
+            var btnIndex = index - 1;
+            if (index > 3) {
+                return;
+            } else {
+                api.getPicture({
+                    sourceType: sourceType[btnIndex],
+                    encodingType: 'jpg',
+                    mediaValue: 'pic',
+                    destinationType: 'url',
+                    allowEdit: false,
+                    quality: 100,
+                    saveToPhotoAlbum: false
+                }, function(ret, err) {
+                    if (ret.data) {
+                        Pub.openView('./avatar_clipper_win', {
+                            pageParam: {
+                                url: ret.data,
+                                type: "group",
+                                gid: gid,
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+    function toRedpacketAuthority(){
+      if(!isGroupMaster) return Pub.msg("您并非群主，无权限设置");
+      $api.setStorage('member_data', memberData);
+      Pub.openView("../redpacket/redpacket_authority_win",{pageParam:{id:gid}});
+    }
+    function onwerChange(){
+      if(!isGroupMaster) return Pub.msg("您并非群主，无权限设置");
+      $api.setStorage('member_data', memberData);
+      Pub.openView("./group_onwer_change_win",{pageParam:{id:gid}});
+    }
+    function setAdmin(){
+      if(!isGroupMaster) return Pub.msg("您并非群主，无权限设置");
+      $api.setStorage('member_data', memberData);
+      Pub.openView("./group_admin_win",{pageParam:{id:gid}});
+    }
+    function banMsg(){
+      if(!isGroupMaster) return Pub.msg("您并非群主，无权限设置");
+      $api.setStorage('member_data', memberData);
+      Pub.openView("./ban_member_win",{pageParam:{id:gid}});
+    }
+</script>
+
+</html>

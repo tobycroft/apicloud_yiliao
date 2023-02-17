@@ -1,0 +1,102 @@
+<!doctype html>
+<html class="bgc-gradual-gray">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+<body class="bgc-gradual-gray">
+  <header class="no-bg" id="header">
+        <div class="header" id="header_index">
+            <div class="header-left" onclick="closeWin()">
+                <i class="return"></i>选择成员
+            </div>
+            <div class="header-right" onclick="done()">
+              <a class="btn-green">开始</a>
+            </div>
+        </div>
+        <div class="chat-video-group-member">
+          <div class="video-member" id="member_choose">
+            <!-- <a><img src="../../icon/logo.png"></a>
+            <a><img src="../../icon/logo.png"></a>
+            <a><img src="../../icon/logo.png"></a>
+            <a><img src="../../icon/logo.png"></a>
+            <a><img src="../../icon/logo.png"></a>
+            <a><img src="../../icon/logo.png"></a>
+            <a><img src="../../icon/logo.png"></a>
+            <a><img src="../../icon/logo.png"></a>
+            <a><img src="../../icon/logo.png"></a> -->
+          </div>
+        </div>
+        <div class="chat-voice-group-search">
+          <div class="search-box">
+            <input type="text" placeholder="搜索" id="search_word">
+          </div>
+        </div>
+    </header>
+    <script type="text/html" id="member_choose_html">
+      {{if data.length > 0}}
+        {{each data}}
+        <a><img src="{{$value.face}}" class="img_url"></a>
+        {{/each}}
+      {{/if}}
+    </script>
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+var checkData = {};
+apiready = function() {
+    api.parseTapmode();
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    var headerPos = $api.offset(header);
+    openFrame(headerPos);
+    Pub.eventListen('member_choose', function(ret){
+      if(ret){
+        console.log('选择的头像' + JSON.stringify(ret));
+        var data = {};
+        data.data = ret.value.chooseMember;
+        var html = template('member_choose_html', data);
+        $('#member_choose').html(html);
+        $('.img_url').each(function(){
+            var thisSrc = $(this).attr('src');
+            console.log(thisSrc);
+            if(thisSrc){
+                if(thisSrc.indexOf('http') == -1){
+                    $(this).attr('src', Pub.imgHost + thisSrc);
+                }
+            }else{
+                $(this).attr('src', '../../skin/default/images/default_avatar.png');
+            }
+        });
+      }
+    });
+    $('#search_word').on('input prototype', function(){
+      var thisVal = $(this).val();
+      console.log(thisVal);
+      Pub.eventSend('vioce_search_word', {
+        searchWord: thisVal
+      });
+    });
+}
+function openFrame(headerPos){
+    Pub.openFrame('./chat_voice_group_choose_frm',{headerPos:headerPos},{bounces:false, pageParam: api.pageParam, bgColor: 'transparent', overScrollMode: 'never'});
+}
+// function done(){
+//   Pub.eventSend('group_member_append');
+// }
+function done(){
+    Pub.eventSend('group_vioce_start');
+}
+function closeWin() {
+  api.closeWin();
+  Pub.setStatusBar();
+}
+</script>
+
+</html>

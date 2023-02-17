@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+
+</head>
+<body>
+  <div id="app">
+    <template>
+      <div class="goods-detail-container">
+        <div class="goods-info">
+          <div class="swiper-container" @touchstart="touchstartBanner" @touchend="touchendBanner">
+            <div class="swiper-wrapper">
+              <div class="swiper-slide" v-for="(item,index) in bannerData" :key="index">
+                <!-- <img :src="(item.pic.indexOf('http') == -1)?(imgHost + item.pic):item.pic"> -->
+                <img :src="item.pic">
+              </div>
+            </div>
+            <div class="swiper-pagination"></div>
+          </div>
+          <div class="name">
+            {{goodsData.cname}}
+          </div>
+          <div class="price" >
+            <span class="unit-price"><h5>￥{{goodsData.price}}</h5>/<font>件</font></span>
+            <!-- <span class="num"><span id="freight">00.00</span></span> -->
+          </div>
+        </div>
+        <div class="content">
+          <div class="tab">
+            <p class="active" onclick="tab(this,'goods-intro')"><span set-lang="text:Product_introduction">商品介绍</span></p>
+          </div>
+          <div class="goods-intro" v-html="goodsData.content">
+          </div>
+        </div>
+        <div class="control-bottom" id="footer">
+          <div class="control">
+            <div class="item">
+              <p>价格：￥{{goodsData.price}}/件</p>
+            </div>
+
+          </div>
+          <div class="btns">
+            <!-- <div onclick="cart()" set-lang="text:add_to_cart">加入购物车</div> -->
+            <div @click="buy()" set-lang="text:Buy_now">立即购买</div>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/swiper.min.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+apiready = function() {
+    api.parseTapmode();
+    var footer = $api.byId('footer');
+    $api.fixTabBar(footer);
+    initEvent();
+}
+function initEvent(){
+  var app = new Vue({
+    el: "#app",
+    data: {
+      imgHost: Pub.imgHost,
+      bannerData: [],
+      goodsData:[],
+    },
+    mounted: function(){
+      var _this = this;
+      _this.getData();
+    },
+    methods:{
+      getData: function() {
+          var _this = this;
+          // _this.bannerData = [{"pic":"../../skin/default/images/mall/banner1.png"},{"pic":"../../skin/default/images/mall/banner2.png"},{"pic":"../../skin/default/images/mall/banner3.png"}]
+          // _this.$nextTick(function() {
+          //     _this.swiperEvent();
+          // });
+          Pub.post(Pub.imgHost + "shop/item/index/get",{id:api.pageParam.id,cata_id:api.pageParam.cata_id},function(res){
+            if(res.code == 0){
+              _this.bannerData = [{"pic":res.data.img}];
+              _this.goodsData = res.data;
+            }
+          })
+      },
+      swiperEvent: function() {
+          var swiper = new Swiper('.swiper-container', {
+              centeredSlides: true,
+              spaceBetween: 0,
+              slidesPerView: 'auto',
+              loop: true,
+              autoplay: true,
+              observer: true,
+              observeParents: true,
+              pagination: {
+                  el: '.swiper-pagination',
+              },
+          })
+      },
+      touchstartBanner: function(e) {
+          e.preventDefault();
+          api.setFrameAttr({
+              name: 'find_frm',
+              bounces: false,
+          });
+      },
+      touchendBanner: function(e) {
+          e.preventDefault();
+          api.setFrameAttr({
+              name: 'find_frm',
+              bounces: true,
+          });
+      },
+      buy:function(){
+        var _this = this;
+        Pub.post(Pub.imgHost + 'shop/addr/index/list',{},function(res){
+          if(res.code == 0){
+            if(res.data.length > 0){
+              data = res.data[0];
+              var info = data.name + "(" + data.phone + ")" + data.provience+data.city+data.state+data.address;
+              Pub.confirm("请确认收货信息", info, function(){
+                Pub.prompt("请输入支付密码","","","",function(text){
+                  alert("支付成功！")
+                })
+              })
+            }else{
+              Pub.confirm("您还未保存收货信息，是否前往保存？", "", function(){
+                Pub.openView("./address_win");
+              })
+            }
+          }
+        })
+
+      }
+
+    }
+  })
+}
+</script>
+
+</html>

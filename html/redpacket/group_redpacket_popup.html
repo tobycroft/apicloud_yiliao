@@ -1,0 +1,160 @@
+<!doctype html>
+<html class="bg-transparent">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bg-transparent">
+    <div class="redpacket-popup-bg" onclick="closePopup()"></div>
+    <div class="redpacket-popup">
+        <div class="close" onclick="closePopup()"></div>
+        <div class="member-info">
+            <span id="user_avatar"></span>
+            <h3><em id="user_name"></em></h3>
+            <p id="pack_remark"></p>
+        </div>
+        <div class="coin-icon" id="btn_get">
+            <div class="icon" id="coin_img">
+            </div>
+        </div>
+        <div class="fonts" onclick="toDetail()"><font set-lang="text:see_receipt_detail">查看领取详情</font> &gt;</div>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    var id = '', gid = '', red = '', uid = '';
+    apiready = function() {
+        api.parseTapmode();
+        id = api.pageParam.id;
+        gid = api.pageParam.gid;
+        red = api.pageParam.red;
+        sender = api.pageParam.sender;
+        uid = $api.getStorage('uid');
+
+        console.log(gid);
+        getUserInfo();
+        getData();
+        clickEvent();
+    }
+    function getData(){
+        console.log(gid)
+        var params = {
+            packid: red,
+            gid: gid,
+            tkey: 'test1936'
+        }
+        console.log('红包参数:' + JSON.stringify(params));
+        Pub.post(Pub.apiChat +'pack/group/info', params, function(res){
+            console.log('红包详情:' + JSON.stringify(res));
+            if(res.code == 0){
+                var data = res.data;
+                // var avatar = data.user_info.face;
+                // if(avatar){
+                //     if(avatar.indexOf('http') == -1){
+                //         $('#user_avatar').html('<img src="'+Pub.imgHost + avatar+'">');
+                //     }else{
+                //         $('#user_avatar').html('<img src="' + avatar+'">');
+                //     }
+                // }
+                // $('#user_name').text(data.user_info.uname + ' '+ Pub.getLang('red_envelopes'));
+                $('#desc').text(Pub.getLang('give_you_a_redpacket'));
+                $('#pack_remark').text(data.remark || Pub.getLang('congratulations'));
+                var coinImg = data.img;
+                if(coinImg){
+                  if(coinImg.indexOf('http') == -1){
+                      $('#coin_img').html('<img src="'+Pub.imgHost + coinImg+'">');
+                  }else{
+                      $('#coin_img').html('<img src="' + coinImg+'">');
+                  }
+                }else{
+                  $('#coin_img').html(Pub.getLang('open'));
+                }
+
+            }
+        });
+    }
+    function toDetail(){
+      Pub.openView('./group_get_redpacket_win', {
+        pageParam: api.pageParam
+      })
+    }
+    function clickEvent(){
+        $('#btn_get').on('click', function(){
+            getRedpacket(id);
+        });
+    }
+    // 领取红包
+    function getRedpacket(id, pass, remark){
+        var params = {
+            packid: red,
+            paypass: pass || '',
+            remark: remark || '',
+            tkey: 'test1936'
+        }
+        Pub.post(Pub.apiChat +'pack/group/recv', params, function(res){
+            console.log('红包领取:' + JSON.stringify(res));
+            if(res.code == 0){
+              Pub.eventSend('chat_group_init');
+              Pub.openView('./group_get_redpacket_win', {
+                pageParam: api.pageParam
+              })
+              Pub.msg(res.echo);
+              $api.setStorage(uid + "_" + red + "_pack_status", 1);
+              setTimeout(function(){
+                closePopup();
+              }, 1000);
+            }
+        });
+    }
+    function getUserInfo(){
+      if($api.getStorage(sender + "_user_info")){
+        var data = $api.getStorage(sender + "_user_info");
+        var avatar = data.face;
+        if(avatar){
+            if(avatar.indexOf('http') == -1){
+                $('#user_avatar').html('<img src="'+Pub.imgHost + avatar+'">');
+            }else{
+                $('#user_avatar').html('<img src="' + avatar+'">');
+            }
+        }else{
+          $('#avatar_receive').html('<img src="../../icon/logo.png">');
+        }
+        $('#user_name').text(data.uname + ' 的红包');
+      }else{
+        Pub.post(Pub.apiChat+"group/info/member2",{gid:gid},function(res){
+          if(res.code == 0){
+            var ownerD = res.data.owner;
+            var adminD = res.data.admin;
+            var memberD = res.data.member;
+            res.data = ownerD.concat(adminD.concat(memberD));
+            console.log(id);
+            for(var i = 0;i<res.data.length;i++){
+              if(sender == res.data[i].uid){
+                $api.setStorage(sender + "_user_info",res.data[i]);
+                if(res.data[i].face.indexOf("http")==-1){
+                  $("#user_avatar").attr("src",Pub.imgHost+res.data[i].face);
+                }else{
+                  $("#user_avatar").attr("src",res.data[i].face);
+                }
+                $("#user_name").html(res.data[i].uname);
+              }
+            }
+          }
+        })
+      }
+
+    }
+    function closePopup(){
+        api.closeFrame();
+    }
+</script>
+
+</html>

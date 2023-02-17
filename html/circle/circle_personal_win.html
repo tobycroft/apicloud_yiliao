@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+<body>
+  <header style="visibility: hidden">
+      <div class="header-box no-bg" id="header" style="visibility: hidden">
+        <div class="header">
+            <div class="header-left">
+                <i class="return" onclick="closeWin()"></i>
+            </div>
+            <div class="header-middle"></div>
+            <div class="header-right">
+              <i class="photo"></i>
+            </div>
+        </div>
+      </div>
+  </header>
+
+
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+apiready = function() {
+    api.parseTapmode();
+    Pub.setStatusBar();
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    var headerPos = $api.offset(header);
+    openFrame();
+    openHeader(headerPos);
+    setFrame();
+    Pub.eventListen('circle_personal_frm_done', function(){
+      var circleH = headerPos.h;
+      api.execScript({
+        frameName: 'circle_personal_frm',
+        script: 'getHeaderH('+circleH+')'
+      });
+    });
+    if(api.pageParam.isToInfo){
+      Pub.keybackClose(true);
+    }
+}
+function openHeader(headerPos){
+  console.log(headerPos.h);
+  console.log(api.safeArea.top);
+  api.openFrame({
+      name: 'circle_personal_header_frm',
+      url: './circle_personal_header_frm.html',
+      rect: {
+          x: 0,
+          y: 0,
+          w: 'auto',
+          h: headerPos.h + api.safeArea.top
+      },
+      bounces: false,
+      bgColor: 'transparent',
+      pageParam: api.pageParam
+  });
+}
+function setFrame(){
+  api.sendFrameToBack({
+      from: 'circle_personal_frm'
+  });
+}
+function openFrame(){
+    Pub.openFrame('./circle_personal_frm',{},{bounces:false, pageParam: api.pageParam, bgColor: '#fff'});
+}
+function closeWin() {
+  if(api.pageParam.isToInfo){
+    Pub.changeStatusBar();
+  }
+  api.closeWin();
+}
+</script>
+
+</html>

@@ -1,0 +1,247 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-white">
+  <div id="searchFriend"></div>
+  <div id="searchGroup"></div>
+  <div id="searchFriendHistory"></div>
+  <div id="searchGroupHistory"></div>
+  <div class="nothing hide" set-lang="text:nothing_to_search" >对不起，没有找到您想要的</div>
+  <script type="text/html" id="search_friend_html">
+    {{if data.length > 0}}
+    <div class="group-cell-index" set-lang="text:friend">好友</div>
+    <div class="group-cell-icon">
+        <ul>
+            {{each data}}
+            <li class="to_click" data-id="{{$value.id}}" data-fid="{{$value.fid}}" data-name="{{$value.uname}}">
+                <div class="icon"><img src="{{$value.face}}" class="img_url"></div>
+                <div class="name">{{$value.uname}}</div>
+            </li>
+            {{/each}}
+        </ul>
+    </div>
+    {{/if}}
+  </script>
+  <script type="text/html" id="search_group_html">
+    {{if data.length > 0}}
+      <div class="group-cell-index" set-lang="text:group">群组</div>
+      <div class="chat-container">
+        <ul>
+          {{each data}}
+          <li class="to_group group" data-id="{{$value.id}}">
+              <div class="avatar"><img src="{{$value.img}}" class="img_url"></div>
+              <div class="info">
+                <div class="info-top">
+                  <!-- <div class="name">{{$value.group_name}}({{$value.member_count}})</div> -->
+                  <div class="name">{{$value.group_name}}</div>
+                </div>
+                <div class="info-bottom">
+                  <div class="desc">
+                    {{$value.introduction}}
+                  </div>
+                </div>
+              </div>
+          </li>
+          {{/each}}
+        </ul>
+      </div>
+    {{/if}}
+  </script>
+  <script type="text/html" id="search_friend_history_html">
+    {{if data.length > 0}}
+    <div class="group-cell-index" set-lang="text:">单人聊天记录</div>
+      <div class="chat-container">
+        <ul>
+          {{each data}}
+          <li class="to_group chat_record" data-chatId="{{$value.chat_id}}" type="private" name="{{$value.uname}}" img="{{$value.face}}">
+              <div class="avatar"><img src="{{$value.face}}" class="img_url"></div>
+              <div class="info">
+                <div class="info-top">
+                  <div class="name">{{$value.uname}}</div>
+                </div>
+                <div class="info-bottom">
+                  <div class="desc">
+                    {{$value.count}}条相关聊天记录
+                  </div>
+                </div>
+              </div>
+          </li>
+          {{/each}}
+        </ul>
+      </div>
+    </div>
+    {{/if}}
+  </script>
+  <script type="text/html" id="search_group_history_html">
+    {{if data.length > 0}}
+      <div class="group-cell-index" set-lang="text:">群聊天记录</div>
+      <div class="chat-container">
+        <ul>
+          {{each data}}
+          <li class="to_group chat_record" data-gid="{{$value.gid}}" type="group" name="{{$value.group_name}}" img="{{$value.img}}">
+              <div class="avatar"><img src="{{$value.img}}" class="img_url"></div>
+              <div class="info">
+                <div class="info-top">
+                  <div class="name">{{$value.group_name}}</div>
+                </div>
+                <div class="info-bottom">
+                  <div class="desc">
+                    {{$value.count}}条相关聊天记录
+                  </div>
+                </div>
+              </div>
+          </li>
+          {{/each}}
+        </ul>
+      </div>
+    {{/if}}
+  </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+var searchText = "";
+var uid = "";
+var friendData = [], groupData = [], friendHistoryData = [], groupHistoryData = [];
+var friendHistoryDataStatus = true,groupHistoryDataStatus = true;
+    apiready = function() {
+        api.parseTapmode();
+        uid = $api.getStorage('uid');
+        Pub.eventListen('search', function(ret){
+          if(ret && ret.value.words){
+            searchText = ret.value.words;
+            var params = {
+              text: ret.value.words,
+            }
+            //搜索好友
+            friendData = [];
+            if($api.getStorage(uid + "_groupList")){
+              var data = $api.getStorage(uid + "_friendList");
+              for(var i = 0;i<data.length;i++){
+                if(data[i].uname.indexOf(searchText) != -1){
+                  friendData.push(data[i]);
+                }
+              }
+              //var obj = {data:friendData};
+              var html = template('search_friend_html', {data:friendData});
+              $('#searchFriend').html(html);
+              imgUrl();
+            }
+            //搜索群名
+            groupData = [];
+            if($api.getStorage(uid + "_groupList")){
+              var data = $api.getStorage(uid + "_groupList");
+              console.log(JSON.stringify(data));
+              data = data.owner.concat(data.admin.concat(data.member.concat(data.other)));
+              for(var i = 0;i<data.length;i++){
+                if(data[i].group_name.indexOf(searchText) != -1){
+                  groupData.push(data[i]);
+                }
+              }
+              //var obj = {data:friendData};
+              var html = template('search_group_html', {data:groupData});
+              $('#searchGroup').html(html);
+              imgUrl();
+            }
+            //搜索聊天记录
+            friendHistoryData = [];
+            Pub.post(Pub.apiChat + 'message/search/single_all', params, function(res){
+              if(res.code == 0){
+                friendHistoryData = res.data;
+                var html = template('search_friend_history_html', {data:friendHistoryData});
+                $('#searchFriendHistory').html(html);
+                imgUrl();
+                if(res.data.length == 0){
+                  friendHistoryDataStatus = false;
+                  if(!friendHistoryDataStatus && !groupHistoryDataStatus){
+                    friendHistoryDataStatus = true;
+                    Pub.msg("对不起，没有找到您想要的!");
+                  }
+                }
+
+              }
+            })
+            groupHistoryData = [];
+            Pub.post(Pub.apiChat + 'message/search/group_all', params, function(res){
+              if(res.code == 0){
+                groupHistoryData = res.data;
+                var html = template('search_group_history_html', {data:groupHistoryData});
+                $('#searchGroupHistory').html(html);
+                imgUrl();
+                if(res.data.length == 0){
+                  groupHistoryDataStatus = false;
+                  if(!friendHistoryDataStatus && !groupHistoryDataStatus){
+                    groupHistoryDataStatus = true;
+                    Pub.msg("对不起，没有找到您想要的!");
+                  }
+                }
+              }
+            })
+          }
+        });
+    }
+    function imgUrl(){
+      $('.img_url').each(function(){
+          var thisSrc = $(this).attr('src');
+          if(thisSrc){
+              if(thisSrc.indexOf('http') === -1){
+                  $(this).attr('src', Pub.imgHost + thisSrc);
+              }
+          }else{
+              $(this).attr('src', '../../skin/default/images/img_avatar.png');
+          }
+      });
+      $('.to_click').on('click', function(){
+          var thisId = $(this).attr('data-id'),
+              thisFid = $(this).attr('data-fid'),
+              thisName = $(this).attr('data-name');
+          Pub.openView('../chat/personal_info_win', {
+              pageParam:{
+                  fid: thisFid,
+                  name: thisName,
+                  isStatus: true
+              }
+          });
+      });
+      $('.group').on('click', function(){
+        var thisId = $(this).attr('data-id');
+        Pub.openView('../chat/group_info_win', {
+          pageParam:{
+            id: thisId,
+            isStatus: true
+          }
+        });
+      });
+      $('.chat_record').on('click', function(){
+        var type = $(this).attr('type');
+        if(type == "group"){
+          Pub.openView("chat_record_detail_win",{pageParam:{
+            type: "group",
+            id: $(this).attr('data-gid'),
+            text: searchText,
+            name: $(this).attr('name'),
+            img: $(this).attr('img'),
+          }})
+        }else{
+          Pub.openView("chat_record_detail_win",{pageParam:{
+            type: "private",
+            id: $(this).attr('data-chatId'),
+            text: searchText,
+            name: $(this).attr('name'),
+            img: $(this).attr('img'),
+          }})
+        }
+      })
+    }
+</script>
+
+</html>

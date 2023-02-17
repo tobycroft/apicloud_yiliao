@@ -1,0 +1,110 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-white">
+  <div id="app">
+    <template>
+      <div class="feedback-list" id="feedback_list">
+        <div class="item" v-for="(item,index) in listData" :key="index" @click="toDetail(item.id)">
+            <h4>{{lang.title}}：{{item.title}}</h4>
+            <p>{{lang.time}}：{{item.date}}</p>
+        </div>
+      </div>
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      var app = new Vue({
+        el: '#app',
+        data: {
+          page: 1,
+          size: 20,
+          listData: [],
+          isNomore: false,
+          lang: {
+            title: Pub.getLang("title"),
+            time: Pub.getLang("time"),
+          }
+        },
+        mounted: function(){
+          this.getData();
+          this.pullDown();
+        },
+        methods: {
+          getData: function(callback){
+            var _this = this;
+            Pub.post('report/user_report', {}, function(res){
+              if(res.code == 0){
+                _this.listData = res.data;
+              }
+              if(callback && typeof callback == 'function'){
+                callback();
+              }
+            });
+          },
+          // getData: function(isMore, callback){
+          //   var _this = this;
+          //   var params = {
+          //     page: this.page,
+          //     limit: this.size
+          //   }
+          //   Pub.post('user/feedback', params, function(res){
+          //     console.log(JSON.stringify(res));
+          //     if(res.code == 0){
+          //       var data = res.data.data;
+          //       if(isMore){
+          //         _this.listData = _this.listData.concat(data);
+          //       }else{
+          //         _this.listData = data;
+          //       }
+          //       if(data.length == 0 || data.length < _this.size){
+          //         _this.isNomore = true;
+          //         Pub.pullUpDone();
+          //       }else{
+          //         _this.isNomore = false;
+          //         _this.pullUp();
+          //       }
+          //     }
+          //     if(callback && typeof callback == 'function'){
+          //       callback();
+          //     }
+          //   });
+          // },
+          pullDown: function(){
+            var _this = this;
+            Pub.pullDown(function(){
+              _this.getData(function(){
+                Pub.pullDownDone();
+              });
+            });
+          },
+          toDetail: function(id){
+            Pub.openView('./complaint_record_detail_win', {
+              pageParam: {
+                id: id
+              }
+            });
+          }
+        }
+      });
+    }
+
+</script>
+
+</html>

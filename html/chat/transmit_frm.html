@@ -1,0 +1,370 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+    <div id="app">
+      <template>
+        <div class="group-cell-icon mt-20">
+            <ul>
+                <li v-for="(item, index) in listData" :key="index">
+                    <div class="icon" v-if="item.gid" @click="clickShare('group', item.gid, item.group_name, item.img, item.gid)">
+                      <img :src="(item.img.indexOf('http') == -1)?(imgHost + item.img):item.img">
+                    </div>
+                    <div class="icon" v-else @click="clickShare('user', item.uid, item.uname, item.face, item.telephone)">
+                      <img :src="(item.face.indexOf('http') == -1)?(imgHost + item.face):item.face" >
+                    </div>
+                    <div class="name" v-if="item.gid" @click="clickShare('group', item.gid, item.group_name, item.img, item.gid)">{{item.group_name}}({{item.member_count}})</div>
+                    <div class="name" v-else @click="clickShare('user', item.uid, item.uname, item.face, item.telephone)">{{Pub.showNickname(item)}}</div>
+                </li>
+                <!-- <li>
+                    <div class="icon"><img src="../../skin/default/images/icon_friend_fill.png"></div>
+                    <div class="name">安星</div>
+                </li>
+                <li>
+                    <div class="icon"><img src="../../skin/default/images/icon_friend_fill.png"></div>
+                    <div class="name">安星</div>
+                </li>
+                <li>
+                    <div class="icon"><img src="../../skin/default/images/icon_friend_fill.png"></div>
+                    <div class="name">安星</div>
+                </li> -->
+            </ul>
+        </div>
+      </template>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+  apiready = function() {
+      api.parseTapmode();
+      initEvent();
+  }
+  function initEvent(){
+    var app = new Vue({
+      el: '#app',
+      data: {
+        uid: $api.getStorage('uid'),
+        imgHost: Pub.imgHost,
+        listData: [],
+        friendData: [],
+        groupData: [],
+        listDataInit: [],
+        searchData: [],
+        msgId: '',
+        msgType: '',
+        fid: '',
+        gid: '',
+        send_fid: '',
+        send_gid: '',
+        card: {
+          headImg : '',
+          phone: '',
+          username: '',
+          id: '',
+        }
+      },
+      mounted: function(){
+        var _this = this;
+        if(api.pageParam.shareType == "message"){
+          this.msgId = api.pageParam.msgId;
+          this.msgType = api.pageParam.msgType;
+        }else if(api.pageParam.shareType == "user_card"){
+          this.fid = api.pageParam.fid;
+        }else if(api.pageParam.shareType == "group_card"){
+          this.gid = api.pageParam.gid;
+        }else if(api.pageParam.shareType == "send_user_card"){
+          this.send_fid = api.pageParam.fid;
+          _this.getUserCardData(this.send_fid);
+        }else if(api.pageParam.shareType == "send_group_card"){
+          this.send_gid = api.pageParam.gid;
+          _this.getGroupCardData(this.send_gid);
+        }
+        this.getData();
+        Pub.eventListen('transmit_search', function(ret){
+          console.log(ret.value.words);
+          _this.searchGet(ret.value.words);
+        });
+        Pub.eventListen('transmit_done', function(){
+          _this.done();
+        });
+      },
+      methods: {
+        getFriendData: function(){
+          var _this = this;
+          if($api.getStorage(_this.uid+"_friendList")){
+            _this.friendData = $api.getStorage(_this.uid+"_friendList");
+          }
+          Pub.post(Pub.apiChat +'friend/friend/list2', {}, function(res){
+            console.log('好友列表:' + JSON.stringify(res));
+              if(res.code == 0){
+                _this.friendData = res.data;
+                $api.setStorage(_this.uid+"_friendList", res.data);
+              }
+          })
+        },
+        getGroupData: function(){
+          var _this = this;
+          if($api.getStorage(_this.uid+"_groupList")){
+            var data = $api.getStorage(_this.uid+"_groupList");
+            var ownerD = data.owner;
+            var adminD = data.admin;
+            var memberD = data.member;
+            _this.groupData = ownerD.concat(adminD.concat(memberD));
+            for(var i = 0;i < _this.groupData.length;i++){
+              if($api.getStorage(_this.groupData[i].id + "_group_members")){
+                var data = $api.getStorage(_this.groupData[i].id + "_group_members");
+                _this.groupData[i].member_count = data.length;
+              }
+            }
+          }
+          Pub.post('group/info/list2', {}, function(res) {
+            if (res.code == 0) {
+              //_this.groupData = res.data;
+              var ownerD = res.data.owner;
+              var adminD = res.data.admin;
+              var memberD = res.data.member;
+              _this.groupData = ownerD.concat(adminD.concat(memberD));
+              $api.setStorage(_this.uid+"_groupList", res.data);
+              for(var i = 0;i < _this.groupData.length;i++){
+                if($api.getStorage(_this.groupData[i].id + "_group_members")){
+                  var data = $api.getStorage(_this.groupData[i].id + "_group_members");
+                  _this.groupData[i].member_count = data.length;
+                }
+              }
+            }
+          });
+          console.log(JSON.stringify(_this.groupData));
+        },
+        getData: function(){
+          var _this = this;
+          //var data = $api.getStorage(_this.uid+'transmit_list');
+          _this.getFriendData();
+          _this.getGroupData();
+          _this.listData = _this.friendData.concat(_this.groupData);
+          _this.listDataInit = _this.friendData.concat(_this.groupData);
+          console.log(JSON.stringify(_this.listData));
+        },
+        getUserCardData: function(fid){
+          var _this = this;
+          Pub.post(Pub.apiChat +'friend/info/userinfo', {fid:fid}, function(res){
+            console.log(JSON.stringify(res));
+            _this.card.id = res.data.uid;
+            _this.card.headImg = res.data.face;
+            _this.card.username = res.data.uname;
+            _this.card.phone = res.data.telephone;
+          });
+        },
+        getGroupCardData: function(gid){
+          var _this = this;
+          Pub.post(Pub.apiChat +'group/info/get', {gid:gid}, function(res){
+            console.log(JSON.stringify(res));
+            _this.card.id = res.data.id;
+            _this.card.headImg = res.data.img;
+            _this.card.username = res.data.group_name;
+            _this.card.phone = res.data.id;
+          });
+        },
+        searchGet: function(words){
+
+          if(words){
+            var data = this.listDataInit;
+            this.searchData = [];
+            for(var i=0; i<data.length; i++){
+              console.log(data[i].gid);
+              if(data[i].gid){
+                if(data[i].group_name.indexOf(words) > -1){
+                  this.searchData.push(data[i]);
+                }
+              }else if(data[i].uid){
+                if(Pub.showNickname(data[i]).indexOf(words) > -1){
+                  this.searchData.push(data[i]);
+                }
+              }
+            }
+          }else{
+            this.searchData = this.listDataInit;
+          }
+          this.listData = this.searchData;
+        },
+        clickShare: function(type, typeId, name, img, intro){
+          console.log(type);
+          var _this = this;
+          var tips = '';
+          if(type == 'group'){
+            tips = Pub.getLang('confirm_send_to_group') + '"'+name+'"';
+          }else{
+            tips = Pub.getLang('confirm_send_to_friend') + '"'+name+'"';
+          }
+          if(api.pageParam.shareType == "message"){
+            Pub.confirm(Pub.getLang('tips'), tips, function(){
+              var params = {
+                forward_type: type,
+                forward_id: typeId,
+                msg_type: _this.msgType,
+                msg_id: _this.msgId
+              }
+              Pub.post(Pub.apiChat +'message/forward', params, function(res){
+                if(res.code == 0){
+                  Pub.msg(res.echo || Pub.getLang('send_succcess'));
+                  setTimeout(function(){
+                    api.closeWin();
+                    Pub.setStatusBar();
+                  }, 1000);
+                }
+              });
+            });
+          }
+          if(api.pageParam.shareType == "user_card"){
+            Pub.confirm(Pub.getLang('tips'), tips, function(){
+              var params = {
+                fid: _this.fid,
+                msg: "好友名片",
+                at: "",
+                extra: {
+                  type: type,
+                  headImg : img,
+                  phone: intro,
+                  username: name,
+                  id: typeId
+                }
+              }
+              Pub.eventSend("send_card_to_user", params);
+              setTimeout(function(){
+                api.closeWin();
+                Pub.setStatusBar();
+              }, 300);
+              // Pub.post(Pub.apiChat +'chat/send_user', params, function(res){
+              //   if(res.code == 0){
+              //     Pub.msg(res.echo || Pub.getLang('send_succcess'));
+              //     setTimeout(function(){
+              //       api.closeWin();
+              //       Pub.setStatusBar();
+              //     }, 1000);
+              //   }
+              // });
+            });
+          }
+          if(api.pageParam.shareType == "group_card"){
+            //console.log(_this.fid);
+            Pub.confirm(Pub.getLang('tips'), tips, function(){
+              var params = {
+                gid: _this.gid,
+                msg: "群名片",
+                at: "",
+                extra: {
+                  type: type,
+                  headImg : img,
+                  phone: intro,
+                  username: name,
+                  id: typeId,
+                }
+              }
+              Pub.eventSend("send_card_to_group", params);
+              setTimeout(function(){
+                api.closeWin();
+                Pub.setStatusBar();
+              }, 300);
+              // Pub.post(Pub.apiChat +'chat/group/share_user', params, function(res){
+              //   if(res.code == 0){
+              //     Pub.msg(res.echo || Pub.getLang('send_succcess'));
+              //     setTimeout(function(){
+              //       api.closeWin();
+              //       Pub.setStatusBar();
+              //     }, 1000);
+              //   }
+              // });
+            });
+          }
+          if(api.pageParam.shareType == "send_user_card" || api.pageParam.shareType == "send_group_card"){
+            Pub.confirm(Pub.getLang('tips'), tips, function(){
+              if(type == "user"){
+                var params = {
+                  fid: typeId,
+                  msg: "好友名片",
+                  at: "",
+                  extra: {
+                    type: api.pageParam.shareType=="send_user_card"?"user":"group",
+                    headImg : _this.card.headImg,
+                    phone: _this.card.phone,
+                    username: _this.card.username,
+                    id: _this.card.id
+                  }
+                }
+                api.closeWin({name:"chat_personal_win"});
+                Pub.openView('./chat_personal_win', {
+                    pageParam:{
+                        fid: typeId,
+                        name: $api.getStorage(typeId + "_user_info").uname,
+                        isStatus: true
+                    }
+                });
+                setTimeout(function(){
+                  Pub.eventSend("send_card_to_user", params);
+                  api.closeWin();
+                  Pub.setStatusBar();
+                }, 1000);
+                // Pub.post(Pub.apiChat +'chat/send_user', params, function(res){
+                //   if(res.code == 0){
+                //     Pub.msg(res.echo || Pub.getLang('send_succcess'));
+                //     setTimeout(function(){
+                //       api.closeWin();
+                //       Pub.setStatusBar();
+                //     }, 1000);
+                //   }
+                // });
+              }else{
+                var params = {
+                  gid: typeId,
+                  msg: "群名片",
+                  at: "",
+                  extra: {
+                    type: api.pageParam.shareType=="send_user_card"?"user":"group",
+                    headImg : _this.card.headImg,
+                    phone: _this.card.phone,
+                    username: _this.card.username,
+                    id: _this.card.id,
+                  }
+                }
+                api.closeWin({name:"chat_group_win"});
+                Pub.openView('./chat_group_win', {
+                    pageParam:{
+                        id: params.gid,
+                        name: $api.getStorage(params.gid + "_group_info").group_name,
+                        memberNum: ""
+                    }
+                });
+                setTimeout(function(){
+                  Pub.eventSend("send_card_to_group", params);
+                  api.closeWin();
+                  Pub.setStatusBar();
+                }, 1000);
+                // Pub.post(Pub.apiChat +'chat/group/share_user', params, function(res){
+                //   if(res.code == 0){
+                //     Pub.msg(res.echo || Pub.getLang('send_succcess'));
+                //     setTimeout(function(){
+                //       api.closeWin();
+                //       Pub.setStatusBar();
+                //     }, 1000);
+                //   }
+                // });
+              }
+            });
+          }
+        }
+      }
+    });
+  }
+
+</script>
+
+</html>

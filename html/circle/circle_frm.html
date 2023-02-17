@@ -1,0 +1,952 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-white">
+  <div id="app">
+    <template>
+      <div class="circle-container" ref="circle_container">
+        <div class="circle-bg" ref="circle_bg">
+          <img :src="(infoData.bg.indexOf('http') == -1)?(imgHost + infoData.bg):infoData.bg"  v-if="infoData.bg">
+          <img src="../../skin/default/images/circle/bg_circle.jpg" v-else>
+        </div>
+        <div class="user-info" @click="toInfo(infoData.uid)">
+          <div class="name">{{infoData.uname}}</div>
+          <div class="avatar" v-if="infoData.face">
+            <img :src="getAvatarCache(infoData.face)" v-if="getAvatarCache(infoData.face)" v-show="getAvatarCache(infoData.face)">
+            <img v-lazy="(infoData.face.indexOf('http') == -1)?(imgHost + infoData.face):infoData.face" :key="infoData.face"  @load="loadImg(infoData.face)" v-else>
+          </div>
+          <div class="avatar" v-else>
+            <img src="../../icon/logo.png">
+          </div>
+        </div>
+        <div class="circle-list">
+          <ul v-if="listData.length > 0">
+            <li v-for="(item,index) in listData" :key="index">
+              <div class="avatar" @click="toInfo(item.user_info.uid)">
+                <img :src="getAvatarCache(item.user_info.face)" v-if="getAvatarCache(item.user_info.face)">
+                <img v-lazy="(item.user_info.face.indexOf('http') == -1)?(imgHost + item.user_info.face):item.user_info.face" :key="item.user_info.face"  @load="loadImg(item.user_info.face)" v-else>
+              </div>
+              <div class="info">
+                <div class="name">{{item.user_info.uname}}</div>
+                <div class="desc">{{item.post.content}}</div>
+                <div class="imgs single" v-if="item.attachs && item.attachs.length == 1">
+                  <a v-for="(attachs, attachsIndex) in item.attachs" :key="attachsIndex" @click="showPhoto(item.attachs, attachsIndex)">
+                    <img v-lazy="(attachs.url.indexOf('http') == -1)?(imgHost + attachs.url):attachs.url" :key="attachs.url">
+                  </a>
+                </div>
+                <div class="imgs four" v-else-if="item.attachs && item.attachs.length == 4">
+                  <a v-for="(attachs, attachsIndex) in item.attachs" :key="attachsIndex" @click="showPhoto(item.attachs, attachsIndex)">
+                    <img v-lazy="(attachs.url.indexOf('http') == -1)?(imgHost + attachs.url):attachs.url" :key="attachs.url">
+                  </a>
+                </div>
+                <div class="imgs" v-else>
+                  <a v-for="(attachs, attachsIndex) in item.attachs" :key="attachsIndex" @click="showPhoto(item.attachs, attachsIndex)">
+                    <img v-lazy="(attachs.url.indexOf('http') == -1)?(imgHost + attachs.url):attachs.url" :key="attachs.url">
+                  </a>
+                </div>
+                <div class="handle">
+                  <div class="handle-left">{{timeShow(item.post.date)}}<a v-if="uid == item.uid" @click="deleteCircle(item.post.id, index)">删除</a></div>
+                  <div class="handle-right">
+                    <div class="omit">
+                      <span class="omit-icon" @click="showHandle(item.post.id)"></span>
+                      <div :class="['omit-popup', {'active': commentChooseId == item.post.id}]">
+                        <div class="popup-cont">
+                          <a :class="['prise', {'active': isPrise(item.likes) == 1}]" @click="toPrise(item.post.id, index, isPrise(item.likes))"><i></i>赞</a>
+                          <a class="comment" @click="toComment(item.post.id, index)"><i></i>评论</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="comment-container" >
+                  <div class="prise-box" v-if="item.likes && item.likes.length > 0">
+                    <a v-for="(likes, likesIndex) in item.likes" :key="likesIndex">
+                      <span v-if="likes.user_info">{{likes.user_info.uname}}</span>
+                    </a>
+                  </div>
+                  <div class="comment-box" v-if="item.comments && item.comments.length > 0">
+                    <div class="comment-item" v-for="(comments, commentsIndex) in item.comments" :key="commentsIndex">
+                      <div class="comment-avatar" @click="toInfo(comments.user_info.uid)">
+                        <img :src="getAvatarCache(comments.user_info.face)" v-if="getAvatarCache(comments.user_info.face)">
+                        <img v-lazy="(comments.user_info.face.indexOf('http') == -1)?(imgHost + comments.user_info.face):comments.user_info.face" :key="comments.user_info.face" @load="loadImg(comments.user_info.face)" v-else>
+                      </div>
+                      <div class="comment-info">
+                        <div class="comment-info-top">
+                          <div class="comment-name">{{comments.user_info.uname}}</div>
+                          <div class="comment-time">{{timeShow(comments.date)}}</div>
+                        </div>
+                        <div class="comment-info-bottom">
+                          <div style="display:inline-block;" v-html="messageCont(comments.comment)"></div> <a v-if="uid == comments.uid" @click="deleteComment(comments.id, index, item.comments, commentsIndex)">删除</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li>
+            <!-- <li>
+              <div class="avatar"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+              <div class="info">
+                <div class="name">快乐聊天</div>
+                <div class="desc">13.8不错摆家里看着心情舒畅</div>
+                <div class="imgs single">
+                  <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                </div>
+                <div class="handle">
+                  <div class="handle-left">13:08<a>删除</a></div>
+                  <div class="handle-right">
+                    <div class="omit">
+                      <span class="omit-icon"></span>
+                      <div class="omit-popup">
+                        <div class="popup-cont">
+                          <a class="prise"><i></i>赞</a>
+                          <a class="comment"><i></i>评论</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="comment-container">
+                  <div class="prise-box">
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                  </div>
+                  <div class="comment-box">
+                    <div class="comment-item">
+                      <div class="comment-avatar"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+                      <div class="comment-info">
+                        <div class="comment-info-top">
+                          <div class="comment-name">快乐聊天</div>
+                          <div class="comment-time">13:09</div>
+                        </div>
+                        <div class="comment-info-bottom">
+                          复制词条评论， 打开淘宝带回家
+                        </div>
+                      </div>
+                    </div>
+                    <div class="comment-item">
+                      <div class="comment-avatar"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+                      <div class="comment-info">
+                        <div class="comment-info-top">
+                          <div class="comment-name">快乐聊天</div>
+                          <div class="comment-time">13:09</div>
+                        </div>
+                        <div class="comment-info-bottom">
+                          复制词条评论， 打开淘宝带回家
+                        </div>
+                      </div>
+                    </div>
+                    <div class="comment-item">
+                      <div class="comment-avatar"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+                      <div class="comment-info">
+                        <div class="comment-info-top">
+                          <div class="comment-name">快乐聊天</div>
+                          <div class="comment-time">13:09</div>
+                        </div>
+                        <div class="comment-info-bottom">
+                          复制词条评论， 打开淘宝带回家
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="avatar"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+              <div class="info">
+                <div class="name">快乐聊天</div>
+                <div class="desc">13.8不错摆家里看着心情舒畅</div>
+                <div class="imgs single">
+                  <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                </div>
+                <div class="handle">
+                  <div class="handle-left">13:08<a>删除</a></div>
+                  <div class="handle-right">
+                    <div class="omit">
+                      <span class="omit-icon"></span>
+                      <div class="omit-popup">
+                        <div class="popup-cont">
+                          <a class="prise"><i></i>赞</a>
+                          <a class="comment"><i></i>评论</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="comment-container">
+                  <div class="prise-box">
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                  </div>
+                  <div class="comment-box">
+                    <div class="comment-item">
+                      <div class="comment-avatar"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+                      <div class="comment-info">
+                        <div class="comment-info-top">
+                          <div class="comment-name">快乐聊天</div>
+                          <div class="comment-time">13:09</div>
+                        </div>
+                        <div class="comment-info-bottom">
+                          复制词条评论， 打开淘宝带回家
+                        </div>
+                      </div>
+                    </div>
+                    <div class="comment-item">
+                      <div class="comment-avatar"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+                      <div class="comment-info">
+                        <div class="comment-info-top">
+                          <div class="comment-name">快乐聊天</div>
+                          <div class="comment-time">13:09</div>
+                        </div>
+                        <div class="comment-info-bottom">
+                          复制词条评论， 打开淘宝带回家
+                        </div>
+                      </div>
+                    </div>
+                    <div class="comment-item">
+                      <div class="comment-avatar"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+                      <div class="comment-info">
+                        <div class="comment-info-top">
+                          <div class="comment-name">快乐聊天</div>
+                          <div class="comment-time">13:09</div>
+                        </div>
+                        <div class="comment-info-bottom">
+                          复制词条评论， 打开淘宝带回家
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="avatar"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+              <div class="info">
+                <div class="name">快乐聊天</div>
+                <div class="desc">13.8不错摆家里看着心情舒畅</div>
+                <div class="imgs single">
+                  <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                </div>
+                <div class="handle">
+                  <div class="handle-left">13:08<a>删除</a></div>
+                  <div class="handle-right">
+                    <div class="omit">
+                      <span class="omit-icon"></span>
+                      <div class="omit-popup">
+                        <div class="popup-cont">
+                          <a class="prise"><i></i>赞</a>
+                          <a class="comment"><i></i>评论</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="comment-container">
+                  <div class="prise-box">
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                    <a><img src="../../skin/default/images/circle/bg_circle.png"></a>
+                  </div>
+                  <div class="comment-box">
+                    <div class="comment-item">
+                      <div class="comment-avatar"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+                      <div class="comment-info">
+                        <div class="comment-info-top">
+                          <div class="comment-name">快乐聊天</div>
+                          <div class="comment-time">13:09</div>
+                        </div>
+                        <div class="comment-info-bottom">
+                          复制词条评论， 打开淘宝带回家
+                        </div>
+                      </div>
+                    </div>
+                    <div class="comment-item">
+                      <div class="comment-avatar"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+                      <div class="comment-info">
+                        <div class="comment-info-top">
+                          <div class="comment-name">快乐聊天</div>
+                          <div class="comment-time">13:09</div>
+                        </div>
+                        <div class="comment-info-bottom">
+                          复制词条评论， 打开淘宝带回家
+                        </div>
+                      </div>
+                    </div>
+                    <div class="comment-item">
+                      <div class="comment-avatar"><img src="../../skin/default/images/circle/bg_circle.png"></div>
+                      <div class="comment-info">
+                        <div class="comment-info-top">
+                          <div class="comment-name">快乐聊天</div>
+                          <div class="comment-time">13:09</div>
+                        </div>
+                        <div class="comment-info-bottom">
+                          复制词条评论， 打开淘宝带回家
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li> -->
+          </ul>
+          <div class="nothing-line" v-if="isNothing"><em></em></div>
+        </div>
+      </div>
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script src="../../script/vue-lazyload.js"></script>
+<script src="../../script/info.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      Vue.use(VueLazyload, {
+        error: '../../icon/error.png',
+        loading: '../../icon/loading.gif'
+      });
+      var app = new Vue({
+        el: '#app',
+        data: {
+          headerH: 0,
+          bgHeight: 0,
+          commentChooseId: '',
+          UIChatBox: {},
+          photoBrowser: {},
+          isShowPhoto: false,
+          panelHeight: 0,
+          inputBarHeight: 0,
+          headerStatus: '',
+          page: 0,
+          listData: [],
+          maxPage: '',
+          listDataLength: '',
+          imgHost: Pub.imgHost,
+          bg: '',
+          infoData: {},
+          uid: $api.getStorage('uid'),
+          commentCircleId: '',
+          commentId: '',
+          commentCircleIndex: '',
+          isNothing: false,
+          sourcePath: 'widget://expression/emotion',
+          emotionData: {},
+          avatarCache: {},
+          fs: api.require('fs')
+        },
+        mounted: function(){
+          var _this = this;
+          this.avatarCache = $api.getStorage('avatar_cache') || {};
+          if(this.avatarCache && Object.keys(this.avatarCache).length > 0){
+            for(var i in this.avatarCache){
+              if(this.avatarCache.hasOwnProperty(i)){
+                _this.isExist(i,this.avatarCache[i]);
+              }
+            }
+          }
+          //this.setCircleNum();
+          this.getInfo();
+          this.getData();
+          this.scrollEvent();
+          this.unhandle();
+          this.pullDown();
+          this.getImgsPaths(this.sourcePath, function (emotion) {
+              _this.emotionData = emotion;
+          });
+          this.UIChatBox = api.require('UIChatBox');
+          this.photoBrowser = api.require("photoBrowser");
+          this.chat();
+          this.chatStatus(false);
+          window.getHeaderH = this.getHeaderH;
+          Pub.eventSend('circle_frm_done');
+          Pub.eventListen('header_status', function(ret){
+            if(ret){
+              _this.headerStatus = ret.value.status;
+            }
+          });
+          Pub.eventListen('circle_update', function(){
+            _this.page = 0;
+            _this.getData(false);
+          });
+          Pub.eventListen('resume', function(){
+            _this.page = 0;
+            _this.getData(false);
+          });
+          Pub.eventListen('keyback', function(){
+            _this.photoBrowser.close();
+            _this.isShowPhoto = false;
+          });
+          Pub.eventListen('circle_info_update', function(){
+            _this.getInfo();
+            console.log(_this.headerStatus);
+            if(_this.headerStatus == 1){
+              Pub.changeStatusBar();
+            }else{
+              Pub.setStatusBar();
+            }
+          });
+        },
+        methods: {
+          loadImg: function(img){
+            var _this = this;
+            var imgUrl = img.indexOf('http') == -1?(Pub.imgHost + img):img;
+            if(!this.avatarCache){
+              this.avatarCache = {};
+            }
+            api.imageCache({
+                url: imgUrl
+            }, function(ret, err) {
+                var url = ret.url;
+                if(JSON.stringify(_this.avatarCache).indexOf(window.btoa(img)) == -1 || !_this.avatarCache[window.btoa(img)]){
+                  _this.avatarCache[window.btoa(img)] = url;
+                  $api.setStorage('avatar_cache', _this.avatarCache);
+                }
+            });
+
+          },
+          getAvatarCache: function(img){
+            var _this = this;
+            var imgName = window.btoa(img);
+            if(this.avatarCache.hasOwnProperty(imgName)){
+              return _this.avatarCache[imgName];
+            }else{
+              return false;
+            }
+          },
+          isExist: function(i, img){
+            var _this = this;
+            this.fs.exist({
+                path: img
+            }, function(ret, err) {
+              if(!ret.exist){
+                _this.avatarCache[i] = '';
+              }
+            })
+          },
+          setCircleNum: function(){
+            Pub.post(Pub.apiChat +'friend_circle/setCountForFriendCircle', {}, function(res){
+              console.log(JSON.stringify(res));
+              if(res.code == 0){
+                Pub.eventSend('circle_num_update');
+              }
+            });
+            Pub.post(Pub.apiChat +'friend_circle/setCountForComment', {}, function(res){
+              console.log(JSON.stringify(res));
+              if(res.code == 0){
+                Pub.eventSend('circle_num_update');
+              }
+            });
+          },
+          getInfo: function(){
+            var _this = this;
+            var params = {
+              fid: $api.getStorage('uid')
+            }
+            Pub.post(Pub.apiChat +'circle/index/setting', params, function(res){
+              console.log('信息' + JSON.stringify(res))
+              if(res.code == 0){
+                _this.infoData = res.data;
+                _this.infoData.uname = $api.getStorage(_this.uid+"_user_info").uname;
+                _this.infoData.face = $api.getStorage(_this.uid+"_user_info").face;
+                console.log(JSON.stringify(_this.infoData));
+              }
+            });
+          },
+          getData: function(isMore, callback){
+            var _this = this;
+            console.log(this.page);
+            var params = {
+              page: this.page
+            }
+            Pub.post(Pub.apiChat +'circle/list/public', params, function(res){
+              console.log('朋友圈' + JSON.stringify(res));
+              if(res.code == 0){
+                //_this.maxPage = res.data.max_page;
+                _this.listDataLength = res.data.length;
+                if(isMore){
+                  _this.listData = _this.listData.concat(res.data);
+                }else{
+                  _this.listData = res.data;
+                }
+                _this.listData = circleListAddFriendInfo(_this.listData);
+
+                for(var i = 0;i< _this.listData.length;i++){
+                  if(_this.listData[i].likes){
+                    _this.listData[i].likes = circleListAddFriendInfo(_this.listData[i].likes);
+                  }
+                  if(_this.listData[i].comments){
+                    _this.listData[i].comments = circleListAddFriendInfo(_this.listData[i].comments);
+                  }
+                }
+                console.log(JSON.stringify(_this.listData))
+                if(_this.listData.length == 0){
+                  _this.isNothing = true;
+                }else{
+                  _this.isNothing = false;
+                }
+                _this.pullUp();
+               }
+              if(callback && typeof callback == 'function'){
+                callback();
+              }
+            });
+          },
+          pullUp: function(){
+            var _this = this;
+            Pub.pullUp(function(){
+              if(_this.listDataLength == 10){
+                ++_this.page;
+                _this.getData(true);
+              }else{
+                Pub.pullUpDone();
+              }
+            });
+          },
+          pullDown: function(){
+            var _this = this;
+            Pub.pullDown(function() {
+                window.location.reload();
+                Pub.pullDownDone();
+            });
+          },
+          timeShow: function(text){
+            return Pub.timestampFormat(text);
+          },
+          showHandle: function(id){
+            event.stopPropagation();
+            if(this.commentChooseId){
+              this.commentChooseId = '';
+              this.chatStatus(false);
+            }else{
+              this.commentChooseId = id;
+            }
+
+          },
+          unhandle: function(){
+            var _this = this;
+            document.querySelector('body').style.cursor = 'pointer';
+            document.querySelector('body').onclick = function(e){
+              if(_this.commentChooseId){
+                _this.commentChooseId = '';
+                _this.chatStatus(false);
+                e.preventDefault();
+                return false;
+              }
+            }
+          },
+          toComment: function(id, index, commentId){
+            event.stopPropagation();
+            this.chatStatus(true);
+            if(id){
+              this.commentCircleId = id;
+            }
+            this.commentCircleIndex = index;
+            if(commentId){
+              this.commentId = commentId;
+            }
+          },
+          deleteCircle: function(id, index){
+            var _this = this;
+            Pub.confirm(Pub.getLang('tips'), Pub.getLang('confirm_delete'), function(){
+              var params = {
+                id: id
+              }
+              Pub.post(Pub.apiChat +'circle/operation/del_circle', params, function(res){
+                console.log('删除' + JSON.stringify(res));
+                if(res.code == 0){
+                  _this.listData.splice(index, 1);
+                }
+              });
+            });
+          },
+          deleteComment: function(id, index, comments, commentsIndex){
+            var _this = this;
+            Pub.confirm(Pub.getLang('tips'), Pub.getLang('confirm_delete'), function(){
+              var params = {
+                id: id
+              }
+              Pub.post(Pub.apiChat +'circle/operation/del_comment', params, function(res){
+                console.log('删除' + JSON.stringify(res));
+                if(res.code == 0){
+                  console.log(JSON.stringify(comments));
+                  comments.splice(commentsIndex, 1);
+                  _this.listData[index].comment = comments;
+                }
+              });
+            });
+          },
+          toPrise: function(id, index, like){
+            event.stopPropagation();
+            var _this = this;
+            if(like == 1){
+              like = 0;
+            }else{
+              like = 1;
+            }
+            var params = {
+              fcid: id,
+              like: like,
+            }
+            Pub.post(Pub.apiChat +'circle/operation/like', params, function(res){
+              console.log('点赞' + JSON.stringify(res));
+              if(res.code == 0){
+                if(like == 1){
+                  if(_this.listData[index].likes){
+                    _this.listData[index].likes = _this.listData[index].likes.concat({"fcid":id,"uid":_this.uid,"user_info":$api.getStorage(_this.uid + "_user_info")});
+                  }else{
+                    _this.listData[index].likes = [{"fcid":id,"uid":_this.uid,"user_info":$api.getStorage(_this.uid + "_user_info")}]
+                  }
+                }else{
+                  for(var i = 0;i<_this.listData[index].likes.length;i++){
+                    if(_this.listData[index].likes[i].uid == _this.uid){
+                      _this.listData[index].likes.splice(i,1);
+                    }
+                  }
+                }
+                _this.commentChooseId = '';
+              }
+            });
+          },
+          isPrise: function(data){
+            var _this = this;
+            if(data){
+              for(var i = 0;i<data.length;i++){
+                if(data[i].uid == _this.uid){
+                  return 1;
+                }else{
+                  return 0;
+                }
+              }
+            }
+          },
+          commentSend: function(cont){
+            var _this = this;
+            if(!cont) return Pub.msg(Pub.getLang('please_enter_a_comment'));
+            var params = {
+              fcid: _this.commentCircleId,
+              comment: cont,
+              pid: _this.commentId || 0,
+            }
+            Pub.post(Pub.apiChat +'circle/operation/comment', params, function(res){
+              console.log('评论' + JSON.stringify(res));
+              if(res.code == 0){
+                //_this.listData[_this.commentCircleIndex].comment = res.data;
+                if(_this.listData[_this.commentCircleIndex].comments){
+                  _this.listData[_this.commentCircleIndex].comments = _this.listData[_this.commentCircleIndex].comments.concat({"fcid":_this.commentCircleId,"date":Date.parse(new Date())/1000,"id":res.data,"pid":_this.commentId || 0,"uid":_this.uid,"comment":cont,"user_info":$api.getStorage(_this.uid + "_user_info")});
+                }else{
+                  _this.listData[_this.commentCircleIndex].comments = [{"fcid":_this.commentCircleId,"date":Date.parse(new Date())/1000,"id":res.data,"pid":_this.commentId || 0,"uid":_this.uid,"comment":cont,"user_info":$api.getStorage(_this.uid + "_user_info")}]
+                }
+                _this.commentChooseId = '';
+                _this.chatStatus(false);
+                _this.UIChatBox.closeKeyboard();
+              }
+            });
+          },
+          showPhoto: function(item, index){
+            var _this = this;
+            console.log(index);
+            Pub.openView('./circle_photo_win', {
+              pageParam:{
+                item: item,
+                index: index,
+                headerStatus: _this.headerStatus
+              }
+            });
+          },
+          toInfo: function(id){
+            console.log(id);
+            var isStatus = false;
+            if(this.headerStatus == 2 || !this.headerStatus){
+              isStatus = false;
+            }else{
+              isStatus = true;
+            }
+            Pub.openView('../chat/personal_info_win',{
+              pageParam:{
+                fid: id,
+                isStatus: isStatus
+              }
+            });
+          },
+          getImgsPaths: function(sourcePathOfChatBox, callback){
+              var jsonPath = "widget://expression/emotion/emotion.json";//表情的JSON数组
+              api.readFile({
+                      path: jsonPath
+              },function(ret,err){
+                  if(ret.status){
+                      var emotionArray = JSON.parse(ret.data);
+                      var emotion = {};
+                      for(var i=0; i<emotionArray.length; i++){
+                          emotion[emotionArray[i]['text']] = '<img src="../../expression/emotion/' + emotionArray[i]['name'] + '.png'+'" width="25" height="25">';
+                      }
+                      /*把emotion对象 回调出去*/
+                      if("function" === typeof(callback)){
+                              callback(emotion);
+                      }
+                  }
+              });
+          },
+          messageCont: function(msg){
+            var _this = this;
+            if(msg){
+              var htmlMsg = msg.replace(Pub.regex.rgEmotion,function(a,b){
+                  if(_this.emotionData[a] && _this.emotionData[a] != 'undefined'){
+                      return _this.emotionData[a];
+                  } else {
+                      return a;
+                  }
+              });
+              return htmlMsg;
+            }else{
+              return '';
+            }
+          },
+          scrollEvent: function(){
+            var _this = this;
+            this.bgHeight = this.$refs.circle_bg.offsetHeight;
+            window.addEventListener('scroll', function(){
+              var scrollH = document.body.scrollTop;
+              if(scrollH >= _this.bgHeight - _this.headerH){
+                if(_this.headerStatus != 1){
+                  api.execScript({
+                    frameName: 'circle_header_frm',
+                    script: 'setHeader(1)'
+                  });
+                }
+              }else{
+                if(_this.headerStatus != 2){
+                  api.execScript({
+                    frameName: 'circle_header_frm',
+                    script: 'setHeader(2)'
+                  });
+                }
+              }
+            });
+          },
+          chatSpace: function(isChat){
+            if(isChat){
+              this.$nextTick(()=>{
+                var container = this.$el.querySelector('.circle_container');
+                if(this.panelHeight > 0){
+                  document.querySelector('html').style.paddingBottom = this.panelHeight + this.inputBarHeight + api.safeArea.bottom + api.safeArea.top + 'px';
+                }else{
+                  document.querySelector('html').style.paddingBottom = 60 + api.safeArea.bottom + 'px'
+                }
+              })
+            }else{
+              document.querySelector('html').style.paddingBottom = 0;
+            }
+          },
+          getHeaderH: function(h){
+            this.headerH = h;
+          },
+          chat: function(){
+            var _this = this;
+            _this.chatSpace(false);
+            _this.UIChatBox.open({
+                placeholder: Pub.getLang('please_enter_a_comment'),
+                maxRows: 6,
+                emotionPath: 'widget://expression/emotion',
+                texts: {
+                    sendBtn: {
+                        title: Pub.getLang('send')
+                    }
+                },
+                styles: {
+                    topDivider: {
+                        width: 1,
+                        color: '#eaeaea'
+                    },
+                    inputBar: {
+                        borderColor: '#f7f7f7',
+                        bgColor: '#f7f7f7'
+                    },
+                    inputBox: {
+                        borderColor: '#dddddd',
+                        bgColor: '#FFFFFF',
+                        borderColor: '#fff',         //（可选项）字符串类型；输入框的边框颜色，支持 rgb，rgba，#；默认：'#B3B3B3'
+                       bgColor: '#fff',             //（可选项）字符串类型；输入框的背景色，支持 rgb，rgba，#；默认：'#f2f2f2'
+                       boardBgColor: '#fff',        //（可选项）字符串类型；面板的背景色(表情面板，附加面板)，支持 rgb，rgba，#；默认：'#f2f2f2'
+                       topMargin:8,                   //（可选项）数字类型；输入框距离顶部的边距；默认：10
+                       borderCorner:5,                 //(可选项)数字类型；默认：5
+                       leftIcon: 0
+                    },
+                    emotionBtn: {
+                        normalImg: 'widget://skin/default/images/chat/icon_expression.png'
+                    },
+                    keyboardBtn: {
+                        normalImg: ''
+                    },
+                    recordBtn: {
+                        normalBg: '#ffffff',
+                        activeBg: '#ccc',
+                        color: '#000',
+                        size: 14
+                    },
+                    indicator: {
+                        target: 'both',
+                        color: '#ffffff',
+                        activeColor: '#21b2ff'
+                    },
+                    sendBtn: {
+                        titleColor: '#ffffff',
+                        bg: '#21b2ff',
+                        activeBg: '#21b2ff',
+                        titleSize: 14
+                    }
+                },
+                isShowSendBtn: true,
+                extras: {
+                    titleSize: 10,
+                    titleColor: '#a3a3a3',
+                    isAdaptScreenSize: false,
+                    btns: [{
+                        title: Pub.getLang('album'),
+                        normalImg: '../../skin/default/images/chat/icon_photo.png',
+                        activeImg: '../../skin/default/images/chat/icon_photo.png'
+                    }, {
+                        title: Pub.getLang('shot'),
+                        normalImg: '../../skin/default/images/chat/icon_shot.png',
+                        activeImg: '../../skin/default/images/chat/icon_shot.png'
+                    }, {
+                        title: Pub.getLang('red_packet'),
+                        normalImg: '../../skin/default/images/chat/icon_redpacket.png',
+                        activeImg: '../../skin/default/images/chat/icon_redpacket.png'
+                    }]
+                }
+            }, function(ret, err) {
+                if (ret) {
+                    console.log(JSON.stringify(ret))
+                    if (ret.eventType == 'send') {
+                        _this.commentSend(ret.msg);
+                    }
+                    // 点击附件功能面板
+                    if (ret.eventType == 'clickExtras') {
+                        // ret.index : 0 => 相册；1 => 拍摄；2=> 发红包
+                        if (ret.index == 0) {
+                            _this.albumEvent(function(data) {
+                                var params = {
+                                    img: data,
+                                    type: 'album'
+                                }
+                                _this.sendImg('upload', params)
+                            })
+                        }
+                        if (ret.index == 1) {
+                            _this.cameraEvent(function(data) {
+                                var params = {
+                                    img: data,
+                                    type: 'camera'
+                                }
+                                _this.sendImg('upload', params)
+                            })
+                        }
+                        if (ret.index == 2) {
+                            Pub.eventSend('chat_window_end');
+                            Pub.openView('../redpacket/give_redpacket_win', {
+                                pageParam: {
+                                    fid: _this.fid
+                                }
+                            });
+                        }
+                    }
+
+                } else {
+                    console.log(JSON.stringify(err));
+                }
+            });
+            // 监听键盘变化
+            _this.UIChatBox.addEventListener({
+                target: 'inputBar',
+                name: 'move'
+            }, function(ret, err) {
+                if (ret) {
+                    console.log(JSON.stringify(ret));
+                    _this.panelHeight = ret.panelHeight;
+                    _this.inputBarHeight = ret.inputBarHeight;
+                    _this.chatSpace();
+                } else {
+                    // alert(JSON.stringify(err));
+                }
+            });
+            // 监听录音
+            _this.UIChatBox.addEventListener({
+                target: 'recordBtn',
+                name: 'press'
+            }, function(ret, err) {
+                if (ret) {
+                    api.startRecord();
+
+                    // alert(JSON.stringify(ret));
+                } else {
+                    alert(JSON.stringify(err));
+                }
+            });
+            _this.UIChatBox.addEventListener({
+                target: 'recordBtn',
+                name: 'press_cancel'
+            }, function(ret, err) {
+                if (ret) {
+                    api.stopRecord(function(ret, err) {
+                        if (ret) {
+                            console.log(JSON.stringify(ret));
+                            var path = ret.path;
+                            var duration = ret.duration;
+                            if(duration < 1) return Pub.getLang('voice_too_short');
+                            Pub.uploadImg('image', path, function(response) {
+                                if(response){
+                                    var param = {
+                                        type: 'amr',
+                                        path: response,
+                                        duration: duration
+                                    }
+                                    _this.sendAudio('upload', param);
+                                }
+                            });
+                        }
+                    });
+                    // alert(JSON.stringify(ret));
+                } else {
+                    alert(JSON.stringify(err));
+                }
+            });
+          },
+          chatStatus: function(isShow){
+            if(isShow){
+              this.UIChatBox.show();
+            }else{
+              this.UIChatBox.hide();
+            }
+            this.chatSpace(isShow);
+          }
+        }
+      });
+    }
+</script>
+
+</html>

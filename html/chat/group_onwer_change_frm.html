@@ -1,0 +1,156 @@
+<!doctype html>
+<html class="bgc-primary">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-primary">
+  <div class="group-info-header" id="header">
+    <div class="info-box">
+      <!-- <div class="avatar" id="avatar" onclick="chooseImg()"> -->
+      <div class="avatar" id="avatar">
+      </div>
+      <div class="info">
+        <h3 id="name_header"></h3>
+        <p><font set-lang="text:group_number">群号</font>: <span id="account_header"></span></p>
+      </div>
+    </div>
+    <div class="group-desc">
+      <font set-lang="text:group_brief">群简介</font>：<span id="desc_header"></span>
+    </div>
+  </div>
+  <div class="group-info-container">
+    <div class="group-title link" id="to_member">
+      <div class="name" set-lang="text:group_member">请选者群成员进行转让</div>
+      <div class="desc">(<span id="group_member_num">0</span><font set-lang="text:people">人</font>)</div>
+    </div>
+    <div class="group-member" id="member_list">
+    </div>
+
+  </div>
+  <script type="text/html" id="member_list_html">
+      {{if data.length > 0}}
+          {{each data}}
+              <div class="item to_personal" data-fid="{{$value.uid}}" data-name="{{$value.uname}}">
+                  <img src="{{$value.face}}" class="img_url">
+                  <p>{{$value.uname}}</p>
+              </div>
+          {{/each}}
+      {{/if}}
+  </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var gid = '', memberData = {}, groupUid = '', imgAvatar = '', groupInfoData={},isGroupMaster;
+    apiready = function() {
+        api.parseTapmode();
+        init();
+    }
+    function init(){
+        gid = api.pageParam.id;
+        getData();
+        getMember();
+    }
+    function getData(){
+      var params = {
+          gid: api.pageParam.id || ''
+      }
+      Pub.post(Pub.apiChat +'group/info/get', params, function(res){
+          console.log('群资料:' + JSON.stringify(res));
+          if(res.code == 0){
+              var data = res.data;
+              var avatar = '';
+              if(data.img){
+                if(data.img.indexOf('http') == -1){
+                  avatar = Pub.imgHost + data.img;
+                }else{
+                  avatar = data.img;
+                }
+                $('#avatar').html('<img src="'+avatar+'">');
+              }else{
+                $('#avatar').html('<img src="../../icon/logo.png">');
+              }
+              $('#name_header').text(data.group_name);
+              $('#account_header').text(data.id);
+              $('#desc_header').text(data.introduction);
+          }
+      });
+    }
+    function getMember(){
+        var params = {
+            gid: gid
+        }
+        Pub.post(Pub.apiChat +'group/info/member2', params, function(res){
+            console.log('群成员:' + JSON.stringify(res));
+            if(res.code == 0){
+                var ownerD = res.data.owner;
+                var adminD = res.data.admin;
+                var memberD = res.data.member;
+                memberData.data = ownerD.concat(adminD.concat(memberD));
+                var html = template('member_list_html', memberData);
+                $('#member_list').html(html);
+                $('#group_member_num').text(memberData.length);
+                Pub.setLang();
+                $('.img_url').each(function(){
+                    var thisSrc = $(this).attr('src');
+                    if(thisSrc){
+                        if(thisSrc.indexOf('http') == -1){
+                            $(this).attr('src', Pub.imgHost + thisSrc);
+                        }
+                    }else{
+                        $(this).attr('src', '../../skin/default/images/default_avatar.png');
+                    }
+                });
+                $('#member_list').find('.to_personal').on('click', function(){
+                    var thisFid = $(this).attr('data-fid');
+                        // checkGroupMaster(gid, $api.getStorage('uid'), function(t){
+                        //   if(t == 'y'){
+                        //     Pub.openView('./personal_info_win', {
+                        //         pageParam: {
+                        //           fid: thisFid,
+                        //           name: thisName
+                        //         }
+                        //     });
+                        //   }else{
+                        //     isCanAdd(function(canData){
+                        //       if(canData == 'yes'){
+                        //         Pub.openView('./personal_info_win', {
+                        //             pageParam: {
+                        //               fid: thisFid,
+                        //               name: thisName
+                        //             }
+                        //         });
+                        //       }
+                        //     })
+                        //   }
+                        // });
+                        var params = {
+                            gid: gid,
+                            owner_id: thisFid,
+                        }
+                        Pub.confirm('提示','您确定要转让群主吗？', function(){
+                          Pub.post(Pub.apiChat +'group/admin/transfer', params, function(res){
+                              if(res.code == 0){
+                                  Pub.msg(res.echo);
+                                  Pub.eventSend('group_update');
+                                  Pub.eventSend('update_groupinfo');
+                                  setTimeout(function(){
+                                      api.closeWin();
+                                  }, 1000);
+                              }
+                          });
+                        });
+                });
+            }
+        });
+    }
+</script>
+
+</html>

@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="">
+  <!-- <div class="login-bg" id="login_bg"></div> -->
+  <header class="no-bg" id="header">
+    <div class="header">
+        <div class="header-middle" set-lang="text:sign_in">登录</div>
+        <!-- <div class="header-right" onclick="changeLanguage()" id="language" >
+          语言切换
+        </div> -->
+    </div>
+  </header>
+  <!-- <header id="header">
+    <div class="header-box no-bg">
+      <div class="header">
+
+      </div>
+    </div>
+  </header> -->
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+apiready = function() {
+    api.parseTapmode();
+    Pub.setStatusBar();
+    $('#login_bg').css('height', api.winHeight + 'px');
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    var headerPos = $api.offset(header);
+    openFrame(headerPos);
+    Pub.exitApp();
+    var lang = $api.getStorage('lang');
+    if(lang == 'en'){
+      $('#language').text('English');
+    }else{
+      $('#language').text('中文');
+    }
+}
+function openFrame(headerPos){
+    Pub.openFrame('./login_frm',{headerPos:headerPos},{bounces:false, pageParam: api.pageParam});
+}
+function changeLanguage(){
+  var _this = this;
+  api.actionSheet({
+    title: Pub.getLang('language_switching'),
+    cancelTitle: Pub.getLang('cancel'),
+    // destructiveTitle: '红色警告按钮',
+    buttons: ['简体中文', 'English']
+  }, function (ret, err) {
+    var index = ret.buttonIndex;
+    console.log(index);
+    var lang = '';
+    switch (index) {
+      case 1:
+        $api.setStorage('lang', 'zh');
+        $('#language').text('中文');
+        lang = 'zh';
+        break;
+      case 2:
+        $api.setStorage('lang', 'en');
+        $('#language').text('English');
+        lang = 'en';
+        break;
+      default:
+        break;
+    }
+    if (index != 3) {
+      Pub.setLang();
+      Pub.eventSend('language');
+    }
+  });
+}
+function closeWin() {
+  api.closeWin();
+}
+</script>
+
+</html>

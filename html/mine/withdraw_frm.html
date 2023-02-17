@@ -1,0 +1,129 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="" class="bgc-white">
+  <div class="withdraw-container">
+    <div class="top">
+      <div class="withdraw-top" onclick="chooseBank()">
+        <span class="name">余额提现</span>
+        <div class="select" onclick="payMethod()">
+          <img src="" alt="" id="icon">
+          <p id="bankname"></p>
+          <p id="cardNo"></p>
+        </div>
+        <div class="arrow"><img src="../../skin/default/images/icon/icon_arrow_down_gray.png" alt=""></div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="name">提现金额</div>
+      <div class="input">
+        <div class="unit">￥</div>
+        <input type="number" name="" value="" id="amount">
+      </div>
+      <div class="tip"><span>当前余额<span id="balance"></span>，</span> <span onclick="allOut()">全部提现</span></div>
+      <div class="btn-group">
+        <a class="primary" onclick="withdraw()" set-lang="text:">提现</a>
+      </div>
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script src="../../script/bank.js"></script>
+<script type="text/javascript">
+var balance;
+var id;
+var is_bind=false;
+var fee;
+    apiready = function() {
+        api.parseTapmode();
+        getBalance();
+        getBankData();
+        Pub.eventListen("choose_bank",function(res){
+          console.log(res.value.name.replace(/\(.*?\)/g,''));
+          $("#bankname").html(res.value.name.replace(/\(.*?\)/g,''));
+          $("#icon").attr("src",res.value.icon);
+          id = res.value.id;
+          var result = res.value.name.match(/\(([^)]*)\)/);
+          console.log(result[1]);
+          // console.log(getParenthesesStr(res.value.name));
+          $("#cardNo").html("**** **** **** "+result[1])
+        })
+    }
+    function chooseBank(){
+      Pub.openFrame('./pop_has_card_frm',{},{bgColor: 'rgba(0,0,0,0.5)',bounces: false})
+
+    }
+    function getBalance(){
+      Pub.post('user/balance/balance', {}, function(res){
+        if(res.code == 0){
+          $("#balance").html(res.data[0].balance);
+          balance = res.data[0].balance;
+          fee= res.data[0].coin_info.out_fee;
+          $("#outFee").html("手续费："+(fee*100)+"%");
+        }
+      })
+    }
+    function allOut(){
+      $("#amount").val(Number(balance));
+    }
+
+    $("#amount").bind("input propertychange",function(event){
+      var amount = $("#amount").val();
+      if(amount<1){
+        $("#amount").val(1);
+        $("#realReceive").val(1-(1*fee));
+      }else{
+        if(Number($("#amount").val())>=balance){
+          $("#amount").val(balance);
+          $("#realReceive").val((balance-(balance*fee)).toFixed(2));
+        }else{
+          $("#realReceive").val((amount-(amount*fee)).toFixed(2));
+        }
+      }
+    });
+    function getBankData(){
+      Pub.post("user/card/list",{},function(res){
+        if(res.code==0){
+          if(res.data.length>0){
+            is_bind = true;
+            var bank = res.data[0].bank;
+            var number = res.data[0].number;
+            id = res.data[0].id;
+            $("#bankname").html(bank);
+            $("#cardNo").html("**** **** **** "+number.substring(number.length-4))
+
+            var bankInfo = bankStr.filter(function(bankInfo) {return bankInfo.name == res.data[0].bank;});
+            var icon = bankInfo[0].icon;
+            $("#icon").attr("src",icon);
+          }
+        }
+      })
+    }
+    function withdraw(){
+      var amount = $("#amount").val();
+      if (!amount) return Pub.msg("请输入金额!");
+      Pub.prompt("请输入支付密码","","","",function(text){
+        Pub.post("user/withdraw/transfer_out",{card_id:id,amount:amount,pay_pass:text},function(res){
+          if(res.code==0){
+            Pub.msg(res.data);
+            Pub.eventSend("refresh_balance");
+            setTimeout(function(){
+              api.closeWin();
+            },1000);
+          }
+        })
+      })
+    }
+</script>
+
+</html>

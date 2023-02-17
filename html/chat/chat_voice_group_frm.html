@@ -1,0 +1,617 @@
+<!doctype html>
+<html class="bgc-gradual-gray">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+<body class="bgc-gradual-gray">
+  <div class="chat-voice-group-avatar" id="member_list" id="display: none;">
+    <!-- <a><img src="../../icon/logo.png"></a>
+    <a><img src="../../icon/logo.png"></a>
+    <a><img src="../../icon/logo.png"></a>
+    <a><img src="../../icon/logo.png"></a>
+    <a><img src="../../icon/logo.png"></a>
+    <a><img src="../../icon/logo.png"></a> -->
+  </div>
+  <div class="chat-voice-user" id="sender_info" style="display: none;">
+    <div class="avatar" id="avatar"></div>
+    <div class="name" id="user_name"></div>
+    <div class="desc" id="user_desc"></div>
+  </div>
+  <div class="chat-voice-status" id="chat_status">
+    <!-- <p><span>已接通</span></p>
+    <p>00:03</p> -->
+  </div>
+  <div class="chat-voice-handle">
+    <a id="handle_left"></a>
+    <a id="handle_middle"></a>
+    <a id="handle_right"></a>
+  </div>
+  <audio id="myaudio" controls="controls" hidden="true" loop="loop">
+    <source src="../../res/voice_call.wav"  type="audio/mpeg">
+      您的浏览器不支持 audio 元素。
+  </audio>
+  <script type="text/html" id="member_list_html">
+    {{if data.length > 0}}
+      {{each data}}
+        <a data-id="{{$value.id}}"><span>等待中</span><img src="{{$value.face}}" class="img_url"></a>
+      {{/each}}
+    {{/if}}
+  </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/AgoraRTCSDK-2.6.1"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+  var maplertc = {}, channel = '', type = '', id = '', isSender = false, msgId = '', channelId = '', timeLong = 0, connentTimer = {};
+  var audio = {};
+  var timer = {};
+  var joinTimes = 0;
+  var isAbroad = false;
+  var memberArr = [];
+  var memberIds = [];
+  apiready = function() {
+      api.parseTapmode();
+      var header = $api.byId('header');
+      audio = document.getElementById('myaudio');
+      audio.play();
+      channel = api.pageParam.channel;
+      console.log('频道' + channel);
+      // channel = '123';
+      type = api.pageParam.type;
+      id = api.pageParam.id;
+      isSender = api.pageParam.isSender;
+      msgId = api.pageParam.msgId;
+      if(isSender){
+        memberArr = api.pageParam.members;
+        getMember();
+        $('#member_list').show();
+        $('#sender_info').hide();
+      }else{
+        getSenderInfo();
+        $('#sender_info').show();
+        $('#member_list').hide();
+      }
+      maplertc = api.require('mapleRTC');
+      getAbroad();
+      chatInit();
+      listenerUser();
+      Pub.eventListen('voice_refuse', function(){
+        Pub.msg('对方已退出语音');
+        leave();
+        hangup();
+        api.removeEventListener({
+            name: 'resume'
+        });
+      })
+      Pub.eventListen('voice_hangup', function(){
+        cancelConnent();
+      });
+      timer = setTimeout(function(){
+        if(isSender){
+          Pub.msg('对方无接听');
+          setTimeout(function(){
+            leave();
+            hangup();
+            api.setKeepScreenOn({
+                keepOn: false
+            });
+          }, 500);
+        }else{
+          Pub.msg('对方已取消');
+          setTimeout(function(){
+            leave();
+            hangup();
+          }, 500);
+        }
+      }, 40000);
+      setTimeout(function(){
+        api.closeWin({
+            name: 'chat_voice_group_choose_win'
+        });
+      }, 500);
+
+  }
+  function getMember(){
+    var memberObj = {};
+    memberObj.data = memberArr;
+    var memberHtml = template('member_list_html', memberObj);
+    $('#member_list').html(memberHtml);
+    $('.img_url').each(function(){
+        var thisSrc = $(this).attr('src');
+        if(thisSrc){
+            if(thisSrc.indexOf('http') == -1){
+                $(this).attr('src', Pub.imgHost + thisSrc);
+            }
+        }else{
+            $(this).attr('src', '../../skin/default/images/default_avatar.png');
+        }
+    });
+    $('#member_list').find('a').each(function(){
+      var thisId = $(this).attr('data-id');
+      if(thisId == $api.getStorage('uid')){
+        $(this).find('span').remove();
+      }
+    });
+  }
+  function getSenderInfo(){
+    if(id){
+      var params = {
+          fid: id
+      }
+      Pub.post(Pub.apiChat +'friend/info/userinfo', params, function(res){
+        if(res.code == 0){
+          var data = res.data;
+          var avatar = '';
+          if(data.face){
+              if(data.face.indexOf('http') == -1){
+                  avatar = Pub.imgHost + data.face;
+              }else{
+                avatar = data.face;
+              }
+              $('#avatar').html('<img src="'+avatar+'">');
+          }else{
+            $('#avatar').html('<img src="../../icon/logo.png">');
+          }
+          $('#user_name').text(data.uname);
+          $('#user_desc').text('对方邀请您加入群语音');
+        }
+      });
+    }
+  }
+  function getAbroad(){
+    Pub.post(Pub.apiChat +'chat/isOutside', {}, function(res){
+      console.log('是否在国外' + JSON.stringify(res));
+      if(res.code == 0){
+        if(res.data == 'y'){
+          isAbroad = true;
+        }else{
+          isAbroad = false;
+        }
+        if(isAbroad){
+          Pub.msg('暂不支持语音通讯');
+          setTimeout(function(){
+            leave();
+            api.setKeepScreenOn({
+                keepOn: false
+            });
+            cancelConnent();
+            hangup();
+          }, 2000);
+        }
+      }
+    });
+  }
+  function getUserInfo(id){
+    if(id){
+      var params = {
+          fid: id
+      }
+      Pub.post(Pub.apiChat +'friend/info/userinfo', params, function(res){
+          console.log('好友信息:'+JSON.stringify(res));
+          if(res.code == 0){
+              var data = res.data;
+              var dataObj = {
+                id: data.uid,
+                face: data.face
+              }
+              memberArr.push(dataObj);
+              var memberObj = {};
+              memberObj.data = memberArr;
+              var memberHtml = template('member_list_html', memberObj);
+              $('#member_list').html(memberHtml);
+              $('.img_url').each(function(){
+                  var thisSrc = $(this).attr('src');
+                  if(thisSrc){
+                      if(thisSrc.indexOf('http') == -1){
+                          $(this).attr('src', Pub.imgHost + thisSrc);
+                      }
+                  }else{
+                      $(this).attr('src', '../../skin/default/images/default_avatar.png');
+                  }
+              });
+              $('#member_list').find('a').each(function(){
+                var thisId = $(this).attr('data-id');
+                if(thisId == $api.getStorage('uid')){
+                  $(this).find('span').remove();
+                }
+              });
+          }
+      },true);
+    }
+  }
+  function chatInit(){
+    console.log(isSender);
+    maplertc.addEventListener({
+    name:'errorListener'
+},function(ret){
+    console.log('语音错误' + JSON.stringify(ret));
+});
+maplertc.addEventListener({
+    name:'warningListener'
+},function(ret){
+    console.log('语音警告' + JSON.stringify(ret));
+});
+maplertc.addEventListener({
+    name:'connectionLostListener'
+},function(ret){
+    console.log('链接丢失' + JSON.stringify(ret));
+});
+maplertc.addEventListener({
+    name:'joinChannelFailedListener'
+},function(ret){
+  console.log('加入频道失败' + JSON.stringify(ret));
+});
+    maplertc.setChannelProfile({
+      profile: 'voiceOnly'
+    }, function(ret){
+      console.log('初始化设置' + JSON.stringify(ret));
+      if(isSender){
+        $('#handle_left').html('');
+        $('#handle_middle').html('<p onclick="cancelConnent()"><i class="hangup"></i></p><p>取消</p>');
+        $('#handle_right').html('');
+        createChannel();
+      }else{
+        $('#handle_left').html('<p onclick="cancelConnent()"><i class="hangup"></i></p><p>挂断</p>');
+        $('#handle_middle').html('');
+        $('#handle_right').html('<p onclick="joinChan()"><i class="connent"></i></p><p>接通</p>');
+        $('#user_desc').text('');
+      }
+
+    })
+    console.log('初始化成功');
+
+    // maplertc.setMediaProfile({
+    //   audioProfile: 'voiceStandard'
+    // }, callback(ret))
+    // maplertc.init({
+    //     appId:'c8c9ff785db74e7e941ed6af6bcc6146'
+    // }, function(ret) {
+    //     if (ret.status) {
+    //         console.log('初始化成功');
+    //         if(isSender){
+    //           $('#handle_left').html('');
+    //           $('#handle_middle').html('<p onclick="cancelConnent()"><i class="hangup"></i></p><p>取消</p>');
+    //           $('#handle_right').html('');
+    //           $('#user_desc').text('正在等待对方接听...');
+    //           createChannel();
+    //         }else{
+    //           $('#handle_left').html('<p onclick="cancelConnent()"><i class="hangup"></i></p><p>挂断</p>');
+    //           $('#handle_middle').html('');
+    //           $('#handle_right').html('<p onclick="joinChan()"><i class="connent"></i></p><p>接通</p>');
+    //           $('#user_desc').text('');
+    //         }
+    //     }
+    // });
+  }
+  function cancelConnent(){
+    var uids = [];
+    for(var i=0; i<memberArr.length; i++){
+      if(memberArr[i].id == $api.getStorage('uid')){
+        uids.push(memberArr[i].id);
+      }
+    }
+    var params = {
+      user_ids: JSON.stringify(uids),
+      msg_type: type,
+      msg_id: msgId
+    }
+    Pub.post(Pub.apiChat +'chat/refuse_voice', params, function(res){
+      console.log('挂断返回' + JSON.stringify(res));
+      if(res.code == 0){
+        // hangup();
+      }
+    }, true);
+  }
+  function hangup(){
+    api.setKeepScreenOn({
+        keepOn: false
+    });
+    api.closeWin();
+  }
+  function exitVoice(){
+    Pub.confirm('提示','您确定要挂断通话吗', function(){
+      // var endTime = new Date().getTime();
+      // connentEnd(Pub.toTime(endTime), timeLong);
+      cancelConnent();
+      hangup();
+    });
+  }
+  function createChannel(){
+    var userId = '';
+    if(isSender){
+      userId = $api.getStorage('uid');
+    }
+    maplertc.setJoinChannelUserId({
+      userId: userId
+    }, function(ret){
+      console.log('创建频道' + JSON.stringify(ret));
+      if (ret.status) {
+        maplertc.joinChannel({
+          channelId: channel,
+          userId: $api.getStorage('uid')
+        }, function(ret){
+          console.log('加入频道' + JSON.stringify(ret));
+        })
+          channelSend();
+          // setChannel();
+      }
+    });
+  }
+  function joinChan(){
+    console.log(channel);
+    console.log($api.getStorage('uid'));
+    maplertc.joinChannel({
+      channelId: channel,
+      userId: $api.getStorage('uid')
+    }, function(ret){
+      console.log('加入频道' + JSON.stringify(ret));
+      $('#member_list').show();
+      $('#sender_info').hide();
+      memberIds = api.pageParam.member;
+      for(var i=0;i<memberIds.length; i++){
+        var memObj = {
+          id: memberIds[i].uid,
+          face: memberIds[i].face
+        }
+        memberArr.push(memObj);
+      }
+      var memberObj = {};
+      memberObj.data = memberArr;
+      var memberHtml = template('member_list_html', memberObj);
+      $('#member_list').html(memberHtml);
+      $('.img_url').each(function(){
+          var thisSrc = $(this).attr('src');
+          if(thisSrc){
+              if(thisSrc.indexOf('http') == -1){
+                  $(this).attr('src', Pub.imgHost + thisSrc);
+              }
+          }else{
+              $(this).attr('src', '../../skin/default/images/default_avatar.png');
+          }
+      });
+      $('#member_list').find('a').each(function(){
+        var thisId = $(this).attr('data-id');
+        if(thisId == $api.getStorage('uid')){
+          $(this).find('span').remove();
+        }
+      });
+    })
+    // maplertc.joinChannelByToken({
+    //   channelToken: '',
+    //   channelId: channel,
+    //   uid: ''
+    // }, function(ret) {
+    //     if (ret.status) {
+    //       setChannel();
+    //     }
+    // });
+  }
+  function channelSend(){
+    if(type == 'group'){
+      var uids = [];
+      for(var i=0;i<memberArr.length; i++){
+        uids.push(memberArr[i].id);
+      }
+      var params = {
+        user_ids: JSON.stringify(uids),
+        channel: channel,
+        msg_type: type,
+        msg_id: msgId,
+      }
+      Pub.post(Pub.apiChat +'chat/join_voice', params, function(res){
+        console.log(JSON.stringify(res));
+      }, true);
+    }
+  }
+  // function setChannel(){
+  //   maplertc.setChannelProfile({
+  //     profile:'communication'
+  //   }, function(ret) {
+  //       if (ret.code == 0) {
+  //         maplertc.disableVideo(function(ret) {
+  //             if (ret.code == 0) {
+  //               localStream();
+  //                 //success
+  //             }
+  //         });
+  //       }
+  //   });
+  // }
+  // 打开音频
+  function localStream(){
+    maplertc.enableAudio(function(ret) {
+        if (ret.code == 0) {
+            //success
+        }
+    });
+  }
+  // 离开频道
+  function leave(){
+    maplertc.leaveChannel(function(ret) {
+      console.log('离开频道' + JSON.stringify(ret))
+        // api.toast({msg:JSON.stringify(ret)});
+    });
+  }
+  function listenerUser(){
+    maplertc.addEventListener({name: 'joinChannelSuccessListener'}, function(ret) {
+          console.log('加入频道成功' + JSON.stringify(ret));
+        });
+        maplertc.addEventListener({
+          name:'joinChannelFailedListener'
+      },function(ret){
+        console.log('加入频道失败' + JSON.stringify(ret));
+          //operation
+      });
+    maplertc.addEventListener({name: 'userJoinedNoticeListener'},function(ret) {
+      console.log(JSON.stringify('远程用户加入' + JSON.stringify(ret)));
+        var userIds = ret.uids;
+        if(ret.uids.length > 1 || userIds[0] != $api.getStorage('uid')){
+          clearTimeout(timer);
+          audio.pause();
+          maplertc.setEnableSpeakerphone({
+            enabled: false
+          });
+          channelId = ret.uid;
+          Pub.eventSend('group_voice_connent', {
+            msgId: msgId
+          });
+          var strartTime = new Date().getTime();
+          connentStart(Pub.toTime(strartTime));
+          $('#member_list').find('a').each(function(){
+            var thisId = $(this).attr('data-id');
+            for(var i=0;i<userIds.length;i++){
+              if(thisId == userIds[i]){
+                $(this).find('span').text('在线');
+              }
+            }
+          });
+          afterConnent();
+        }
+    });
+
+    // maplertc.userJoinedListener({
+    //   enable: true
+    // },function(ret) {
+    //   if(ret){
+    //
+    //   }
+    // });
+    maplertc.addEventListener({
+      name:'userOfflineNoticeListener'
+    },function(ret){
+      var offUids = ret.uids;
+      console.log('退出用户' + JSON.stringify(ret));
+      $('#member_list').find('a').each(function(){
+        var thisId = $(this).attr('data-id');
+        for(var i=0;i<offUids.length; i++){
+          if(thisId == offUids[i]){
+            $(this).remove();
+          }
+        }
+      });
+      for(j=0;j<memberArr.length;j++){
+        for(var k=0;k<offUids.length; k++){
+          if(memberArr[j].id == offUids[k]){
+            memberArr.splice(j,1);
+          }
+        }
+      }
+
+      console.log('剩余人数'+JSON.stringify(memberArr));
+      if(memberArr.length < 2){
+        // var endTime = new Date().getTime();
+        // connentEnd(Pub.toTime(endTime), timeLong);
+        leave();
+        hangup();
+      }
+      // var endTime = new Date().getTime();
+      // connentEnd(Pub.toTime(endTime), timeLong);
+      // setTimeout(function(){
+      //   leave();
+      //   hangup();
+      // }, 1000);
+    });
+    // maplertc.userOfflineListener({
+    //   enable: true
+    // },function(ret) {
+    //   Pub.msg('对方已退出语音');
+    //   var endTime = new Date().getTime();
+    //   connentEnd(Pub.toTime(endTime), timeLong);
+    //   setInterval(function(){
+    //     leave();
+    //     hangup();
+    //   }, 1000);
+    // });
+  }
+  function afterConnent(){
+    $('#handle_left').html('<p><i class="speek-no" onclick="swichSpeek(this)"></i></p><p>静音</p>');
+    $('#handle_middle').html('<p onclick="exitVoice()"><i class="hangup"></i></p><p>挂断</p>');
+    $('#handle_right').html('<p><i class="sound" onclick="swichSound(this)"></i></p><p>免提</p>');
+    $('#user_desc').text('');
+    $('#chat_status').html('<p><span>已接通</span></p><p class="time">00:00</p>');
+    connentTimer = setInterval(function(){
+      timeLong =  parseInt(timeLong) + 1000;
+      $('#chat_status').find('.time').text(timeShow(timeLong));
+    }, 1000);
+  }
+  function swichSpeek(el){
+    if($(el).hasClass('active')){
+      $(el).removeClass('active')
+      maplertc.muteLocalAudioStream({
+          muted:false
+      }, function(ret) {
+          if (ret.code == 0) {
+              //success
+          }
+      });
+    }else{
+      $(el).addClass('active');
+      maplertc.muteLocalAudioStream({
+          muted:true
+      }, function(ret) {
+          if (ret.code == 0) {
+              //success
+          }
+      });
+    }
+  }
+  function swichSound(el){
+    if($(el).hasClass('active')){
+      $(el).removeClass('active')
+      maplertc.setEnableSpeakerphone({
+        enabled: false
+      });
+    }else{
+      $(el).addClass('active');
+      maplertc.setEnableSpeakerphone({
+        enabled: true
+      });
+    }
+  }
+  function timeShow(time){
+    var timeTxt = '';
+    min = Math.floor((time/1000/60) << 0),
+    sec = Math.floor((time/1000) % 60);
+    if(parseInt(min) < 10){
+      min = '0' + min;
+    }
+    if(parseInt(sec) < 10){
+      sec = '0' + sec;
+    }
+    timeTxt = min + ':' + sec;
+    return timeTxt;
+  }
+  function connentStart(time){
+    // var params = {
+    //   msg_id: msgId,
+    //   s_time: time
+    // }
+    // Pub.post(Pub.apiChat +'chat/log_group_voice_s_time', params, function(res){
+    //   console.log('接听时间' + JSON.stringify(res));
+    //   Pub.eventSend('voice_connent', {
+    //     msgId: msgId
+    //   });
+    // }, true);
+  }
+  function connentEnd(time, long){
+    var params = {
+      msg_id: msgId,
+      e_time: time,
+      duration: long
+    }
+    Pub.post(Pub.apiChat +'chat/log_group_voice_e_time', params, function(res){
+      console.log('挂断时间' + JSON.stringify(res));
+      Pub.eventSend('voice_connent', {
+        msgId: msgId
+      });
+    }, true);
+  }
+</script>
+
+</html>

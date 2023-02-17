@@ -1,0 +1,205 @@
+<!doctype html>
+<html class="bgc-white">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bgc-white">
+    <div class="redpacket-main-info">
+        <div class="avatar" style="margin-top: .02rem;">
+            <img src="../../skin/default/images/default_avatar.png" id="avatar">
+        </div>
+        <div class="name" id="name"></div>
+        <!-- <div class="desc">给你发了一个红包</div>
+        <div class="money">
+            <strong>1.00</strong>元
+        </div> -->
+    </div>
+    <div class="redpacket-count-give">
+        <font set-lang="text:total_send_redpacket">发出红包总数</font><span id="count">0</span>个
+    </div>
+    <div class="redpacket-cell" id="list">
+        <!-- <div class="item">
+            <div class="item-left">
+                <h3>魏老师</h3>
+                <p>11-28</p>
+            </div>
+            <div class="item-right">
+                200.00 BTC
+            </div>
+        </div>
+        <div class="item">
+            <div class="item-left">
+                <h3>魏老师</h3>
+                <p>11-28</p>
+            </div>
+            <div class="item-right">
+                200.00 BTC
+            </div>
+        </div>
+        <div class="item">
+            <div class="item-left">
+                <h3>魏老师</h3>
+                <p>11-28</p>
+            </div>
+            <div class="item-right">
+                200.00 BTC
+            </div>
+        </div>
+        <div class="item">
+            <div class="item-left">
+                <h3>魏老师</h3>
+                <p>11-28</p>
+            </div>
+            <div class="item-right">
+                200.00 BTC
+            </div>
+        </div>
+        <div class="item">
+            <div class="item-left">
+                <h3>魏老师</h3>
+                <p>11-28</p>
+            </div>
+            <div class="item-right">
+                200.00 BTC
+            </div>
+        </div>
+        <div class="item">
+            <div class="item-left">
+                <h3>魏老师</h3>
+                <p>11-28</p>
+            </div>
+            <div class="item-right">
+                200.00 BTC
+            </div>
+        </div>
+        <div class="item">
+            <div class="item-left">
+                <h3>魏老师</h3>
+                <p>11-28</p>
+            </div>
+            <div class="item-right">
+                200.00 BTC
+            </div>
+        </div> -->
+    </div>
+    <script type="text/html" id="list_html">
+        {{if data.length > 0}}
+            {{each data}}
+            <div class="item">
+                <div class="item-left">
+                    <h3>{{$value.user_info.uname}}</h3>
+                    <p class="time">{{$value.msg_info.date}}</p>
+                </div>
+                <div class="item-right">
+                    {{$value.amount}} {{$value.name}}
+                </div>
+            </div>
+            {{/each}}
+        {{/if}}
+    </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var page = 1, listObj = {}, listData = [];
+    apiready = function(){
+        api.parseTapmode();
+        getMember();
+        getCount();
+        getData(true);
+        pullDown();
+        pullUp();
+    }
+    function getMember(){
+        Pub.post(Pub.apiChat +'User/myinfo', {}, function(res){
+            console.log('用户信息:' + JSON.stringify(res))
+            if(res.code == 0){
+                var data = res.data;
+                var avatar = data.face;
+                if(avatar){
+                    if(avatar.indexOf('http') == -1){
+                        $('#avatar').attr('src', Pub.imgHost + avatar);
+                    }else{
+                        $("#avatar").attr('src', avatar);
+                    }
+                }
+                $('#name').text(data.uname || '');
+            }
+        });
+    }
+    function getCount(){
+        Pub.post(Pub.apiChat +'packs/pack_sum', {}, function(res){
+            if(res.code == 0){
+                $('#count').text(res.data.send_count);
+            }
+        });
+    }
+    function getData(isEmpty, callback){
+        var params = {
+            page: page
+        }
+
+        Pub.post(Pub.apiChat +'packs/pack_list_send', params, function(res){
+            console.log('发出的红包:'+JSON.stringify(res))
+            if(res.code == 0){
+                if(isEmpty){
+                    listData = res.data;
+                } else {
+                    listData = listData.concat(res.data);
+                }
+                listObj = {
+                    data: listData
+                };
+                if(res.data.length == 0 || res.data.length < 10){
+                    listObj.isDown = true;
+                    Pub.pullUpDone();
+                }else{
+                    pullUp();
+                }
+                var html = template('list_html', listObj);
+                $api.byId('list').innerHTML = html;
+                dataEvent();
+                if(typeof callback == 'function'){
+                    callback();
+                }
+            } else {
+                Pub.msg(res.message);
+            }
+        })
+    }
+    function dataEvent(){
+        $('.time').each(function(){
+            var thisTime = $(this).text();
+            if(thisTime){
+                $(this).text(Pub.toTime(thisTime * 1000));
+            }
+        });
+    }
+    function pullDown(){
+        Pub.pullDown(function(){
+            page = 1;
+            listData = [];
+            getData(true, function(){
+                api.refreshHeaderLoadDone();
+            });
+        });
+    }
+    function pullUp(){
+        Pub.pullUp(function(){
+            ++page;
+            getData(false);
+        });
+
+    }
+</script>
+
+</html>

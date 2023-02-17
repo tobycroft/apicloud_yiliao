@@ -1,0 +1,236 @@
+<!doctype html>
+<html class="bgc-white-dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bgc-white-dark">
+  <div class="redpacket-info-header">
+    <div class="info-header">
+      <div class="avatar" id="user_avatar">
+        <!-- <img src="../../skin/default/images/chat/img_avatar.png" class="avatar" id="user_avatar"> -->
+      </div>
+
+      <div class="name" id="user_name"></div>
+      <div class="desc" id="desc"></div>
+      <div style="width: 100%;text-align: center; font-size: 45px; color: #f7513a; margin-top: 10px; display: none;" id="red_amount_box"><span id="red_amount" style="font-weight: bold">0.00</span><em style="font-size: 12px" id="red_amount_unit" set-lang="text:yuan">元</em></div>
+    </div>
+  </div>
+  <div class="redpack-group-get" >
+    <div class="count"><font set-lang="text:receive">领取</font><span id="nowReceiverNum"></span>/<span id="totalReceiverNum"></span> <font set-lang="text:total">共</font><span id="receiveAmount"></span>/<span id="totalAmount"></span><span id="coinName"></span><span id="tip"></span></div>
+    <div id="red_info"></div>
+    <!-- <div class="count">领取70/100 共70.00/100.00元</div> -->
+    <!-- <div class="item">
+      <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+      <div class="info">
+        <h3>云游中</h3>
+        <p>2019-02-26 17:11:02</p>
+      </div>
+      <div class="amount">0.00001 ETH</div>
+    </div>
+    <div class="item">
+      <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+      <div class="info">
+        <h3>云游中</h3>
+        <p>2019-02-26 17:11:02</p>
+      </div>
+      <div class="amount">0.00001 ETH</div>
+    </div>
+    <div class="item">
+      <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+      <div class="info">
+        <h3>云游中</h3>
+        <p>2019-02-26 17:11:02</p>
+      </div>
+      <div class="amount">0.00001 ETH</div>
+    </div>
+    <div class="item">
+      <div class="avatar"><img src="../../skin/default/images/chat/img_avatar.png"></div>
+      <div class="info">
+        <h3>云游中</h3>
+        <p>2019-02-26 17:11:02</p>
+      </div>
+      <div class="amount">0.00001 ETH</div>
+    </div> -->
+  </div>
+  <script type="text/html" id="red_info_html">
+
+    {{if data.length > 0}}
+      {{each data}}
+      <div class="item">
+        <div class="avatar"><img src="{{$value.user_info.face}}" class="img_url"></div>
+        <div class="info">
+          <h3>{{$value.user_info.uname}}</h3>
+          <p>{{$value.date}} <span class="best" style="color:red"></span></p>
+        </div>
+        <div class="amount"><span class="a">{{$value.amount}}</span> {{$value.coin_info.name}}</div>
+      </div>
+      {{/each}}
+    {{/if}}
+  </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var id = '', gid = '', red = '',coinName = '',redType = '',totalReceiverNum = '',nowReceiverNum = '', uid = '';
+    apiready = function() {
+        api.parseTapmode();
+        Pub.setStatusBar();
+        id = api.pageParam.id;
+        gid = api.pageParam.gid;
+        red = api.pageParam.red;
+        uid = $api.getStorage('uid');
+        console.log(red);
+        getData();
+        //getReceiverRecord();
+    }
+    function getData(){
+      var params = {
+          gid: gid,
+          packid: red,
+          tkey: 'test1936'
+      }
+        Pub.post(Pub.apiChat +'pack/group/info', params, function(res){
+            console.log('红包详情:' + JSON.stringify(res));
+            if(res.code == 0){
+                var data = res.data;
+                //var logData = res.data.log;
+                var uid = $api.getStorage('uid');
+                // for(var i=0;i<logData.length; i++){
+                //   if(logData[i].user.uid == uid){
+                //     $('#red_amount').text(logData[i].amount);
+                //     $('#red_amount_unit').text(logData[i].coin_type.cname);
+                //     $('#red_amount_box').show();
+                //   }
+                // }
+                console.log(data.sender);
+                if($api.getStorage(data.sender + "_user_info")){
+                  data.user_info = $api.getStorage(data.sender + "_user_info");
+                }else if($api.getStorage(data.sender + "_anynomous")){
+                  data.user_info = $api.getStorage(data.sender + "_anynomous");
+                }else{
+                  getAnynomous(res.data.sender,function(){
+                    data.user_info = $api.getStorage(res.data.sender + "_anynomous");
+                  });
+                }
+                var avatar = data.user_info.face;
+                if(avatar){
+                    if(avatar.indexOf('http') == -1){
+                        $('#user_avatar').html('<img src="'+Pub.imgHost + avatar+'">');
+                    }else{
+                        $('#user_avatar').html('<img src="' + avatar+'">');
+                    }
+                }else{
+                  $('#user_avatar').html('<img src="../../icon/logo.png">');
+                }
+                $('#user_name').text(data.user_info.uname);
+                var desc = data.remark||Pub.getLang('congratulations');
+                $('#desc').text(desc);
+                $("#totalReceiverNum").html(res.data.max_number);
+                totalReceiverNum = res.data.max_number;
+                $("#totalAmount").html(res.data.amount);
+                $("#coinName").html(res.data.coin_info.name);
+                coinName = res.data.coin_info.name;
+                redType = res.data.type;
+                getReceiverRecord();
+                //getTip();
+            }
+        });
+    }
+    function getTip(){
+      var params = {
+          gid: gid,
+          msg_id: id,
+          tkey: 'test1936'
+      }
+        Pub.post(Pub.apiChat +'packs/pack_time', params, function(res){
+          console.log(res.data);
+          if(res.code==0){
+            console.log(2232);
+            $("#tip").html("。"+res.data);
+          }
+        })
+    }
+    function getReceiverRecord(){
+      Pub.post(Pub.apiChat +'pack/log/pack', {packid:red}, function(res){
+        if(res.code == 0){
+          var length = res.data.length;
+          var amount = 0;
+          $("#nowReceiverNum").html(length);
+          nowReceiverNum = length;
+          for(var i = 0; i< length;i++){
+            amount = amount + Number(res.data[i].amount);
+            res.data[i].coin_name = coinName;
+            if($api.getStorage(res.data[i].receiver + "_user_info")){
+              res.data[i].user_info = $api.getStorage(res.data[i].receiver + "_user_info");
+            }else if($api.getStorage(res.data[i].receiver + "_anynomous")){
+              res.data[i].user_info = $api.getStorage(res.data[i].receiver + "_anynomous");
+            }else{
+              getAnynomous(res.data[i].receiver,function(){
+                res.data[i].user_info = $api.getStorage(res.data[i].receiver + "_anynomous");
+              });
+            }
+            if($api.getStorage(res.data[i].cid + "_coin_info")){
+              res.data[i].coin_info = $api.getStorage(res.data[i].cid + "_coin_info");
+            }
+          }
+          $("#receiveAmount").html(amount.toFixed(2));
+          console.log(JSON.stringify(res.data));
+          var html = template('red_info_html', res);
+          $('#red_info').html(html);
+          Pub.setLang();
+          $('.img_url').each(function(){
+              var thisSrc = $(this).attr('src');
+              var imgSrc = '';
+              var _this = this;
+              if(thisSrc){
+                  if(thisSrc.indexOf('http') == -1){
+                    imgSrc = Pub.imgHost + thisSrc;
+                      // $(this).attr('src', Pub.imgHost + thisSrc);
+                  }else{
+                    imgSrc = thisSrc;
+                  }
+                  $(this).attr('src', imgSrc);
+              }else{
+                  $(this).attr('src', '../../icon/logo.png');
+              }
+          });
+          bestLuckyReceiver();
+        }
+      })
+    }
+    function bestLuckyReceiver(){
+      if(nowReceiverNum == totalReceiverNum){
+        Pub.eventSend("chat_group_init");
+        $api.setStorage(uid + "_" + red + "_pack_status", 2);
+        if(redType == "51"){
+          var amountArr = [];
+          for(var i = 0;i<$(".a").length;i++){
+            var a = $(".a").eq(i).html();
+            amountArr.push(a);
+          }
+          amountArr.sort(function (a, b) {
+            return a-b;
+          });
+          var maxAmount = amountArr[amountArr.length - 1];
+          console.log(maxAmount);
+          for(var i = 0;i<$(".a").length;i++){
+            var a = Number($(".a").eq(i).html());
+            if(a == maxAmount){
+              $(".best").eq(i).html('<img src="../../skin/default/images/chat/icon_best_redpacket.png" alt="" /> <span style="font-size:12px;color:red">手气最佳</span>')
+            }
+          }
+        }
+      }
+    }
+</script>
+
+</html>

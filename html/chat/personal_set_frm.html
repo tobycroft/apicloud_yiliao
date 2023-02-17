@@ -1,0 +1,326 @@
+<!doctype html>
+<html class="bgc-base">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="" class="bgc-base">
+  <div id="app">
+    <template>
+      <div class="group-cell-font mt-20" v-if="Object.keys(detail).length > 0">
+        <ul>
+          <li class="link set-avatar" @click="chooseImg" tapmode>
+            <div class="name">{{lang.head}}</div>
+            <div class="desc">
+              <div class="avatar-box">
+                  <img :src="detail.face" v-if="detail.face">
+                  <div class="avatar-font" v-else>{{detail.uname.substring(0,1).toUpperCase()}}</div>
+              </div>
+            </div>
+          </li>
+          <li class="link" @click="setNickname" tapmode>
+            <div class="name">{{lang.nickname}}</div>
+            <div class="desc">{{detail.uname}}</div>
+          </li>
+          <li class="link" @click="setSex" tapmode>
+            <div class="name">{{lang.sex}}</div>
+            <div class="desc">
+                <!-- <font v-if="detail.sex == 0">保密</font> -->
+                <font v-if="detail.sex == 1">{{lang.male}}</font>
+                <font v-else-if="detail.sex == 2">{{lang.female}}</font>
+            </div>
+          </li>
+          <!-- <li class="link" @click="setDate" tapmode>
+            <div class="name">{{lang.birthday}}</div>
+            <div class="desc"><input type="text" :value="detail.birthday || lang.set_not" readonly onfocus="this.blur()"></div>
+          </li> -->
+          <li class="link" @click="setSign" tapmode>
+            <div class="name">{{lang.signature}}</div>
+            <div class="desc">{{detail.introduction || lang.set_not}}</div>
+          </li>
+        </ul>
+      </div>
+      <div class="group-cell-font mt-20" v-if="Object.keys(detail).length > 0">
+        <ul>
+          <li @click="copy(uid)" tapmode>
+            <div class="name">我的易聊号</div>
+            <div class="desc">{{uid}} <img src="../../skin/default/images/icon/icon_copy.png"></div>
+          </li>
+          <li class="link" @click="toQrcode">
+            <div class="name">{{lang.my_QR}}</div>
+            <div class="desc"><img src="../../skin/default/images/icon/img_qrcode.png"></div>
+          </li>
+        </ul>
+      </div>
+      <div class="group-cell-font mt-20" v-if="Object.keys(detail).length > 0">
+        <ul>
+          <li @click="setNoticeStatus" tapmode>
+            <div class="name">{{lang.push_notification_settings}}</div>
+            <div class="desc"><span :class="['switch', {'active': noticeStatus == 1}]"></span></div>
+          </li>
+          <!-- <li @click="setGroupStatus" tapmode>
+            <div class="name">群聊通知设置</div>
+            <div class="desc"><span :class="['switch', {'active': groupStatus == 1}]"></span></div>
+          </li> -->
+        </ul>
+      </div>
+
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      var app = new Vue({
+        el: '#app',
+        data: {
+            uid: $api.getStorage('uid'),
+            detail: {},
+            noticeStatus: 0,
+            lang: {
+              head: Pub.getLang("head"),
+              nickname: Pub.getLang("nickname"),
+              sex: Pub.getLang("sex"),
+              male: Pub.getLang("male"),
+              female: Pub.getLang("female"),
+              birthday: Pub.getLang("birthday"),
+              signature: Pub.getLang("signature"),
+              my_QR: Pub.getLang("my_QR"),
+              my: Pub.getLang("my"),
+              push_notification_settings: Pub.getLang("push_notification_settings"),
+              set_not: Pub.getLang("set_not"),
+            }
+        },
+        mounted: function(){
+            var _this = this;
+            this.getData();
+            Pub.eventListen('update_userinfo', function(){
+                _this.getData();
+            });
+        },
+        methods: {
+            getData: function(){
+                var _this = this;
+                Pub.post('user/info/myinfo', {}, function(res){
+                    if(res.code == 0){
+                        _this.detail = res.data;
+                        _this.noticeStatus = res.data.can_notice;
+                    }
+                }, true);
+            },
+            setNoticeStatus: function(){
+              var _this = this;
+              var status = 0;
+              if(this.noticeStatus == 0){
+                status = 1;
+              }
+              var params = {
+                can_notice: status
+              }
+              Pub.post('user/edit/can_notice_set', params, function(res){
+                if(res.code == 0){
+                  Pub.msg(Pub.getLang("set_success"));
+                  _this.noticeStatus = status;
+                }
+              });
+            },
+            chooseImg: function() {
+                api.actionSheet({
+                  title: Pub.getLang("choose_picture"),
+                  cancelTitle: Pub.getLang("cancel"),
+                  buttons: [Pub.getLang("image_library"), Pub.getLang("camera"), Pub.getLang("albumText")]
+                }, function(ret, err) {
+                    console.log(JSON.stringify(ret))
+                    console.log(JSON.stringify(err))
+                    var index = ret.buttonIndex;
+                    var sourceType = ['library', 'camera', 'album'];
+                    var btnIndex = index - 1;
+                    if (index > 3) {
+                        return;
+                    } else {
+                        api.getPicture({
+                            sourceType: sourceType[btnIndex],
+                            encodingType: 'jpg',
+                            mediaValue: 'pic',
+                            destinationType: 'url',
+                            allowEdit: false,
+                            quality: 100,
+                            saveToPhotoAlbum: false
+                        }, function(ret, err) {
+                            if (ret.data) {
+                                Pub.openView('./avatar_clipper_win', {
+                                    pageParam: {
+                                        url: ret.data
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            },
+            copy: function(id){
+                Pub.copy(id);
+            },
+            toQrcode: function(){
+                var _this = this;
+                Pub.openView('./personal_qrcode_win', {
+                    pageParam: {
+                        detail: _this.detail
+                    }
+                });
+            },
+            setNickname: function(){
+              var _this = this;
+              Pub.openView('./personal_nickname_win', {
+                pageParam: {
+                  //name: _this.detail.uname,
+                  data: _this.detail
+                }
+              });
+            },
+            setSex: function(){
+              var _this = this;
+              api.actionSheet({
+                  title: Pub.getLang("set_sex"),
+                  cancelTitle: Pub.getLang("cancel"),
+                  // destructiveTitle: '红色警告按钮',
+                  buttons: [Pub.getLang("male"), Pub.getLang("female")]
+              }, function(ret, err) {
+                  var index = ret.buttonIndex;
+                  if(index < 3){
+                    var sex = '';
+                    switch (index) {
+                      case 1:
+                        sex = 1
+                        break;
+                      case 2:
+                        sex = 2
+                        break;
+                      default:
+                        break;
+                    }
+                    // var params = {
+                    //   sex: sex
+                    // }
+                    _this.detail.sex = sex;
+                    Pub.post('user/edit/edit_info', _this.detail, function(res){
+                      if(res.code == 0){
+                        _this.$set(_this.detail,'sex',sex);
+                      }
+                    });
+                  }
+
+              });
+            },
+            // setDate: function(){
+            //   var _this = this;
+            //   var UIDatePicker = api.require('UIDatePicker');
+            //   var nowDay = Pub.getCurrentDay() + ' 00:00:00';
+            //   UIDatePicker.open({
+            //      type: 'date',
+            //      rowHeight:40,
+            //      maxDate:nowDay,
+            //      minDate:'1900-01-01 00:00:00',
+            //      title: Pub.getLang("choose_time"),
+            //       styles: {
+            //               bg: 'rgba(0,0,0,0)',
+            //              headerViewBackgroundColor:'rgba(0,0,0,0)',
+            //              lineBackgroundColor: 'rgba(0,0,0,0)',
+            //       item:{
+            //            normal: '#666',
+            //               normalFont: 14,
+            //            selected: '#008FFF',
+            //            selectedFont: 17,
+            //            cancelBtn:{
+            //                  cancelButtonTextColor: '#9e9e9f',
+            //                cancelButtonText: Pub.getLang("cancel") ,
+            //                cancelButtonFont:17
+            //            },
+            //            confirmBtn:{
+            //               confirmButtonTextColor: '#008FFF',
+            //                confirmButtonText: Pub.getLang("confirm") ,
+            //                confirmButtonFont:17
+            //               },
+            //       }
+            //       },
+            //   }, function(ret, err) {
+            //       if (ret) {
+            //           console.log(JSON.stringify(ret));
+            //           if(ret.eventType == 'submit'){
+            //             var time = ret.year + '-' + ret.month + '-' + ret.day;
+            //             var timeFull = time;
+            //             var params = {
+            //               birthday: timeFull
+            //             }
+            //             Pub.post('user/edit/edit_info', params, function(res){
+            //               if(res.code == 0){
+            //                 _this.$set(_this.detail,'birthday', time);
+            //               }
+            //             });
+            //           }
+            //       } else {
+            //           console.log(JSON.stringify(err));
+            //       }
+            //   });
+            // },
+            setDate: function(){
+              var _this = this;
+              var date = new Date();
+               Y = date.getFullYear() + '-';
+               M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+               D = date.getDate();
+               var day= Y + M + D;
+               var maxDay = Y+M+D +' 00:00';
+              api.openPicker({
+                  type: 'date',
+                  date: day,
+                  minDate: '1970-01-01 00:00',
+                  maxDate: maxDay,
+                  title: Pub.getLang("Select_date")
+              }, function(ret, err) {
+                  if (ret) {
+                      var month = ret.month < 10? '0' + ret.month: ret.month
+                      var data = ret.data <10? '0'+ret.day:ret.day
+                       var time = ret.year + '-' + month + '-' + data;
+                       var timeFull = time + ' 00:00:00';
+                      //  var params = {
+                      //    birthday: timeFull
+                      //  }
+                      _this.detail.birthday = timeFull
+                      Pub.post('user/edit/edit_info', _this.detail, function(res){
+                        if(res.code == 0){
+                          _this.$set(_this.detail,'birthday', time);
+                        }
+                      });
+                  } else {
+                      console.log(JSON.stringify(err));
+                  }
+              });
+
+            },
+            setSign: function(){
+              var _this = this;
+              Pub.openView('./personal_set_autograph_win', {
+                pageParam: {
+                  //sign: _this.detail.introduction,
+                  data: _this.detail
+                }
+              });
+            }
+        }
+      })
+    }
+</script>
+
+</html>

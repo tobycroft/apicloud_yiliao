@@ -1,0 +1,306 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+          content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,initial-scale=1.0,width=device-width"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>身份证绑定</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+    <style>
+    select{
+        direction: rtl;
+    }
+    </style>
+</head>
+<body>
+    <!-- <div class="realname-container">
+        <div class="input-box">
+            <div class="name"><font set-lang="text:name">姓名</font> :</div>
+            <div class="input">
+                <div class="aui-list-item-input">
+                    <input type="text" set-lang="请输入真实姓名"  id="id_name">
+                </div>
+            </div>
+        </div>
+        <div class="input-box">
+            <div class="name"><font set-lang="text:ID_number">身份证号</font> :</div>
+            <div class="input">
+                <div class="aui-list-item-input">
+                    <input type="text" set-lang="placeholder:Please_enter_ID_number" id="id_number">
+                </div>
+            </div>
+        </div>
+        <div class="file-box bd-none">
+            <div class="name"><font set-lang="text:Upload_ID_card_front_picture">上传身份证正面图片</font> :</div>
+            <div class="icon" onclick="chooseImg(1)" id="face_upload"><i></i></div>
+        </div>
+        <div class="file-show" id="face_img"></div>
+        <div class="file-box bd-none">
+            <div class="name"><font set-lang="text:Upload_ID_card_back_picture">上传身份证背面图片</font> :</div>
+            <div class="icon" onclick="chooseImg(2)" id="back_upload"><i></i></div>
+        </div>
+        <div class="file-show" id="back_img"></div>
+        <div class="btn-submit" tapmode onclick="clickSubmit()" id="btn_submit"  set-lang="text:upload_audit">上传审核</div>
+    </div> -->
+    <div class="certification-container">
+      <div class="img-box">
+        <div class="tips">请上传本人有效期内的身份证照片，享受更多权益。</div>
+        <div class="box" id="box">
+          <div class="item example">
+            <img src="../../skin/default/images/icon/id_example_face.png">
+            <!-- <p>正确示例：文字清晰可见</p> -->
+          </div>
+          <div class="item upload" onclick="chooseImg(1)" id="face_img" tapmode>
+            <img src="../../skin/default/images/icon/icon_photo_primary.png">
+            <!-- <p>点击上传身份证正面照片</p> -->
+          </div>
+          <div class="item example">
+            <img src="../../skin/default/images/icon/id_example_back.png">
+            <!-- <p>正确示例：文字清晰可见</p> -->
+          </div>
+          <div class="item upload" onclick="chooseImg(2)" id="back_img" tapmode>
+            <img src="../../skin/default/images/icon/icon_photo_primary.png">
+            <!-- <p>点击上传身份证背面照片</p> -->
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="payment-form-container" style="padding-top: 0; margin-top:0;">
+      <div class="payment-form">
+        <div class="input">
+          <input type="text" placeholder="请填写真实姓名" id="id_name">
+        </div>
+        <div class="input">
+          <input type="text" placeholder="请填写身份证号码" id="id_number">
+        </div>
+      </div>
+      <div class="tip">
+        必须本人的有效身份证，与基本信息一致、<br/>
+        照片确保身份证边框完整，字体清晰，亮度均匀，照片要求5M以内，支持jpg/jpeg/png。
+      </div>
+    </div>
+    <div class="btn-lg-primary" onclick="clickSubmit()" tapmode>确定</div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    var uid = $api.getStorage('uid');
+    var imgUrl1 = '', imgUrl2 = '', province='', city='', district='';
+    apiready = function(){
+        api.parseTapmode();
+        getMemberInfo();
+        getIdCardInfo();
+        Pub.eventSend("refresh_real");
+        if(api.pageParam.type=="unreal"){
+            Pub.alert("提示","您未实名认证，请先认证才可以登录本APP!");
+        }else if(api.pageParam.type=="failed"){
+            Pub.alert("提示","您的实名认证未通过，请重新认证才可以登录本APP!");
+        }
+        api.addEventListener({
+            name: 'keyback'
+        }, function(ret, err) {
+            
+        });
+        api.addEventListener({
+            name: 'viewdisappear'
+        }, function(ret, err) {
+            
+        });
+    }
+    function chooseAddress(){
+        var addressView = api.require('addressView');
+        addressView.show({}, function(ret, err) {
+            if (ret.status) {
+                // alert(JSON.stringify(ret)); //返回值
+                var data = ret.data;
+                var address = '';
+                province = data[0].name;
+                city = data[1].name;
+                district = data[2].name;
+                for(var i=0; i<data.length; i++){
+                    address += data[i].name
+                }
+                $('#address').val(address);
+            }
+        });
+    }
+    function countryChoose(){
+        $('#country').change(function(){
+            var thisVal = $(this).val();
+            console.log(thisVal);
+            if(thisVal == 0){
+                $('#address_box').show();
+            } else {
+                $('#address_box').hide();
+            }
+        });
+    }
+    function getMemberInfo(){
+        var params = {
+            uid: $api.getStorage('uid')
+        }
+        Pub.post('user/cert/get', params, function(res){
+            console.log('身份证:' + JSON.stringify(res));
+            if(res.code == 0){
+                var data = res.data;
+                console.log(JSON.stringify(data));
+                if(data){
+                  console.log(867666666);
+                    $('#id_name').val(data.name);
+                    $('#id_number').val(data.cert);
+                    if(res.data.is_verify!=-1){
+                      $('#id_name').attr('readonly', 'readonly');
+                      $('#id_number').attr('readonly', 'readonly');
+                    };
+                    // $('#country').find('option').each(function(){
+                    //     var thisTxt = $(this).text();
+                    //     if(thisTxt == data.country){
+                    //         $(this).prop('selected', true);
+                    //     }
+                    // })
+                    // if(data.country == '中国'){
+                    //     $('#address_box').show();
+                    // } else {
+                    //     $('#address_box').hide();
+                    // }
+                    // $('#address').val(data.provin + data.city + data.xian);
+                    // province = data.provin;
+                    // city: data.city;
+                    // district: data.xian;
+                    if(data.front && data.front.indexOf('http') > -1){
+                        $('#face_img').html('<img src="'+data.front+'">');
+                    } else {
+                        $('#face_img').html('<img src="'+ Pub.imgHost + data.front+'">');
+                    }
+                    imgUrl1 = data.front;
+                    imgUrl2 = data.back;
+                    console.log($api.IMGURL + data.front);
+                    if(data.back && data.back.indexOf('http') > -1){
+                        $('#back_img').html('<img src="'+data.back+'">');
+                    } else {
+                        $('#back_img').html('<img src="'+ Pub.imgHost + data.back+'">');
+                    }
+                }
+            }
+        });
+    }
+    function getIdCardInfo(){
+        var params = {
+            uid: $api.getStorage('uid')
+        }
+        Pub.post('user/cert/get', params, function(res){
+            if(res.data){
+              if(res.data.is_verify == 1 || res.data.is_verify == 0){
+                  $('#face_upload').hide();
+                  $('#back_upload').hide();
+                  $('#btn_submit').hide();
+              } else {
+                  $('#face_upload').show();
+                  $('#back_upload').show();
+                  $('#btn_submit').show();
+              }
+            }else{
+              $('#face_upload').show();
+              $('#back_upload').show();
+              $('#btn_submit').show();
+            }
+        })
+    }
+    function chooseImg(type){
+     api.actionSheet({
+         title: Pub.getLang("choose_picture"),
+         cancelTitle: Pub.getLang("cancel"),
+         buttons: [Pub.getLang("image_library"), Pub.getLang("camera"), Pub.getLang("albumText")],
+   }, function(ret, err) {
+       var index = ret.buttonIndex;
+       var sourceType =['library' , 'camera' ,'album'];
+       var btnIndex = index - 1;
+       if(index>3){
+         return;
+       }else{
+             api.getPicture({
+               sourceType: sourceType[btnIndex],
+               encodingType: 'jpg',
+               mediaValue: 'pic',
+               destinationType: 'base64',
+               allowEdit: true,
+               quality: 100,
+               saveToPhotoAlbum: false
+           }, function(ret, err) {
+               api.hideProgress();
+               if (ret.base64Data) {
+                    //console.log(ret.base64Data);
+                    if(type == 1){
+                        $('#face_img').html('<img src="'+ ret.base64Data +'">');
+                    } else {
+                        $('#back_img').html('<img src="'+ ret.base64Data +'">');
+                    }
+                    uploadImg(ret.base64Data, type);
+               } else {
+                   Pub.msg($api.getLang('choose_photo_fail'),"middle");
+               }
+           });
+       }
+   });
+   }
+    function uploadImg(image, type){
+        Pub.uploadImgBase64(image,function(res){
+            if(type == 1){
+                imgUrl1 = res.data;
+            } else {
+                imgUrl2 = res.data;
+            }
+        });
+        // var params = {
+        //     uid: $api.getStorage('uid'),
+        //     file: image
+        // }
+        // Pub.post('http://upload.moeddcoin.vip:81/upfull?token=gamming', params, function(res){
+        //   console.log('上传图片' + JSON.stringify(res));
+        //     if(res.code == 0){
+        //         if(type == 1){
+        //             imgUrl1 = res.data;
+        //         } else {
+        //             imgUrl2 = res.data;
+        //         }
+
+        //     } else {
+        //         Pub.msg(res.echo);
+        //     }
+        // })
+    }
+    function clickSubmit(){
+        var idName = $('#id_name').val(),
+            idNum = $('#id_number').val();
+        if(!idName) return Pub.msg(Pub.getLang("Please_enter_your_name"));
+        if(!idNum) return Pub.msg(Pub.getLang("Please_enter_ID_number"));
+        if(!imgUrl1) return Pub.msg(Pub.getLang("Upload_ID_card_front_picture"));
+        if(!imgUrl2) return Pub.msg(Pub.getLang("Upload_ID_card_back_picture"));
+        var params = {
+            uid: $api.getStorage('uid'),
+            name: idName,
+            cert: idNum,
+            front: imgUrl1,
+            back: imgUrl2,
+            // country: $('#country option:selected').text(),
+            // provin: province,
+            // city: city,
+            // xian: district
+        }
+        Pub.post('user/cert/set', params, function(res){
+            if(res.code == 0){
+                //$api.apitoast($api.getLang('bind_success'));
+                Pub.msg(res.echo);
+                setTimeout(function(){
+                    api.closeWin();
+                }, 1000);
+            } else {
+                Pub.msg(res.echo);
+            }
+        })
+    }
+</script>
+</html>

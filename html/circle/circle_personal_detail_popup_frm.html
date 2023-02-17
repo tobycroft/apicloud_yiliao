@@ -1,0 +1,59 @@
+<!doctype html>
+<html class="bg-transparent">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bg-transparent">
+    <div class="shade-black" style="display: block;" onclick="api.closeFrame()" tapmode></div>
+    <div class="circle-detail-popup">
+      <!-- <a class="active-primary" tapmode>转发给好友</a> -->
+      <a class="active-primary" tapmode onclick="deleteEvent()" set-lang="text:delete_info">删除信息</a>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    var detail = {};
+    apiready = function() {
+        api.parseTapmode();
+        detail = api.pageParam.detail;
+        console.log(JSON.stringify(api.pageParam));
+    }
+    function deleteEvent(){
+      Pub.confirm(Pub.getLang('tips'), Pub.getLang('confirm_delete'), function(){
+        var params = {
+          id: detail.id
+        }
+        Pub.post(Pub.apiChat +'friend_circle/delete', params, function(res){
+          if(res.code == 0){
+            Pub.msg(res.data || Pub.getLang('operation_success'));
+            Pub.eventSend('circle_personal_update',{
+              id: detail.id
+            });
+            setTimeout(function(){
+              var headerStatus = api.pageParam.headerStatus;
+              if(!headerStatus || headerStatus == 1){
+                Pub.changeStatusBar();
+              }else if(headerStatus == 2){
+                Pub.setStatusBar();
+              }
+              api.closeWin({
+                  name: 'circle_personal_detail_win'
+              });
+              api.closeFrame();
+            }, 1000);
+          }
+        });
+      });
+    }
+</script>
+
+</html>

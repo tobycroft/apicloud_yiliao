@@ -1,0 +1,93 @@
+<!doctype html>
+<html class="bg-transparent">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+<body class="bg-transparent">
+  <div class="chat-video-status" id="chat_status">
+    <p>&nbsp;</p>
+  </div>
+  <div class="chat-video-handle">
+    <a id="handle_left"></a>
+    <a id="handle_middle"></a>
+    <a id="handle_right"></a>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/AgoraRTCSDK-2.6.1"></script>
+<script type="text/javascript">
+  var id = '', isSender = false, timeLong = 0;
+  apiready = function(){
+    id = api.pageParam.id;
+    isSender = api.pageParam.isSender;
+    if(isSender){
+      $('#handle_left').html('');
+      $('#handle_middle').html('<p onclick="cancelConnent()"><i class="hangup"></i></p><p>取消</p>');
+      $('#handle_right').html('');
+    }else{
+      $('#handle_left').html('<p onclick="cancelConnent()"><i class="hangup"></i></p><p>挂断</p>');
+      $('#handle_middle').html('');
+      $('#handle_right').html('<p onclick="joinChan()"><i class="video-connent"></i></p><p>接通</p>');
+    }
+    Pub.eventListen('video_connented', function(){
+      $('#handle_left').html('<p><i class="speek-no" onclick="swichSpeek(this)"></i></p><p>静音</p>');
+      $('#handle_middle').html('<p onclick="exitVoice()"><i class="hangup"></i></p><p>挂断</p>');
+      $('#handle_right').html('<p><i class="camera" onclick="swichCamera(this)"></i></p><p>转换摄像头</p>');
+      $('#chat_status').html('<p class="time">00:00</p>');
+      var connentTimer = setInterval(function(){
+        timeLong =  parseInt(timeLong) + 1000;
+        $('#chat_status').find('.time').text(timeShow(timeLong));
+      }, 1000);
+    })
+  }
+  function cancelConnent(){
+    Pub.eventSend('video_cancel_connent');
+  }
+  function joinChan(){
+    Pub.eventSend('video_join_channel');
+  }
+  function swichSpeek(el){
+    if($(el).hasClass('active')){
+      $(el).removeClass('active')
+      Pub.eventSend('video_speek', {
+        muted: false
+      });
+    }else{
+      $(el).addClass('active');
+      Pub.eventSend('video_speek', {
+        muted: true
+      });
+    }
+  }
+  function swichCamera(el){
+    console.log('切换摄像头');
+    Pub.eventSend('video_camera');
+  }
+  function exitVoice(){
+    Pub.eventSend('video_exit', {
+      time: timeLong
+    })
+  }
+  function timeShow(time){
+    var timeTxt = '';
+    min = Math.floor((time/1000/60) << 0),
+    sec = Math.floor((time/1000) % 60);
+    if(parseInt(min) < 10){
+      min = '0' + min;
+    }
+    if(parseInt(sec) < 10){
+      sec = '0' + sec;
+    }
+    timeTxt = min + ':' + sec;
+    return timeTxt;
+  }
+
+</script>
+
+</html>

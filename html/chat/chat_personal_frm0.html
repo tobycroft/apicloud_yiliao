@@ -1,0 +1,1323 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+
+<body>
+    <div class="chat-window-container" id="app">
+      <div class="chat_container">
+      <template>
+        <ul v-for="(item, index) in listData" :key="index">
+          <li class="time" v-if="toTime(item.date).isShow"><span>{{toTime(item.date).time}}</span></li>
+          <li class="redstatus" v-if="item.sender == uid && item.type == 101"><span>您领取了对方一个红包</span></li>
+          <li class="redstatus" v-if="item.sender != uid && item.type == 101"><span>对方领取了您的红包</span></li>
+          <li class="mine" v-if="item.sender == uid && item.type != 101">
+              <div class="info">
+                  <div class="info-box message" v-if="item.type == 1" v-html="messageCont(item.message)">
+                  </div>
+                  <div class="info-box img message" v-else-if="item.type == 2" v-html="getPhotos(item.extra)" @click="showPhoto(item.extra)">
+                  </div>
+                  <div class="info-box" v-else-if="item.type == 3">
+                      <div :class="['voice', {'active': item.id == voiceChooseId}]" @click="playVoice(getVoice(item.extra).path, item.id)">
+                          <em>{{getVoice(item.extra).duration}}''</em><i></i>
+                      </div>
+                  </div>
+                  <div class="info-box red" v-else-if="item.type == 10" @click="toRedpacket(item.sender, item.id, item.pack_info.id, item.pack_info.reciver,redpackStatus(item.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time).status)">
+                      <div :class="['red-box', 'redpacket-mine', {'yet': redpackStatus(item.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time).status == 1}]">
+                        <div class="icon">
+                          <div class="icon-bg">
+                            <div class="icon-coin">
+                              <img :src="(item.pack_info.img.indexOf('http') == -1)?(imgHost + item.pack_info.img):item.pack_info.img" class="img_url">
+                            </div>
+                          </div>
+                        </div>
+                        <div class="red-cont">
+                          <h3>{{item.pack_info.remark || '恭喜发财，大吉大利'}}</h3>
+                          <p>{{redpackStatus(item.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time).text}}</p>
+                        </div>
+                      </div>
+                      <div class="red-sign">Lexin Pay</div>
+                  </div>
+              </div>
+              <div class="avatar"><img :src="(item.user_info.face.indexOf('http') == -1)?(imgHost + item.user_info.face):item.user_info.face"></div>
+          </li>
+          <li v-else-if="item.sender != uid && item.type != 101">
+              <div class="avatar" @click="toFriendInfo(item.user_info.uid)"><img :src="(item.user_info.face.indexOf('http') == -1)?(imgHost + item.user_info.face):item.user_info.face"></div>
+              <div class="info">
+                <div class="info-box message" v-if="item.type == 1" v-html="messageCont(item.message)">
+                </div>
+                <div class="info-box img message" v-else-if="item.type == 2" v-html="getPhotos(item.extra)" @click="showPhoto(item.extra)">
+                </div>
+                <div class="info-box" v-else-if="item.type == 3">
+                    <div :class="['voice', {'active': item.id == voiceChooseId}]" @click="playVoice(getVoice(item.extra).path, item.id)">
+                        <i></i><em>{{getVoice(item.extra).duration}}''</em>
+                    </div>
+                </div>
+                <div class="info-box red" v-else-if="item.type == 10" @click="toRedpacket(item.sender, item.id, item.pack_info.id, item.pack_info.reciver, redpackStatus(item.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time).status)">
+                    <div :class="['red-box', 'redpacket-mine', {'yet': redpackStatus(item.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time).status == 1}]">
+                      <div class="icon">
+                        <div class="icon-bg">
+                          <div class="icon-coin">
+                            <img :src="(item.pack_info.img.indexOf('http') == -1)?(imgHost + item.pack_info.img):item.pack_info.img" class="img_url">
+                          </div>
+                        </div>
+                      </div>
+                      <div class="red-cont">
+                        <h3>{{item.pack_info.remark || '恭喜发财，大吉大利'}}</h3>
+                        <p>{{redpackStatus(item.sender, item.pack_info.opened, item.pack_info.start_time, item.pack_info.end_time).text}}</p>
+                      </div>
+                    </div>
+                    <div class="red-sign">Lexin Pay</div>
+                </div>
+
+              </div>
+          </li>
+        </ul>
+      </template>
+    </div>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script src="../../script/expression.js"></script>
+<script src="../../script/vue.js"></script>
+<script type="text/javascript">
+    var timer = {};
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      var app = new Vue({
+        el: '#app',
+        data: {
+          uid: $api.getStorage('uid'),
+          imgHost: Pub.imgHost,
+          fid: '',
+          listData: [],
+          voiceChooseId: '',
+          panelHeight: 0,
+          inputBarHeight: 0,
+          photoBrowser: {},
+          isShowPhoto: false,
+          sourcePath: 'widget://expression/emotion',
+          emotionData: {},
+          scrollH: 0
+        },
+        mounted: function(){
+          var _this = this;
+          fid = api.pageParam.fid;
+          this.photoBrowser = api.require("photoBrowser");
+          this.getData();
+          this.getImgsPaths(this.sourcePath, function (emotion) {
+              _this.emotionData = emotion;
+          });
+          this.chat();
+          this.scrollEvent();
+          timer = setInterval(function() {
+              _this.getMsg();
+          }, 2000);
+          Pub.eventListen('chat_window_load', function() {
+              clearInterval(timer);
+              timer = setInterval(function() {
+                  _this.getMsg()
+              }, 2000);
+          });
+          Pub.eventListen('chat_personal_init', function(){
+            this.getData();
+          });
+          Pub.eventListen('chat_window_end', function() {
+              clearInterval(timer);
+          });
+          Pub.eventListen('personal_photo_close', function(){
+            _this.photoBrowser.close();
+          });
+        },
+        methods: {
+          getData: function(){
+            var _this = this;
+            var params = {
+                fid: fid
+            }
+            Pub.post(Pub.apiChat +'message/msg', params, function(res) {
+              console.log('聊天:' + JSON.stringify(res));
+                if (res.code == 0) {
+                  _this.listData = res.data;
+                  _this.scrolltoBottom();
+                  var t = setInterval(function(){
+                    _this.scrolltoBottom();
+                  },20);
+                  setTimeout(function(){
+                    clearInterval(t);
+                  }, 1000);
+                }
+            }, true);
+          },
+          getMsg: function(){
+            var _this = this;
+            var params = {
+                fid: fid
+            }
+            Pub.post(Pub.apiChat +'message/msg_new', params, function(res) {
+                if (res.code == 0) {
+                    if(res.data.length > 0){
+                      _this.listData = _this.listData.concat(res.data);
+                      console.log(_this.$el.querySelector('.chat_container').scrollHeight)
+                      console.log(_this.scrollH);
+                      if(_this.$el.querySelector('.chat_container').scrollHeight - _this.scrollH < api.winHeight){
+                        _this.scrolltoBottom();
+                        var t = setInterval(function(){
+                          _this.scrolltoBottom();
+                        },20);
+                        setTimeout(function(){
+                          clearInterval(t);
+                        }, 1000);
+                      }
+                    }
+                }
+            }, true);
+          },
+          toTime: function(time){
+            // var curTime = new Date().getTime() / 1000;
+            var timeObj = {};
+            if (time) {
+                // console.log(timeDif);
+                // var timeDif = curTime - thisTime;
+                if (parseInt(time) > 0) {
+                    var showTxt = new Date(time * 1000).toWeiXinString();
+                    timeObj.time = showTxt;
+                }else{
+                    timeObj.isShow = false;
+                }
+                timeObj.isShow = true;
+            } else {
+                timeObj.isShow = false;
+            }
+            return timeObj;
+          },
+          toFriendInfo: function(id){
+            Pub.openView('./personal_info_win', {
+                pageParam: {
+                    fid: id,
+                    isChat: true
+                }
+            });
+          },
+          getPhotos: function(json){
+            console.log(json);
+            if(json){
+              var img = JSON.parse(json).img;
+              var imgUrl = '';
+              if(img.indexOf('http') == -1){
+                imgUrl = Pub.imgHost + img;
+              }else{
+                imgUrl = img;
+              }
+              return '<img src="'+imgUrl+'" width="100">';
+            }
+          },
+          getVoice: function(json){
+            if(json){
+              return JSON.parse(json);
+            }else{
+              return {};
+            }
+          },
+          playVoice: function(path, id){
+            var _this = this;
+            _this.stopAmr();
+            _this.voiceChooseId = id;
+            var curPath = '';
+            if(path.indexOf('http') == -1){
+              curPath = Pub.imgHost + path;
+            }else{
+              curPath = path;
+            }
+            _this.downAmr(curPath, function(ret){
+                var voicePath = ret.savePath;
+                _this.playAmr(voicePath, function(){
+                  _this.voiceChooseId = '';
+                });
+            });
+          },
+          scrollEvent: function(){
+            var _this = this;
+            window.onscroll = function(e){
+              var e =e || window.event;
+              var scrolltop=document.documentElement.scrollTop||document.body.scrollTop;
+              _this.scrollH = scrolltop;
+            }
+          },
+          scrolltoBottom: function(){
+            this.$nextTick(()=>{
+              var container = this.$el.querySelector('.chat_container');
+              if(this.panelHeight > 0){
+                document.querySelector('html').style.paddingBottom = this.panelHeight + this.inputBarHeight + 'px';
+              }else{
+                document.querySelector('html').style.paddingBottom = '60px'
+              }
+              window.scrollTo(0, container.scrollHeight - this.panelHeight + this.inputBarHeight);
+            })
+          },
+          getImgsPaths: function(sourcePathOfChatBox, callback){
+              var jsonPath = "widget://expression/emotion/emotion.json";//表情的JSON数组
+              api.readFile({
+                      path: jsonPath
+              },function(ret,err){
+                  if(ret.status){
+                      var emotionArray = JSON.parse(ret.data);
+                      var emotion = {};
+                      for(var i=0; i<emotionArray.length; i++){
+                          emotion[emotionArray[i]['text']] = '<img src="../../expression/emotion/' + emotionArray[i]['name'] + '.png'+'" width="25" height="25">';
+                      }
+                      /*把emotion对象 回调出去*/
+                      if("function" === typeof(callback)){
+                              callback(emotion);
+                      }
+                  }
+              });
+          },
+          messageCont: function(msg){
+            var _this = this;
+            if(msg){
+              var htmlMsg = msg.replace(Pub.regex.rgEmotion,function(a,b){
+                  if(_this.emotionData[a] && _this.emotionData[a] != 'undefined'){
+                      return _this.emotionData[a];
+                  } else {
+                      return a;
+                  }
+              });
+              return htmlMsg;
+            }else{
+              return '';
+            }
+          },
+          redpackStatus: function(sender, isOpen, start, end){
+            var _this = this;
+            var redStatus = {};
+            var curTime = new Date().getTime() / 1000;
+            redStatus.status = isOpen;
+            if(isOpen == 0){
+              if(sender == _this.uid){
+                redStatus.text = '查看红包';
+              }else{
+                redStatus.text = '领取红包';
+              }
+            }else{
+              if(sender == _this.uid){
+                redStatus.text = '已被领取';
+              }else{
+                redStatus.text = '已领取';
+              }
+            }
+            if(curTime >= end){
+              redStatus.status = 1;
+              redStatus.text = '已过期'
+            }
+
+            return redStatus;
+          },
+          toRedpacket: function(sender, id, redId, fid, status){
+            var _this = this;
+            console.log(id)
+            console.log(redId);
+            console.log(fid);
+            if(sender == _this.uid){
+                Pub.openView('../redpacket/get_redpacket_win', {
+                  pageParam: {
+                    id: id,
+                    red: redId,
+                    fid: fid
+                  }
+                });
+            }else{
+                if(status == 1){
+                  Pub.openView('../redpacket/get_redpacket_win', {
+                    pageParam:{
+                      id: id,
+                      red: redId,
+                      fid: fid
+                    }
+                  });
+                }else{
+                  Pub.eventSend('get_redpacket', {
+                    id: id,
+                    red: redId,
+                    fid: fid
+                  })
+                }
+            }
+          },
+          showPhoto: function(json){
+            var _this = this;
+            console.log(json);
+              var photos = [];
+              var img = '';
+              if(json){
+                img = JSON.parse(json).img;
+              }
+              if(img.indexOf('http') == -1){
+                img = Pub.imgHost + img;
+              }
+              photos.push(img);
+              _this.photoBrowser.open({
+                  images: photos,
+                  placeholderImg: 'widget://res/img/apicloud.png',
+                  bgColor: '#000',
+                  activeIndex: 0
+              }, function(ret, err) {
+                  if (ret) {
+                      if (ret.eventType == 'show') {
+                          _this.isShowPhoto = true;
+                      }
+                      if (ret.eventType == 'click') {
+                          _this.photoBrowser.close();
+                          _this.isShowPhoto = false;
+                      }
+                      Pub.eventSend('personal_photo_status', {
+                        isShowPhoto: _this.isShowPhoto
+                      });
+                      // alert(JSON.stringify(ret));
+                  } else {
+                      // alert(JSON.stringify(err));
+                  }
+              });
+
+          },
+          chat: function(){
+            var _this = this;
+            this.scrolltoBottom();
+            var UIChatBox = api.require('UIChatBox');
+            UIChatBox.open({
+                placeholder: '',
+                maxRows: 6,
+                emotionPath: 'widget://expression/emotion',
+                texts: {
+                    recordBtn: {
+                        normalTitle: '按住说话',
+                        activeTitle: '松开结束'
+                    },
+                    sendBtn: {
+                        title: '发送'
+                    }
+                },
+                styles: {
+                    topDivider: {
+                        width: 1,
+                        color: '#eaeaea'
+                    },
+                    inputBar: {
+                        borderColor: '#f7f7f7',
+                        bgColor: '#f7f7f7'
+                    },
+                    inputBox: {
+                        borderColor: '#dddddd',
+                        bgColor: '#FFFFFF',
+                        borderColor: '#fff',         //（可选项）字符串类型；输入框的边框颜色，支持 rgb，rgba，#；默认：'#B3B3B3'
+                       bgColor: '#fff',             //（可选项）字符串类型；输入框的背景色，支持 rgb，rgba，#；默认：'#f2f2f2'
+                       boardBgColor: '#fff',        //（可选项）字符串类型；面板的背景色(表情面板，附加面板)，支持 rgb，rgba，#；默认：'#f2f2f2'
+                       topMargin:3,                   //（可选项）数字类型；输入框距离顶部的边距；默认：10
+                       borderCorner:5,                 //(可选项)数字类型；默认：5
+                    },
+                    emotionBtn: {
+                        normalImg: 'widget://skin/default/images/chat/icon_expression.png'
+                    },
+                    extrasBtn: {
+                        normalImg: 'widget://skin/default/images/chat/icon_add_gray.png'
+                    },
+                    keyboardBtn: {
+                        normalImg: 'widget://skin/default/images/chat/key_box.png'
+                    },
+                    speechBtn: {
+                        normalImg: 'widget://skin/default/images/chat/voice_icon.png'
+                    },
+                    recordBtn: {
+                        normalBg: '#c4c4c4',
+                        activeBg: '#999999',
+                        color: '#000',
+                        size: 14
+                    },
+                    indicator: {
+                        target: 'both',
+                        color: '#ffffff',
+                        activeColor: '#21b2ff'
+                    },
+                    sendBtn: {
+                        titleColor: '#ffffff',
+                        bg: '#21b2ff',
+                        activeBg: '#21b2ff',
+                        titleSize: 14
+                    }
+                },
+                extras: {
+                    titleSize: 10,
+                    titleColor: '#a3a3a3',
+                    isAdaptScreenSize: false,
+                    btns: [{
+                        title: '相册',
+                        normalImg: '../../skin/default/images/chat/icon_photo.png',
+                        activeImg: '../../skin/default/images/chat/icon_photo.png'
+                    }, {
+                        title: '拍摄',
+                        normalImg: '../../skin/default/images/chat/icon_shot.png',
+                        activeImg: '../../skin/default/images/chat/icon_shot.png'
+                    }, {
+                        title: '红包',
+                        normalImg: '../../skin/default/images/chat/icon_redpacket.png',
+                        activeImg: '../../skin/default/images/chat/icon_redpacket.png'
+                    }]
+                }
+            }, function(ret, err) {
+                if (ret) {
+                    console.log(JSON.stringify(ret))
+                    if (ret.eventType == 'send') {
+                        _this.sendMsg(ret.msg);
+                    }
+                    // 点击附件功能面板
+                    if (ret.eventType == 'clickExtras') {
+                        // ret.index : 0 => 相册；1 => 拍摄；2=> 发红包
+                        if (ret.index == 0) {
+                            _this.albumEvent(function(data) {
+                                var params = {
+                                    img: data,
+                                    type: 'album'
+                                }
+                                _this.sendImg('', params)
+                            })
+                        }
+                        if (ret.index == 1) {
+                            _this.cameraEvent(function(data) {
+                                var params = {
+                                    img: data,
+                                    type: 'camera'
+                                }
+                                _this.sendImg('', params)
+                            })
+                        }
+                        if (ret.index == 2) {
+                            Pub.eventSend('chat_window_end');
+                            Pub.openView('../redpacket/give_redpacket_win', {
+                                pageParam: {
+                                    fid: fid
+                                }
+                            });
+                        }
+                    }
+
+                } else {
+                    console.log(JSON.stringify(err));
+                }
+            });
+            // 监听键盘变化
+            UIChatBox.addEventListener({
+                target: 'inputBar',
+                name: 'move'
+            }, function(ret, err) {
+                if (ret) {
+                    console.log(JSON.stringify(ret));
+                    _this.panelHeight = ret.panelHeight;
+                    _this.inputBarHeight = ret.inputBarHeight;
+                    _this.scrolltoBottom();
+                } else {
+                    // alert(JSON.stringify(err));
+                }
+            });
+            // 监听录音
+            var UIChatBox = api.require('UIChatBox');
+            UIChatBox.addEventListener({
+                target: 'recordBtn',
+                name: 'press'
+            }, function(ret, err) {
+                if (ret) {
+                    api.startRecord();
+
+                    // alert(JSON.stringify(ret));
+                } else {
+                    alert(JSON.stringify(err));
+                }
+            });
+            UIChatBox.addEventListener({
+                target: 'recordBtn',
+                name: 'press_cancel'
+            }, function(ret, err) {
+                if (ret) {
+                    api.stopRecord(function(ret, err) {
+                        if (ret) {
+                            console.log(JSON.stringify(ret));
+                            var path = ret.path;
+                            var duration = ret.duration;
+                            if(duration < 1) return Pub.msg('您发送的语音太短');
+                            Pub.uploadImg('image', path, function(response) {
+                                if(response){
+                                    var param = {
+                                        type: 'amr',
+                                        path: response,
+                                        duration: duration
+                                    }
+                                    _this.sendAudio('', param);
+                                }
+                            });
+                        }
+                    });
+                    // alert(JSON.stringify(ret));
+                } else {
+                    alert(JSON.stringify(err));
+                }
+            });
+          },
+          // 相册
+          albumEvent: function (callback) {
+              api.getPicture({
+                  sourceType: 'album',
+                  encodingType: 'jpg',
+                  mediaValue: 'pic',
+                  destinationType: 'url',
+                  allowEdit: true,
+                  quality: 30,
+                  saveToPhotoAlbum: false
+              }, function(ret, err) {
+                  if (ret) {
+                      if (ret.data) {
+                          Pub.uploadImg('image', ret.data, function(response) {
+                              if (callback && typeof callback == 'function') {
+                                  callback(response);
+                              }
+                          });
+                      }
+                  } else {
+                      console.log(JSON.stringify(ret));
+                  }
+              });
+          },
+          // 相机
+          cameraEvent: function (callback) {
+              api.getPicture({
+                  sourceType: 'camera',
+                  encodingType: 'jpg',
+                  mediaValue: 'pic',
+                  destinationType: 'url',
+                  allowEdit: true,
+                  quality: 30,
+                  saveToPhotoAlbum: true
+              }, function(ret, err) {
+                  if (ret) {
+                      if (ret.data) {
+                          Pub.uploadImg('image', ret.data, function(response) {
+                              if (callback && typeof callback == 'function') {
+                                  callback(response);
+                              }
+                          });
+                      }
+                  } else {
+                      console.log(JSON.stringify(err));
+                  }
+              });
+          },
+          // 发送消息
+          sendMsg: function (msg, obj) {
+            var _this = this;
+              if (msg) {
+                  var params = {
+                      fid: fid,
+                      msg: msg,
+                      extra: ''
+                  }
+                  Pub.post(Pub.apiChat +'chat/send_msg', params, function(res) {
+                      console.log(JSON.stringify(res));
+                      if (res.code == 0) {
+                        _this.getMsg();
+                      }
+                  }, true);
+              }
+          },
+          // 发送图片
+          sendImg: function (msg, obj) {
+              var _this = this;
+              var params = {
+                  fid: fid,
+                  msg: msg,
+                  extra: obj
+              }
+              Pub.post(Pub.apiChat +'chat/send_img', params, function(res) {
+                  console.log(JSON.stringify(res));
+                  if (res.code == 0) {
+                      _this.getMsg();
+                  }
+              }, true);
+          },
+          // 发送语音
+          sendAudio: function (msg, obj) {
+              var _this = this;
+              var params = {
+                  fid: fid,
+                  msg: msg,
+                  extra: obj
+              }
+              Pub.post(Pub.apiChat +'chat/send_rec', params, function(res) {
+                  console.log(JSON.stringify(res));
+                  if (res.code == 0) {
+                      _this.getMsg();
+                  }
+              }, true);
+          },
+          // 播放音频
+          playAmr: function (path, callback){
+              console.log(path);
+              api.startPlay({
+                  path: path
+              }, function(ret, err) {
+                  if (ret) {
+                      // alert('播放完成');
+                      if(callback && typeof callback == 'function'){
+                          callback();
+                      }
+                  } else {
+                      console.log(JSON.stringify(err));
+                  }
+              });
+          },
+          // 停止播放音频
+          stopAmr: function (){
+              api.stopPlay();
+          },
+          // 下载文件
+          downAmr: function (path, callback){
+              var randomString = Math.random().toString(36).substr(2);
+              api.download({
+                  url: path,
+                  savePath: 'fs://record'+ randomString +'.amr',
+                  encode: false,
+                  report: false,
+                  cache: false
+              }, function(ret, err) {
+                  console.log('下载文件：' + JSON.stringify(ret));
+                  if (ret.state == 1) {
+                      //下载成功
+                      if(callback && typeof callback == 'function'){
+                          callback(ret);
+                      }
+                  } else {
+
+                  }
+              });
+          },
+        }
+      });
+    }
+    // function getData(callback) {
+    //     var params = {
+    //         fid: fid
+    //     }
+    //     Pub.post(Pub.apiChat +'message/msg', params, function(res) {
+    //         if (res.code == 0) {
+    //             chatData = res.data;
+    //             chatDataArr = [];
+    //             for(var i=0; i<chatData.length; i++){
+    //                 var dataObj = chatData[i];
+    //                 if(chatData[i].extra && chatData[i].extra!='album' && chatData[i].extra != 'camera'){
+    //                     dataObj.extraObj = JSON.parse(chatData[i].extra);
+    //                 }
+    //                 chatDataArr.push(dataObj);
+    //             }
+    //             chatDataObj.data = chatDataArr;
+    //             console.log('聊天数据:' + JSON.stringify(chatDataObj));
+    //             var html = template('list_html', chatDataObj);
+    //             $('#list').html(html);
+    //             getDataEvent();
+    //             window.scrollTo(0, document.getElementById('list').scrollHeight);
+    //             setTimeout(function() {
+    //                 window.scrollTo(0, document.getElementById('list').scrollHeight);
+    //             }, 300);
+    //
+    //         }
+    //         if (callback && typeof callback == 'function') {
+    //             callback();
+    //         }
+    //     }, true);
+    // }
+
+    function getMsg(callback) {
+        var params = {
+            fid: fid
+        }
+        Pub.post(Pub.apiChat +'message/msg_new', params, function(res) {
+            if (res.code == 0) {
+                var data = res.data;
+                if (data && data.length > 0) {
+                    var type = data[0].type;
+                    if(type == 101){
+                        getData();
+                        return false;
+                    }
+                    curId = data[0].id;
+                    var isNew = true;
+                    if (chatData.length > 0) {
+                        for (var i = 0; i < chatData.length; i++) {
+                            if (curId == chatData[i].id) {
+                                isNew = false;
+                            }
+                        }
+                    }
+                    console.log(isNew);
+                    if (isNew) {
+                        chatDataArr = [];
+                        for(var i=0; i<data.length; i++){
+                            var dataObj = data[i];
+                            if(data[i].extra){
+                                dataObj.extraObj = JSON.parse(data[i].extra);
+                            }
+                            chatDataArr.push(chatDataArr);
+                        }
+                        chatData = chatData.concat(dataObj);
+                        chatDataObj.data = chatData;
+                        var html = template('list_html', chatDataObj);
+                        $('#list').html(html);
+                        getDataEvent();
+                        if (document.getElementById('list').scrollHeight - scrollH < api.winHeight) {
+                            window.scrollTo(0, document.getElementById('list').scrollHeight - panelH + inputH);
+                        }
+                    }
+                }
+            }
+            if (callback && typeof callback == 'function') {
+                callback();
+            }
+        }, true);
+    }
+    function getDataEvent(){
+        $('.time').each(function() {
+            var thisTime = $(this).find('span').text();
+            // var curTime = new Date().getTime() / 1000;
+            if (thisTime) {
+                // console.log(timeDif);
+                // var timeDif = curTime - thisTime;
+                if (parseInt(thisTime) > 0) {
+                    var showTxt = new Date(thisTime * 1000).toWeiXinString();
+                    $(this).find('span').text(showTxt);
+                }else{
+                    $(this).remove();
+                }
+            } else {
+                $(this).remove();
+            }
+        });
+        $('.img_url').each(function() {
+            var thisSrc = $(this).attr('src');
+            if (thisSrc) {
+                if (thisSrc.indexOf('http') == -1) {
+                    $(this).attr('src', Pub.imgHost + thisSrc);
+                }
+            } else {
+                $(this).attr('src', '../../skin/default/images/chat/default_avatar.png');
+            }
+        });
+        $('.message').each(function() {
+            var thisHtml = $(this).html();
+            var htmlMsg = '';
+            htmlMsg = thisHtml.replace(Pub.regex.rgEmotion, function(a, b) {
+                if(emotionData[a] && emotionData[a] != 'undefined'){
+                    return emotionData[a];
+                } else {
+                    return a;
+                }
+            });
+            $(this).html(htmlMsg);
+        });
+        $('.avatar').on('click', function() {
+            var thisFid = $(this).attr('data-fid');
+            Pub.openView('./personal_info_win', {
+                pageParam: {
+                    fid: thisFid,
+                    isChat: true
+                }
+            });
+        });
+        $('.voice').on('click', function(){
+            var _this = this;
+            var thisPath = $(this).attr('data-path');
+            if(thisPath.indexOf('http') == -1){
+                thisPath = Pub.imgHost + thisPath;
+            }
+            console.log(thisPath);
+            if($(this).hasClass('active')){
+                $(this).removeClass('active');
+                stopAmr();
+            }else{
+                $(this).addClass('active');
+                downAmr(thisPath, function(ret){
+                    var path = ret.savePath;
+                    playAmr(path, function(){
+                        $(_this).removeClass('active');
+                    });
+                });
+
+            }
+        });
+        $('.redpacket-mine').each(function(){
+            var thisId = $(this).attr('data-id'),
+                thisOpen = $(this).attr('data-open'),
+                thisStart = $(this).attr('data-start'),
+                thisEnd = $(this).attr('data-end');
+            var curTime = new Date().getTime() / 1000;
+            if(thisOpen == 0){
+                $(this).removeClass('yet');
+            }else{
+                $(this).addClass('yet');
+                $(this).find('p').text('已被领取');
+            }
+            if(curTime >= thisEnd){
+                $(this).addClass('yet');
+                $(this).find('p').text('已过期');
+            }
+        });
+        $('.redpacket').each(function(){
+            var thisId = $(this).attr('data-id'),
+                thisOpen = $(this).attr('data-open'),
+                thisStart = $(this).attr('data-start'),
+                thisEnd = $(this).attr('data-end');
+            var curTime = new Date().getTime() / 1000;
+            if(thisOpen == 0){
+                $(this).removeClass('yet');
+            }else{
+                $(this).addClass('yet');
+                $(this).find('p').text('已领取');
+            }
+            if(curTime >= thisEnd){
+                $(this).addClass('yet');
+                $(this).find('p').text('已过期');
+            }
+        });
+        $('.redpacket-mine').on('click', function(){
+            var thisId = $(this).attr('data-id'),
+                thisRed = $(this).attr('data-red'),
+                thisFid = $(this).attr('data-fid');
+            Pub.openView('../redpacket/get_redpacket_win', {
+                pageParam:{
+                    id: thisId,
+                    red: thisRed,
+                    fid: fid
+                }
+            });
+        });
+        $('.redpacket').on('click', function(){
+            var thisId = $(this).attr('data-id'),
+                thisRed = $(this).attr('data-red'),
+                thisFid = $(this).attr('data-fid');
+            if($(this).hasClass('yet')){
+                Pub.openView('../redpacket/get_redpacket_win', {
+                    pageParam:{
+                        id: thisId,
+                        red: thisRed,
+                        fid: thisFid
+                    }
+                });
+            }else{
+                Pub.eventSend('get_redpacket', {
+                    id: thisId,
+                    red: thisRed,
+                    fid: thisFid
+                })
+            }
+        });
+        photoEvent();
+    }
+    function photoEvent() {
+        var photos = [];
+        $('.photo').each(function(index) {
+            var thisSrc = $(this).attr('src');
+            if (thisSrc) {
+                photos.push(thisSrc);
+            }
+            $(this).on('click', function() {
+                photoBrowser.open({
+                    images: photos,
+                    placeholderImg: 'widget://res/img/apicloud.png',
+                    bgColor: '#000',
+                    activeIndex: index
+                }, function(ret, err) {
+                    if (ret) {
+                        if (ret.eventType == 'show') {
+                            isShowPhoto = true;
+                        }
+                        if (ret.eventType == 'click') {
+                            photoBrowser.close();
+                            isShowPhoto = false;
+                        }
+                        // alert(JSON.stringify(ret));
+                    } else {
+                        // alert(JSON.stringify(err));
+                    }
+                });
+            });
+        });
+
+    }
+
+    function chat2() {
+        // 页面滚动到底部
+        document.querySelector('html').style.paddingBottom = '60px'
+        window.scrollTo(0, document.getElementById('app').scrollHeight);
+        var UIChatBox = api.require('UIChatBox');
+        UIChatBox.open({
+            placeholder: '',
+            maxRows: 6,
+            emotionPath: 'widget://expression/emotion',
+            texts: {
+                recordBtn: {
+                    normalTitle: '按住说话',
+                    activeTitle: '松开结束'
+                },
+                sendBtn: {
+                    title: '发送'
+                }
+            },
+            styles: {
+                topDivider: {
+                    width: 1,
+                    color: '#cdd2d4'
+                },
+                inputBar: {
+                    borderColor: '#d9d9d9',
+                    bgColor: '#fcfcfc'
+                },
+                inputBox: {
+                    borderColor: '#dddddd',
+                    bgColor: '#FFFFFF'
+                },
+                emotionBtn: {
+                    normalImg: 'widget://skin/default/images/chat/icon_expression.png'
+                },
+                extrasBtn: {
+                    normalImg: 'widget://skin/default/images/chat/icon_add_gray.png'
+                },
+                keyboardBtn: {
+                    normalImg: 'widget://skin/default/images/chat/key_box.png'
+                },
+                speechBtn: {
+                    normalImg: 'widget://skin/default/images/chat/voice_icon.png'
+                },
+                recordBtn: {
+                    normalBg: '#c4c4c4',
+                    activeBg: '#999999',
+                    color: '#000',
+                    size: 14
+                },
+                indicator: {
+                    target: 'both',
+                    color: '#ffffff',
+                    activeColor: '#21b2ff'
+                },
+                sendBtn: {
+                    titleColor: '#ffffff',
+                    bg: '#21b2ff',
+                    activeBg: '#21b2ff',
+                    titleSize: 14
+                }
+            },
+            extras: {
+                titleSize: 10,
+                titleColor: '#a3a3a3',
+                isAdaptScreenSize: false,
+                btns: [{
+                    title: '相册',
+                    normalImg: '../../skin/default/images/chat/icon_photo.png',
+                    activeImg: '../../skin/default/images/chat/icon_photo.png'
+                }, {
+                    title: '拍摄',
+                    normalImg: '../../skin/default/images/chat/icon_shot.png',
+                    activeImg: '../../skin/default/images/chat/icon_shot.png'
+                }, {
+                    title: '红包',
+                    normalImg: '../../skin/default/images/chat/icon_redpacket.png',
+                    activeImg: '../../skin/default/images/chat/icon_redpacket.png'
+                }]
+            }
+        }, function(ret, err) {
+            if (ret) {
+                console.log(JSON.stringify(ret))
+                if (ret.eventType == 'send') {
+                    sendMsg(ret.msg);
+                }
+                // 点击附件功能面板
+                if (ret.eventType == 'clickExtras') {
+                    // ret.index : 0 => 相册；1 => 拍摄；2=> 发红包
+                    if (ret.index == 0) {
+                        albumEvent(function(data) {
+                            var params = {
+                                img: data,
+                                type: 'album'
+                            }
+                            sendImg('', params)
+                        })
+                    }
+                    if (ret.index == 1) {
+                        cameraEvent(function(data) {
+                            var params = {
+                                img: data,
+                                type: 'camera'
+                            }
+                            sendImg('', params)
+                        })
+                    }
+                    if (ret.index == 2) {
+                        Pub.eventSend('chat_window_end');
+                        Pub.openView('../redpacket/give_redpacket_win', {
+                            pageParam: {
+                                fid: fid
+                            }
+                        });
+                    }
+                }
+
+            } else {
+                console.log(JSON.stringify(err));
+            }
+        });
+        // 监听键盘变化
+        UIChatBox.addEventListener({
+            target: 'inputBar',
+            name: 'move'
+        }, function(ret, err) {
+            if (ret) {
+                console.log(JSON.stringify(ret));
+                panelH = ret.panelHeight;
+                inputH = ret.inputBarHeight;
+                setTimeout(function() {
+                    document.querySelector('html').style.paddingBottom = ret.panelHeight + ret.inputBarHeight + 'px'
+                        // document.getElementById('list').scrollTop = document.getElementById('list').scrollHeight
+                    window.scrollTo(0, document.getElementById('app').scrollHeight - ret.panelHeight + ret.inputBarHeight);
+                }, 100);
+            } else {
+                // alert(JSON.stringify(err));
+            }
+        });
+        // 监听录音
+        var UIChatBox = api.require('UIChatBox');
+        UIChatBox.addEventListener({
+            target: 'recordBtn',
+            name: 'press'
+        }, function(ret, err) {
+            if (ret) {
+                api.startRecord();
+
+                // alert(JSON.stringify(ret));
+            } else {
+                alert(JSON.stringify(err));
+            }
+        });
+        UIChatBox.addEventListener({
+            target: 'recordBtn',
+            name: 'press_cancel'
+        }, function(ret, err) {
+            if (ret) {
+                api.stopRecord(function(ret, err) {
+                    if (ret) {
+                        console.log(JSON.stringify(ret));
+                        var path = ret.path;
+                        var duration = ret.duration;
+                        if(duration < 1) return Pub.msg('您发送的语音太短');
+                        Pub.uploadImg('image', path, function(response) {
+                            if(response){
+                                var param = {
+                                    type: 'amr',
+                                    path: response,
+                                    duration: duration
+                                }
+                                sendAudio('', param);
+                            }
+                        });
+                    }
+                });
+                // alert(JSON.stringify(ret));
+            } else {
+                alert(JSON.stringify(err));
+            }
+        });
+
+    }
+    // 相册
+    function albumEvent(callback) {
+        api.getPicture({
+            sourceType: 'album',
+            encodingType: 'jpg',
+            mediaValue: 'pic',
+            destinationType: 'url',
+            allowEdit: true,
+            quality: 100,
+            saveToPhotoAlbum: false
+        }, function(ret, err) {
+            if (ret) {
+                if (ret.data) {
+                    Pub.uploadImg('image', ret.data, function(response) {
+                        if (callback && typeof callback == 'function') {
+                            callback(response);
+                        }
+                    });
+                }
+            } else {
+                console.log(JSON.stringify(ret));
+            }
+        });
+    }
+    // 相机
+    function cameraEvent(callback) {
+        api.getPicture({
+            sourceType: 'camera',
+            encodingType: 'jpg',
+            mediaValue: 'pic',
+            destinationType: 'url',
+            allowEdit: true,
+            quality: 50,
+            saveToPhotoAlbum: true
+        }, function(ret, err) {
+            if (ret) {
+                if (ret.data) {
+                    Pub.uploadImg('image', ret.data, function(response) {
+                        if (callback && typeof callback == 'function') {
+                            callback(response);
+                        }
+                    });
+                }
+            } else {
+                console.log(JSON.stringify(err));
+            }
+        });
+    }
+    // 发送消息
+    function sendMsg(msg, obj) {
+        if (msg) {
+            var params = {
+                fid: fid,
+                msg: msg,
+                extra: ''
+            }
+            Pub.post(Pub.apiChat +'chat/send_msg', params, function(res) {
+                console.log(JSON.stringify(res));
+                if (res.code == 0) {
+                    getMsg(function() {
+                        window.scrollTo(0, document.getElementById('app').scrollHeight - panelH + inputH);
+                    });
+                }
+            }, true);
+        }
+    }
+    // 发送图片
+    function sendImg(msg, obj) {
+        var params = {
+            fid: fid,
+            msg: msg,
+            extra: obj
+        }
+        Pub.post(Pub.apiChat +'chat/send_img', params, function(res) {
+            console.log(JSON.stringify(res));
+            if (res.code == 0) {
+                getMsg(function() {
+                    window.scrollTo(0, document.getElementById('app').scrollHeight - panelH + inputH);
+                });
+            }
+        }, true);
+    }
+    // 发送语音
+    function sendAudio(msg, obj) {
+        var params = {
+            fid: fid,
+            msg: msg,
+            extra: obj
+        }
+        Pub.post(Pub.apiChat +'chat/send_rec', params, function(res) {
+            console.log(JSON.stringify(res));
+            if (res.code == 0) {
+                getMsg(function() {
+                    window.scrollTo(0, document.getElementById('app').scrollHeight - panelH + inputH);
+                });
+            }
+        }, true);
+    }
+    // 播放音频
+    function playAmr(path, callback){
+        console.log(path);
+        api.startPlay({
+            path: path
+        }, function(ret, err) {
+            if (ret) {
+                // alert('播放完成');
+                if(callback && typeof callback == 'function'){
+                    callback();
+                }
+            } else {
+                console.log(JSON.stringify(err));
+            }
+        });
+    }
+    // 停止播放音频
+    function stopAmr(){
+        api.stopPlay();
+    }
+    // 下载文件
+    function downAmr(path, callback){
+        var randomString = Math.random().toString(36).substr(2);
+        api.download({
+            url: path,
+            savePath: 'fs://record'+ randomString +'.amr',
+            encode: false,
+            report: false,
+            cache: false
+        }, function(ret, err) {
+            console.log('下载文件：' + JSON.stringify(ret));
+            if (ret.state == 1) {
+                //下载成功
+                if(callback && typeof callback == 'function'){
+                    callback(ret);
+                }
+            } else {
+
+            }
+        });
+    }
+    function getImgsPaths(sourcePathOfChatBox, callback) {
+        var jsonPath = "widget://expression/emotion/emotion.json"; //表情的JSON数组
+        api.readFile({
+            path: jsonPath
+        }, function(ret, err) {
+            if (ret.status) {
+                var emotionArray = JSON.parse(ret.data);
+                var emotion = {};
+                for (var i = 0; i < emotionArray.length; i++) {
+                    emotion[emotionArray[i]['text']] = '<img src="../../expression/emotion/' + emotionArray[i]['name'] + '.png' + '" width="25" height="25">';
+                }
+                /*把emotion对象 回调出去*/
+                if ("function" === typeof(callback)) {
+                    callback(emotion);
+                }
+            }
+        });
+    }
+
+    function hideChat() {
+        var UIChatBox = api.require('UIChatBox');
+        UIChatBox.hide();
+    }
+
+    function showChat() {
+        var UIChatBox = api.require('UIChatBox');
+        UIChatBox.show();
+    }
+
+    function pullDown() {
+        Pub.pullDown(function() {
+            setTimeout(function() {
+                Pub.pullDownDone();
+            }, 1000);
+        }, 'up');
+    }
+</script>
+
+</html>

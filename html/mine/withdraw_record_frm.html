@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="">
+  <div id="app">
+    <template>
+      <div class="record-common">
+        <div class="item" v-for="(item,index) in listData" :index="item.id" :track-id="item.id">
+          <div class="item-left">
+            <p style="word-break:break-all;">{{lang.transaction_number}}：{{item.order_id}}</p>
+            <p><font>{{lang.time}}</font>：{{item.date}}</p>
+            <p><font>{{lang.home_coin}}</font>：{{item.coin_info.cname}}</p>
+            <p><font>{{lang.address}}</font>：{{item.card_id}}</p>
+            <!-- <p>银行：{{item.card_info.bank}}</p>
+            <p>卡号：**** **** **** {{item.card_info.number.substring(item.card_info.number.length-4)}}</p> -->
+          </div>
+          <div class="item-right">
+            <p><strong>{{item.amount}}</strong></p>
+            <p><span>{{lang.wallet_service_charge}}：{{item.coin_info.out_fee}}</span></p>
+            <p v-if="item.approve==1">{{lang.withdraw_success}}</p>
+            <p v-if="item.approve==0">{{lang.withdrawing}}</p>
+            <p v-if="item.approve==-1||item.approve==2">{{lang.withdraw_failed}}</p>
+          </div>
+        </div>
+      </div>
+      <div class="nothing" v-show="isNomore">{{lang.no_more}}</div>
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      var app = new Vue({
+        el: '#app',
+        data: {
+          listData: [],
+          isNomore: false,
+          lang: {
+            transaction_number: Pub.getLang("transaction_number"),
+            time: Pub.getLang("time"),
+            home_coin: Pub.getLang("home_coin"),
+            address: Pub.getLang("address"),
+            withdraw_success: Pub.getLang("withdraw_success"),
+            withdrawing: Pub.getLang("withdrawing"),
+            withdraw_failed: Pub.getLang("withdraw_failed"),
+            no_more: Pub.getLang("no_more"),
+            wallet_service_charge: Pub.getLang("wallet_service_charge"),
+          }
+        },
+        mounted: function(){
+          this.getData();
+          this.pullDown();
+        },
+        methods: {
+          getData: function(callback){
+            var _this = this;
+            Pub.post('user/withdraw/record', {}, function(res){
+              if(res.code == 0){
+                _this.listData = res.data;
+                if(_this.listData.length > 0){
+                  _this.isNomore = false;
+                }else{
+                  _this.isNomore = true;
+                }
+              }
+              if(callback && typeof callback == 'function'){
+                callback()
+              }
+            });
+          },
+          pullDown: function(){
+            var _this = this;
+            Pub.pullDown(function(){
+              _this.getData(function(){
+                Pub.pullDownDone();
+              });
+            });
+          },
+
+        }
+      })
+    }
+</script>
+
+</html>

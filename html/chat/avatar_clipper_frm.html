@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    var url = '';
+    apiready = function() {
+        api.parseTapmode();
+        url = api.pageParam.url;
+        clip();
+        Pub.eventListen('avatar_clip', function(){
+            var randomString = Math.random().toString(36).substr(2);
+            console.log(randomString)
+            var FNImageClip = api.require('FNImageClip');
+            FNImageClip.save({
+                destPath: 'fs://imgae_clipper'+ randomString +'.jpg',
+                copyToAlbum: false,
+                quality: 1
+            }, function(ret, err) {
+                if (ret) {
+                  var files = [];
+                  var imgOptim = api.require('imageOptim');
+                  console.log('图片路径:' + ret.destPath);
+                  imgOptim.compress({ quality: .8, width: 150, height: 150, imgPath: ret.destPath, destinationPath: ret.destPath }, function (rets, errs) {
+                    console.log('图片压缩成功'+JSON.stringify(rets));
+                    console.log('图片压缩成功'+JSON.stringify(errs));
+                      if (rets) {
+                        var imgSrc = rets.imgPath;
+                        files.push(imgSrc);
+                        if(api.pageParam.type!="group"){
+                          Pub.uploadImg(files, function(img){
+                              var params = {
+                                  face: img
+                              }
+                              Pub.post('user/edit/edit_face', params, function(res2){
+                                  if(res2.code == 0){
+                                      Pub.msg(Pub.getLang("modify_successfully"));
+                                      Pub.eventSend('update_userinfo');
+                                      api.closeWin();
+
+                                  }
+                              });
+                          });
+                        }else{
+                          Pub.uploadImg(files, function(img){
+                              var params = {
+                                  face: img,
+                                  gid: api.pageParam.gid
+                              }
+                              Pub.post('group/admin/face_set', params, function(res2){
+                                  if(res2.code == 0){
+                                      Pub.msg(Pub.getLang("modify_successfully"));
+                                      Pub.eventSend('update_groupinfo');
+                                      api.closeWin();
+
+                                  }
+                              });
+                          });
+                        }
+                      } else {
+                      }
+                  });
+
+
+                } else {
+                    console.log(JSON.stringify(err));
+                }
+            });
+        });
+    }
+    function clip(){
+        var FNImageClip = api.require('FNImageClip');
+         FNImageClip.open({
+             rect: {
+                 x: 0,
+                 y: 0
+             },
+             mode: 'clip',
+             srcPath: url,
+             style: {
+                 mask: 'rgba(0,0,0,.5)',
+                 clip: {
+                     x: (api.winWidth - 200) / 2,
+                     y:(api.winHeight - 200) / 2,
+                     w: 200,
+                     h: 200,
+                     borderColor: '#21b2ff',
+                     borderWidth: 0,
+                     appearance: 'rectangle'
+                 }
+             },
+             fixedOn: api.frameName
+         }, function(ret, err) {
+             if (ret) {
+                 console.log(JSON.stringify(ret));
+             } else {
+                 console.log(JSON.stringify(err));
+             }
+         });
+    }
+</script>
+
+</html>

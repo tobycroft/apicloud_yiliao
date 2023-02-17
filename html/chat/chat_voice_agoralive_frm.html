@@ -1,0 +1,687 @@
+<!doctype html>
+<html class="bgc-gradual-gray">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+<body class="bgc-gradual-gray">
+  <div class="chat-voice-user" id="header">
+    <div class="avatar" id="avatar"></div>
+    <div class="name" id="user_name"></div>
+    <div class="desc" id="user_desc"></div>
+  </div>
+  <div class="chat-voice-status" id="chat_status">
+    <!-- <p><span>已接通</span></p>
+    <p>00:03</p> -->
+  </div>
+  <div class="chat-voice-handle">
+    <a id="handle_left"></a>
+    <a id="handle_middle"></a>
+    <a id="handle_right"></a>
+  </div>
+  <audio id="myaudio" controls="controls" hidden="true" loop="loop">
+    <source src="../../res/voice_call.wav"  type="audio/mpeg">
+      您的浏览器不支持 audio 元素。
+  </audio>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/AgoraRTCSDK-2.6.1"></script>
+<script type="text/javascript">
+  var agoraRtc = {}, channel = '', type = '', id = '', isSender = false, msgId = '', channelId = '', timeLong = 0, connentTimer = {};
+  var audio = {};
+  var timer = {};
+  apiready = function() {
+      api.parseTapmode();
+      var header = $api.byId('header');
+      $api.fixStatusBar(header);
+      audio = document.getElementById('myaudio');
+      audio.play();
+      channel = api.pageParam.channel;
+      type = api.pageParam.type;
+      id = api.pageParam.id;
+      isSender = api.pageParam.isSender;
+      msgId = api.pageParam.msgId;
+      agoraRtc = api.require('agoraRtc');
+      getUserInfo();
+      chatInit();
+      listenerUser();
+      Pub.eventListen('voice_refuse', function(){
+        Pub.msg('对方已退出语音');
+        leave();
+        hangup();
+        api.removeEventListener({
+            name: 'resume'
+        });
+      })
+      Pub.eventListen('voice_hangup', function(){
+        cancelConnent();
+      });
+      timer = setTimeout(function(){
+        if(isSender){
+          Pub.msg('对方无接听');
+          setTimeout(function(){
+            leave();
+            hangup();
+            api.setKeepScreenOn({
+                keepOn: false
+            });
+          }, 1000);
+        }else{
+          Pub.msg('对方已取消');
+          setTimeout(function(){
+            leave();
+            hangup();
+          }, 1000);
+        }
+      }, 40000);
+      agoraRtc.errorListener(function(ret) {
+        console.log(JSON.stringify(ret))
+        console.log('语音网络断开');
+      });
+  }
+  function getUserInfo(){
+    console.log(id);
+    if(id){
+      var params = {
+          fid: id
+      }
+      Pub.post(Pub.apiChat +'friend/info/userinfo', params, function(res){
+          console.log('好友信息:'+JSON.stringify(res));
+          if(res.code == 0){
+              var data = res.data;
+              var avatar = '';
+              if(data.face){
+                  if(data.face.indexOf('http') == -1){
+                      avatar = Pub.imgHost + data.face;
+                  }else{
+                    avatar = data.face;
+                  }
+                  $('#avatar').html('<img src="'+avatar+'">');
+              }else{
+                $('#avatar').html('<img src="../../icon/logo.png">');
+              }
+              $('#user_name').text(data.uname);
+          }
+      });
+    }
+  }
+  function chatInit(){
+    agoraRtc.init({appId:'c8c9ff785db74e7e941ed6af6bcc6146'});
+    console.log(isSender);
+    if(isSender){
+      leave();
+      $('#handle_left').html('');
+      $('#handle_middle').html('<p onclick="cancelConnent()"><i class="hangup"></i></p><p>取消</p>');
+      $('#handle_right').html('');
+      $('#user_desc').text('正在等待对方接听...');
+      createChannel();
+    }else{
+      $('#handle_left').html('<p onclick="cancelConnent()"><i class="hangup"></i></p><p>挂断</p>');
+      $('#handle_middle').html('');
+      $('#handle_right').html('<p onclick="joinChan()"><i class="connent"></i></p><p>接通</p>');
+      $('#user_desc').text('');
+    }
+  }
+  function cancelConnent(){
+    var params = {
+      user_id: id,
+      msg_type: type,
+      msg_id: msgId
+    }
+    Pub.post(Pub.apiChat +'chat/refuse_voice', params, function(res){
+      if(res.code == 0){
+        leave();
+        hangup();
+      }
+    }, true);
+  }
+  function hangup(){<!doctype html>
+  <html class="bgc-gradual-gray">
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+      <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+      <title>chat</title>
+      <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+  </head>
+  <body class="bgc-gradual-gray">
+    <div class="chat-voice-user" id="header">
+      <div class="avatar" id="avatar"></div>
+      <div class="name" id="user_name"></div>
+      <div class="desc" id="user_desc"></div>
+    </div>
+    <div class="chat-voice-status" id="chat_status">
+      <!-- <p><span>已接通</span></p>
+      <p>00:03</p> -->
+    </div>
+    <div class="chat-voice-handle">
+      <a id="handle_left"></a>
+      <a id="handle_middle"></a>
+      <a id="handle_right"></a>
+    </div>
+    <audio id="myaudio" controls="controls" hidden="true" loop="loop">
+      <source src="../../res/voice_call.wav"  type="audio/mpeg">
+        您的浏览器不支持 audio 元素。
+    </audio>
+  </body>
+  <script src="../../script/jquery.min.js"></script>
+  <script src="../../script/api.js"></script>
+  <script src="../../script/public.js"></script>
+  <script src="../../script/AgoraRTCSDK-2.6.1"></script>
+  <script type="text/javascript">
+    var agoraLive = {}, channel = '', type = '', id = '', isSender = false, msgId = '', channelId = '', timeLong = 0, connentTimer = {};
+    var audio = {};
+    var timer = {};
+    apiready = function() {
+        api.parseTapmode();
+        var header = $api.byId('header');
+        $api.fixStatusBar(header);
+        audio = document.getElementById('myaudio');
+        audio.play();
+        channel = api.pageParam.channel;
+        type = api.pageParam.type;
+        id = api.pageParam.id;
+        isSender = api.pageParam.isSender;
+        msgId = api.pageParam.msgId;
+        agoraLive = api.require('agoraLive');
+        getUserInfo();
+        chatInit();
+        listenerUser();
+        Pub.eventListen('voice_refuse', function(){
+          Pub.msg('对方已退出语音');
+          leave();
+          hangup();
+          api.removeEventListener({
+              name: 'resume'
+          });
+        })
+        Pub.eventListen('voice_hangup', function(){
+          cancelConnent();
+        });
+        timer = setTimeout(function(){
+          if(isSender){
+            Pub.msg('对方无接听');
+            setTimeout(function(){
+              leave();
+              hangup();
+              api.setKeepScreenOn({
+                  keepOn: false
+              });
+            }, 1000);
+          }else{
+            Pub.msg('对方已取消');
+            setTimeout(function(){
+              leave();
+              hangup();
+            }, 1000);
+          }
+        }, 40000);
+        agoraLive.setLogFile({
+            filePath: 'fs://chat_voice//log.txt'
+        }, function(ret) {
+            if (ret.status) {
+                console.log({msg:JSON.stringify(ret)});
+            }
+        });
+        agoraLive.errorListener(function(ret) {
+          console.log(JSON.stringify(ret))
+          console.log('网络连接错误');
+          Pub.msg('网络连接错误');
+          cancelConnent();
+          setTimeout(function(){
+            hangup();
+          }, 1000);
+        });
+        agoraLive.warningListener({
+        enable: true
+      }, function(ret){
+        console.log('警告' + JSON.stringify(ret));
+      })
+    }
+    function getUserInfo(){
+      console.log(id);
+      if(id){
+        var params = {
+            fid: id
+        }
+        Pub.post(Pub.apiChat +'friend/info/userinfo', params, function(res){
+            console.log('好友信息:'+JSON.stringify(res));
+            if(res.code == 0){
+                var data = res.data;
+                var avatar = '';
+                if(data.face){
+                    if(data.face.indexOf('http') == -1){
+                        avatar = Pub.imgHost + data.face;
+                    }else{
+                      avatar = data.face;
+                    }
+                    $('#avatar').html('<img src="'+avatar+'">');
+                }else{
+                  $('#avatar').html('<img src="../../icon/logo.png">');
+                }
+                $('#user_name').text(data.uname);
+            }
+        });
+      }
+    }
+    function chatInit(){
+      console.log(isSender);
+      agoraLive.init({
+          appId:'c8c9ff785db74e7e941ed6af6bcc6146'
+      }, function(ret) {
+          if (ret.status) {
+              console.log('初始化成功');
+              if(isSender){
+                $('#handle_left').html('');
+                $('#handle_middle').html('<p onclick="cancelConnent()"><i class="hangup"></i></p><p>取消</p>');
+                $('#handle_right').html('');
+                $('#user_desc').text('正在等待对方接听...');
+                createChannel();
+              }else{
+                $('#handle_left').html('<p onclick="cancelConnent()"><i class="hangup"></i></p><p>挂断</p>');
+                $('#handle_middle').html('');
+                $('#handle_right').html('<p onclick="joinChan()"><i class="connent"></i></p><p>接通</p>');
+                $('#user_desc').text('');
+              }
+          }
+      });
+    }
+    function cancelConnent(){
+      var params = {
+        user_id: id,
+        msg_type: type,
+        msg_id: msgId
+      }
+      Pub.post(Pub.apiChat +'chat/refuse_voice', params, function(res){
+        console.log('挂断返回' + JSON.stringify(res));
+        if(res.code == 0){
+          hangup();
+        }
+      }, true);
+    }
+    function hangup(){
+      api.setKeepScreenOn({
+          keepOn: false
+      });
+      api.closeWin();
+      agoraLive.destroy();
+    }
+    function exitVoice(){
+      Pub.confirm('提示','您确定要挂断通话吗', function(){
+        var endTime = new Date().getTime();0
+        connentEnd(Pub.toTime(endTime), timeLong);
+        cancelConnent();
+        hangup();
+      });
+    }
+    function createChannel(){
+      console.log(channel)
+      agoraLive.joinChannelByToken({
+        channelToken: '',
+        channelId: channel,
+        uid: ''
+      }, function(ret) {
+        console.log('创建频道' + JSON.stringify(ret));
+          if (ret.status) {
+              channelSend();
+              setChannel();
+          }
+      });
+    }
+    function joinChan(){
+      agoraLive.joinChannelByToken({
+        channelToken: '',
+        channelId: channel,
+        uid: ''
+      }, function(ret) {
+          if (ret.status) {
+            setChannel();
+          }
+      });
+    }
+    function channelSend(){
+      if(type == 'private'){
+        var params = {
+          user_id: id,
+          channel: channel,
+          msg_type: type,
+          msg_id: msgId,
+        }
+        Pub.post(Pub.apiChat +'chat/join_voice', params, function(res){
+          console.log(JSON.stringify(res));
+        }, true);
+      }
+    }
+    function setChannel(){
+      agoraLive.setChannelProfile({
+        profile:'communication'
+      }, function(ret) {
+          if (ret.code == 0) {
+            agoraLive.disableVideo(function(ret) {
+                if (ret.code == 0) {
+                  localStream();
+                    //success
+                }
+            });
+          }
+      });
+    }
+    // 打开音频
+    function localStream(){
+      agoraLive.enableAudio(function(ret) {
+          if (ret.code == 0) {
+              //success
+          }
+      });
+    }
+    // 离开频道
+    function leave(){
+      agoraLive.leaveChannel(function(ret) {
+          if (ret.code == 0) {
+              //success
+          }
+      });
+    }
+    function listenerUser(){
+      agoraLive.userJoinedListener({
+        enable: true
+      },function(ret) {
+        if(ret){
+          clearTimeout(timer);
+          audio.pause();
+          agoraLive.setEnableSpeakerphone({
+            enabled: false
+          });
+          channelId = ret.uid;
+          var strartTime = new Date().getTime();
+          connentStart(Pub.toTime(strartTime));
+          afterConnent();
+        }
+      });
+      agoraLive.userOfflineListener({
+        enable: true
+      },function(ret) {
+        Pub.msg('对方已退出语音');
+        var endTime = new Date().getTime();
+        connentEnd(Pub.toTime(endTime), timeLong);
+        setInterval(function(){
+          leave();
+          hangup();
+        }, 1000);
+      });
+    }
+    function afterConnent(){
+      $('#handle_left').html('<p><i class="speek-no" onclick="swichSpeek(this)"></i></p><p>静音</p>');
+      $('#handle_middle').html('<p onclick="exitVoice()"><i class="hangup"></i></p><p>挂断</p>');
+      $('#handle_right').html('<p><i class="sound" onclick="swichSound(this)"></i></p><p>免提</p>');
+      $('#user_desc').text('');
+      $('#chat_status').html('<p><span>已接通</span></p><p class="time">00:00</p>');
+      connentTimer = setInterval(function(){
+        timeLong =  parseInt(timeLong) + 1000;
+        $('#chat_status').find('.time').text(timeShow(timeLong));
+      }, 1000);
+    }
+    function swichSpeek(el){
+      if($(el).hasClass('active')){
+        $(el).removeClass('active')
+        agoraLive.muteLocalAudioStream({
+            muted:false
+        }, function(ret) {
+            if (ret.code == 0) {
+                //success
+            }
+        });
+      }else{
+        $(el).addClass('active');
+        agoraLive.muteLocalAudioStream({
+            muted:true
+        }, function(ret) {
+            if (ret.code == 0) {
+                //success
+            }
+        });
+      }
+    }
+    function swichSound(el){
+      if($(el).hasClass('active')){
+        $(el).removeClass('active')
+        agoraLive.setEnableSpeakerphone({
+          enabled: false
+        });
+      }else{
+        $(el).addClass('active');
+        agoraLive.setEnableSpeakerphone({
+          enabled: true
+        });
+      }
+    }
+    function timeShow(time){
+      var timeTxt = '';
+      min = Math.floor((time/1000/60) << 0),
+      sec = Math.floor((time/1000) % 60);
+      if(parseInt(min) < 10){
+        min = '0' + min;
+      }
+      if(parseInt(sec) < 10){
+        sec = '0' + sec;
+      }
+      timeTxt = min + ':' + sec;
+      return timeTxt;
+    }
+    function connentStart(time){
+      var params = {
+        msg_id: msgId,
+        s_time: time
+      }
+      Pub.post(Pub.apiChat +'chat/log_voice_s_time', params, function(res){
+        console.log('接听时间' + JSON.stringify(res));
+        Pub.eventSend('voice_connent', {
+          msgId: msgId
+        });
+      }, true);
+    }
+    function connentEnd(time, long){
+      var params = {
+        msg_id: msgId,
+        e_time: time,
+        duration: long
+      }
+      Pub.post(Pub.apiChat +'chat/log_voice_e_time', params, function(res){
+        console.log('挂断时间' + JSON.stringify(res));
+        Pub.eventSend('voice_connent', {
+          msgId: msgId
+        });
+      }, true);
+    }
+  </script>
+
+  </html>
+
+    agoraRtc.destroy();
+    api.setKeepScreenOn({
+        keepOn: false
+    });
+    api.closeWin();
+  }
+  function exitVoice(){
+    leave();
+    var endTime = new Date().getTime();
+    connentEnd(Pub.toTime(endTime), timeLong);
+    hangup();
+  }
+  function createChannel(){
+    agoraRtc.joinChannel({
+      channel: channel,
+    }, function(ret) {
+        if (ret.code == 0) {
+            channelSend();
+            setChannel();
+        }
+    });
+  }
+  function joinChan(){
+    leave();
+    agoraRtc.joinChannel({
+      channel: channel,
+    }, function(ret) {
+        if (ret.code == 0) {
+          setChannel();
+        }
+    });
+  }
+  function channelSend(){
+    if(type == 'private'){
+      var params = {
+        user_id: id,
+        channel: channel,
+        msg_type: type,
+        msg_id: msgId,
+      }
+      Pub.post(Pub.apiChat +'chat/join_voice', params, function(res){
+        console.log(JSON.stringify(res));
+      }, true);
+    }
+  }
+  function setChannel(){
+    agoraRtc.setChannelProfile({
+      profile:0
+    }, function(ret) {
+        if (ret.code == 0) {
+          agoraRtc.disableVideo(function(ret) {
+              if (ret.code == 0) {
+                localStream();
+                  //success
+              }
+          });
+        }
+    });
+  }
+  // 打开音频
+  function localStream(){
+    agoraRtc.enableAudio(function(ret) {
+        if (ret.code == 0) {
+            //success
+        }
+    });
+  }
+  // 离开频道
+  function leave(){
+    agoraRtc.leaveChannel(function(ret) {
+        if (ret.code == 0) {
+            //success
+        }
+    });
+  }
+  function listenerUser(){
+    agoraRtc.remoteUserJoinedListener(function(ret) {
+      if(ret){
+        clearTimeout(timer);
+        audio.pause();
+        channelId = ret.uid;
+        var strartTime = new Date().getTime();
+        connentStart(Pub.toTime(strartTime));
+        afterConnent();
+      }
+    });
+    agoraRtc.remoteUserOfflineListener(function(ret) {
+      Pub.msg('对方已退出语音');
+      var endTime = new Date().getTime();
+      connentEnd(Pub.toTime(endTime), timeLong);
+      setInterval(function(){
+        leave();
+        hangup();
+      }, 1000);
+    });
+  }
+  function afterConnent(){
+    $('#handle_left').html('<p><i class="speek-no" onclick="swichSpeek(this)"></i></p><p>静音</p>');
+    $('#handle_middle').html('<p onclick="exitVoice()"><i class="hangup"></i></p><p>挂断</p>');
+    $('#handle_right').html('<p><i class="sound" onclick="swichSound(this)"></i></p><p>免提</p>');
+    $('#user_desc').text('');
+    $('#chat_status').html('<p><span>已接通</span></p><p class="time">00:00</p>');
+
+    connentTimer = setInterval(function(){
+      timeLong =  parseInt(timeLong) + 1000;
+      $('#chat_status').find('.time').text(timeShow(timeLong));
+    }, 1000);
+  }
+  function swichSpeek(el){
+    if($(el).hasClass('active')){
+      $(el).removeClass('active')
+      agoraRtc.muteLocalAudioStream({
+          mute:false
+      }, function(ret) {
+          if (ret.code == 0) {
+              //success
+          }
+      });
+    }else{
+      $(el).addClass('active');
+      agoraRtc.muteLocalAudioStream({
+          mute:true
+      }, function(ret) {
+          if (ret.code == 0) {
+              //success
+          }
+      });
+    }
+  }
+  function swichSound(el){
+    if($(el).hasClass('active')){
+      $(el).removeClass('active')
+      // agoraRtc.setEnableSpeakerphone({
+      //   enabled: false
+      // });
+    }else{
+      $(el).addClass('active');
+      // agoraRtc.setEnableSpeakerphone({
+      //   enabled: true
+      // });
+    }
+  }
+  function timeShow(time){
+    var timeTxt = '';
+    min = Math.floor((time/1000/60) << 0),
+    sec = Math.floor((time/1000) % 60);
+    if(parseInt(min) < 10){
+      min = '0' + min;
+    }
+    if(parseInt(sec) < 10){
+      sec = '0' + sec;
+    }
+    timeTxt = min + ':' + sec;
+    return timeTxt;
+  }
+  function connentStart(time){
+    var params = {
+      msg_id: msgId,
+      s_time: time
+    }
+    Pub.post(Pub.apiChat +'chat/log_voice_s_time', params, function(res){
+      console.log('接听时间' + JSON.stringify(res));
+      Pub.eventSend('voice_connent', {
+        msgId: msgId
+      });
+    }, true);
+  }
+  function connentEnd(time, long){
+    var params = {
+      msg_id: msgId,
+      e_time: time,
+      duration: long
+    }
+    Pub.post(Pub.apiChat +'chat/log_voice_e_time', params, function(res){
+      console.log('挂断时间' + JSON.stringify(res));
+      Pub.eventSend('voice_connent', {
+        msgId: msgId
+      });
+    }, true);
+  }
+</script>
+
+</html>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <div class="book-verify-list">
+        <ul id="list">
+        </ul>
+    </div>
+    <script type="text/html" id="list_html">
+        {{if data.length > 0}}
+            {{each data}}
+            <li class="fid">
+                <div class="avatar"><img src="{{$value.face}}" class="img_url"></div>
+                <div class="info">
+                    <h3>{{$value.uname}}</h3>
+                    <p>{{$value.introduction}}</p>
+                </div>
+                <div class="handle" data-fid="{{$value.uid}}"></div>
+            </li>
+            {{/each}}
+        {{else}}
+        <li set-lang="text:sorry_no_one_you_look_for">
+            抱歉，没有你要找的人
+        </li>
+        {{/if}}
+    </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var searchData = {};
+    apiready = function() {
+        api.parseTapmode();
+        Pub.openHref();
+        Pub.eventListen('search_result', function(result){
+            searchData = result.value;
+            var html = template('list_html', searchData);
+            $('#list').html(html);
+            Pub.setLang();
+            $('.img_url').each(function(){
+                var thisSrc = $(this).attr('src');
+                if(thisSrc){
+                    if(thisSrc.indexOf('http') == -1){
+                        $(this).attr('src', Pub.imgHost + thisSrc);
+                    }
+
+                }else{
+                    $(this).attr('src', '../../skin/default/images/img_avatar.png');
+                }
+                console.log(Pub.imgHost + thisSrc);
+            });
+            $('.handle').each(function(){
+                var _this = this;
+                var thisFid = $(this).attr('data-fid');
+
+                isFriend(thisFid, function(res){
+                    if(thisFid == $api.getStorage('uid')){
+                      $(_this).html(Pub.getLang('oneself'));
+                    }else{
+                      if(res.data){
+                          $(_this).html(Pub.getLang('already_your_friend'));
+                      }else {
+                          $(_this).html('<a onclick="addFriend('+thisFid+')">'+Pub.getLang('add_friend')+'</a>');
+                      }
+                    }
+                });
+            });
+        });
+    }
+    function addFriend(id){
+        Pub.openView('./personal_add_verify_win', {
+          pageParam: {
+            fid: id
+          }
+        });
+        // var params = {
+        //     fid: id
+        // }
+        // Pub.post(Pub.apiChat +'request/request/friend', params, function(res){
+        //     if(res.code == 0){
+        //         Pub.msg(res.data || '您的好友请求已经发送，等待对方回复');
+        //     }
+        // });
+    }
+    function isFriend(fid, callback){
+        var params = {
+            fid: fid
+        }
+        Pub.post(Pub.apiChat +'friend/friend/is_friend', params, function(res){
+            console.log('是否好友:' + JSON.stringify(res));
+            if(res.code == 0){
+                if(callback && typeof callback == 'function'){
+                    callback(res);
+                }
+            }
+        });
+    }
+</script>
+
+</html>

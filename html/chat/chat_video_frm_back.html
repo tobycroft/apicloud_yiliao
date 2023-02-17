@@ -1,0 +1,608 @@
+<!doctype html>
+<html class="bgc-gradual-gray">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+<body class="bgc-gradual-gray">
+  <div class="chat-video-user" id="chat_header" style="visibility: hidden;">
+    <div class="user-box">
+      <div class="avatar"><img src="../../skin/default/images/logo.png"></div>
+      <div class="info">
+        <div class="name">测试测试测试</div>
+        <div class="desc">等待对方接受邀请</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="chat_footer" style="visibility: hidden;">
+    <div class="chat-video-status" id="chat_status" style="visibility: hidden;">
+      <p>&nbsp;</p>
+    </div>
+    <div class="chat-video-handle">
+      <a id="handle_left"></a>
+      <a id="handle_middle"></a>
+      <a id="handle_right"></a>
+    </div>
+</div>
+  <audio id="myaudio" controls="controls" hidden="true" loop="loop">
+    <source src="../../res/voice_call.wav"  type="audio/mpeg">
+      您的浏览器不支持 audio 元素。
+  </audio>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/AgoraRTCSDK-2.6.1"></script>
+<script type="text/javascript">
+  var maplertc = {}, channel = '', type = '', id = '', isSender = false, msgId = '', channelId = '', timeLong = 0, connentTimer = {};
+  var audio = {};
+  var timer = {};
+  var joinTimes = 0;
+  var isAbroad = false;
+  apiready = function() {
+      api.parseTapmode();
+      audio = document.getElementById('myaudio');
+      audio.play();
+      channel = api.pageParam.channel;
+      console.log('频道' + channel);
+      // channel = '123';
+      type = api.pageParam.type;
+      id = api.pageParam.id;
+      isSender = api.pageParam.isSender;
+      msgId = api.pageParam.msgId;
+      maplertc = api.require('mapleRTC');
+      getAbroad();
+      getUserInfo();
+      chatInit();
+      listenerUser();
+      Pub.eventListen('video_refuse', function(){
+        Pub.msg('对方已退出语音');
+        leave();
+        hangup();
+        api.removeEventListener({
+            name: 'resume'
+        });
+      })
+      Pub.eventListen('voice_hangup', function(){
+        cancelConnent();
+      });
+      timer = setTimeout(function(){
+        if(isSender){
+          Pub.msg('对方无接听');
+          setTimeout(function(){
+            leave();
+            hangup();
+            api.setKeepScreenOn({
+                keepOn: false
+            });
+          }, 500);
+        }else{
+          Pub.msg('对方已取消');
+          setTimeout(function(){
+            leave();
+            hangup();
+          }, 500);
+        }
+      }, 40000);
+      Pub.eventListen('video_cancel_connent', function(){
+        cancelConnent();
+      });
+      Pub.eventListen('video_join_channel', function(){
+        joinChan();
+      });
+      Pub.eventListen('video_speek', function(ret){
+        if(ret){
+          maplertc.muteLocalAudioStream({
+              muted:ret.value.muted
+          }, function(ret) {
+              if (ret.code == 0) {
+                  //success
+              }
+          });
+        }
+      });
+      Pub.eventListen('video_camera', function(ret){
+        if(ret){
+          maplertc.switchCamera(function(ret) {
+              console.log('切换摄像头' + JSON.stringify(ret));
+          });
+        }
+      });
+      Pub.eventListen('video_exit', function(ret){
+        if(ret){
+          exitVoice(ret.value.time);
+        }
+      });
+      // 远端视频流监听
+      maplertc.addEventListener({
+          name:'firstRemoteVideoFrameSizeChangedListener'
+      },function(ret){
+        console.log('远端视频流' + JSON.stringify(ret));
+          //operation
+      });
+      // 打开远端视频
+      api.openFrame({
+          name: 'chat_video_remote_frm',
+          url: './chat_video_remote_frm.html',
+          rect: {
+              x: 0,
+              y: 0,
+              w: api.winWidth,
+              h: api.winHeight,
+          },
+          pageParam: api.pageParam,
+          bounces: false,
+          bgColor: 'rgba(0,0,0,0)',
+      });
+      // 打开本地视频
+      api.openFrame({
+          name: 'chat_video_local_frm',
+          url: './chat_video_local_frm.html',
+          rect: {
+              x: 0,
+              y: 0,
+              w: api.winWidth,
+              h: api.winHeight,
+          },
+          pageParam: api.pageParam,
+          bounces: false,
+          bgColor: 'rgba(0,0,0,0)',
+      });
+  }
+  function getAbroad(){
+    Pub.post(Pub.apiChat +'chat/isOutside', {}, function(res){
+      console.log('是否在国外' + JSON.stringify(res));
+      if(res.code == 0){
+        if(res.data == 'y'){
+          isAbroad = true;
+        }else{
+          isAbroad = false;
+        }
+        if(isAbroad){
+          Pub.msg('暂不支持视频通讯');
+          setTimeout(function(){
+            leave();
+            api.setKeepScreenOn({
+                keepOn: false
+            });
+            cancelConnent();
+          }, 2000);
+        }
+      }
+    });
+  }
+  function getUserInfo(){
+    console.log(id);
+    if(id){
+      var params = {
+          fid: id
+      }
+      Pub.post(Pub.apiChat +'friend/info/userinfo', params, function(res){
+          console.log('好友信息:'+JSON.stringify(res));
+          if(res.code == 0){
+              var data = res.data;
+              var avatar = '';
+              if(data.face){
+                  if(data.face.indexOf('http') == -1){
+                      avatar = Pub.imgHost + data.face;
+                  }else{
+                    avatar = data.face;
+                  }
+                  $('#avatar').html('<img src="'+avatar+'">');
+              }else{
+                $('#avatar').html('<img src="../../icon/logo.png">');
+              }
+              $('#user_name').text(data.uname);
+          }
+      });
+    }
+  }
+  function chatInit(){
+      console.log(isSender);
+      maplertc.addEventListener({
+      name:'errorListener'
+  },function(ret){
+      console.log('语音错误' + JSON.stringify(ret));
+  });
+  maplertc.addEventListener({
+      name:'warningListener'
+  },function(ret){
+      console.log('语音警告' + JSON.stringify(ret));
+  });
+  maplertc.addEventListener({
+      name:'connectionLostListener'
+  },function(ret){
+      console.log('链接丢失' + JSON.stringify(ret));
+  });
+  maplertc.addEventListener({
+      name:'joinChannelFailedListener'
+  },function(ret){
+    console.log('加入频道失败' + JSON.stringify(ret));
+  });
+    maplertc.setChannelProfile({
+      profile: 'voiceAndVideo'
+    }, function(ret){
+      console.log('初始化设置' + JSON.stringify(ret));
+      maplertc.setVideoConferenceProfile({profile: 'sfu'}, function(ret) {
+      });
+      maplertc.setMediaProfile({audioProfile: "musicHighQuality", videoProfile: "480P"}, function(ret) {
+      });
+      if(isSender){
+        // $('#handle_left').html('');
+        // $('#handle_middle').html('<p onclick="cancelConnent()"><i class="hangup"></i></p><p>取消</p>');
+        // $('#handle_right').html('');
+        // $('#user_desc').text('正在等待对方接听...');
+        createChannel();
+      }else{
+        openFrameHeader();
+        openFrameFooter();
+        // $('#handle_left').html('<p onclick="cancelConnent()"><i class="hangup"></i></p><p>挂断</p>');
+        // $('#handle_middle').html('');
+        // $('#handle_right').html('<p onclick="joinChan()"><i class="connent"></i></p><p>接通</p>');
+        // $('#user_desc').text('');
+      }
+    })
+    console.log('初始化成功');
+
+    // maplertc.setMediaProfile({
+    //   audioProfile: 'voiceStandard'
+    // }, callback(ret))
+    // maplertc.init({
+    //     appId:'c8c9ff785db74e7e941ed6af6bcc6146'
+    // }, function(ret) {
+    //     if (ret.status) {
+    //         console.log('初始化成功');
+    //         if(isSender){
+    //           $('#handle_left').html('');
+    //           $('#handle_middle').html('<p onclick="cancelConnent()"><i class="hangup"></i></p><p>取消</p>');
+    //           $('#handle_right').html('');
+    //           $('#user_desc').text('正在等待对方接听...');
+    //           createChannel();
+    //         }else{
+    //           $('#handle_left').html('<p onclick="cancelConnent()"><i class="hangup"></i></p><p>挂断</p>');
+    //           $('#handle_middle').html('');
+    //           $('#handle_right').html('<p onclick="joinChan()"><i class="connent"></i></p><p>接通</p>');
+    //           $('#user_desc').text('');
+    //         }
+    //     }
+    // });
+  }
+  function cancelConnent(){
+    var params = {
+      user_id: id,
+      msg_type: type,
+      msg_id: msgId
+    }
+    Pub.post(Pub.apiChat +'chat/refuse_video', params, function(res){
+      console.log('挂断返回' + JSON.stringify(res));
+      if(res.code == 0){
+        hangup();
+      }
+    }, true);
+  }
+  function hangup(){
+    api.setKeepScreenOn({
+        keepOn: false
+    });
+    api.closeWin();
+  }
+  function exitVoice(time){
+    Pub.confirm('提示','您确定要挂断通话吗', function(){
+      timeLong = time;
+      console.log('时长'+timeLong);
+      var endTime = new Date().getTime();
+      connentEnd(Pub.toTime(endTime), time);
+    });
+  }
+  function createChannel(){
+    var userId = '';
+    if(isSender){
+      userId = $api.getStorage('uid');
+    }else{
+      userId = id;
+    }
+    maplertc.setJoinChannelUserId({
+      userId: userId
+    }, function(ret){
+      console.log('创建频道' + JSON.stringify(ret));
+      if (ret.status) {
+        maplertc.joinChannel({
+          channelId: channel,
+          userId: $api.getStorage('uid')
+        }, function(ret){
+          console.log('加入频道' + JSON.stringify(ret));
+          console.log(api.frameName);
+        })
+          channelSend();
+          // setChannel();
+      }
+    });
+  }
+  function joinChan(){
+    console.log(channel);
+    console.log($api.getStorage('uid'));
+    maplertc.joinChannel({
+      channelId: channel,
+      userId: $api.getStorage('uid')
+    }, function(ret){
+      console.log('加入频道' + JSON.stringify(ret));
+    })
+    // maplertc.joinChannelByToken({
+    //   channelToken: '',
+    //   channelId: channel,
+    //   uid: ''
+    // }, function(ret) {
+    //     if (ret.status) {
+    //       setChannel();
+    //     }
+    // });
+  }
+  function channelSend(){
+    if(type == 'private'){
+      var params = {
+        user_id: id,
+        channel: channel,
+        msg_type: type,
+        msg_id: msgId,
+      }
+      Pub.post(Pub.apiChat +'chat/join_video', params, function(res){
+        console.log(JSON.stringify(res));
+      }, true);
+    }
+  }
+  // function setChannel(){
+  //   maplertc.setChannelProfile({
+  //     profile:'communication'
+  //   }, function(ret) {
+  //       if (ret.code == 0) {
+  //         maplertc.disableVideo(function(ret) {
+  //             if (ret.code == 0) {
+  //               localStream();
+  //                 //success
+  //             }
+  //         });
+  //       }
+  //   });
+  // }
+  // 打开音频
+  function localStream(){
+    maplertc.enableAudio(function(ret) {
+        if (ret.code == 0) {
+            //success
+        }
+    });
+  }
+  // 离开频道
+  function leave(){
+    maplertc.leaveChannel(function(ret) {
+      console.log('离开频道' + JSON.stringify(ret))
+        // api.toast({msg:JSON.stringify(ret)});
+    });
+  }
+  function openFrameHeader(){
+    var header = $api.byId('chat_header');
+    $api.fixStatusBar(header);
+    var headerPos = $api.offset(header);
+    api.openFrame({
+        name: 'chat_video_user_frm',
+        url: './chat_video_user_frm.html',
+        rect: {
+            x: 0,
+            y: 0,
+            w: 'auto',
+            h: headerPos.h
+        },
+        pageParam: api.pageParam,
+        bounces: false,
+        bgColor: 'rgba(0,0,0,0)'
+    });
+  }
+  function openFrameFooter(){
+    var footer = $api.byId('chat_footer');
+    var footerPos = $api.offset(footer);
+    api.openFrame({
+        name: 'chat_video_handle_frm',
+        url: './chat_video_handle_frm.html',
+        rect: {
+            x: 0,
+            y: api.winHeight - footerPos.h -40,
+            w: 'auto',
+            h: footerPos.h
+        },
+        pageParam: api.pageParam,
+        bounces: false,
+        bgColor: 'rgba(0,0,0,0)'
+    });
+  }
+  function listenerUser(){
+    maplertc.addEventListener({name: 'joinChannelSuccessListener'}, function(ret) {
+      console.log('加入频道成功' + JSON.stringify(ret));
+      maplertc.setupLocalVideo({
+        localView: {
+          fixedOn: 'chat_video_local_frm'
+        }}, function(ret) {
+      });
+      maplertc.startPreview(function(ret) {
+        if(api.pageParam.isSender){
+          openFrameHeader();
+        }
+        openFrameFooter();
+      });
+      //发送本地视频
+      maplertc.muteLocalVideoStream({muted: false}, function(ret) {
+          console.log('发送本地视频' + JSON.stringify(ret));
+      });
+      console.log(id);
+
+    });
+    maplertc.addEventListener({
+        name:'joinChannelFailedListener'
+    },function(ret){
+      console.log('加入频道失败' + JSON.stringify(ret));
+        //operation
+    });
+    maplertc.addEventListener({
+        name:'forceKickOutChannelListener'
+    },function(ret){
+        //operation
+        console.log('掉线' + JSON.stringify(ret));
+    });
+    maplertc.addEventListener({name: 'userJoinedNoticeListener'},function(ret) {
+      console.log(JSON.stringify('远程用户加入' + JSON.stringify(ret)));
+        var userIds = ret.uids;
+        if(ret.uids.length > 1 || userIds[0] != $api.getStorage('uid')){
+          api.setFrameAttr({
+              name: 'chat_video_user_frm',
+              hidden: true
+          });
+          audio.pause();
+          clearTimeout(timer);
+          api.setFrameAttr({
+              name: 'chat_video_local_frm',
+              rect: {
+                  x: api.winWidth - 130,
+                  y: 60,
+                  w: 120,
+                  h: 160
+              }
+          });
+          maplertc.setupRemoteVideo({remoteView: {fixedOn: 'chat_video_remote_frm'}, userId : id}, function(ret) {
+            console.log('远端视频' + JSON.stringify(ret));
+          });
+          maplertc.muteRemoteVideoStream({userId:id , muted: false}, function(ret) {
+              console.log('远端视频推流' + JSON.stringify(ret));
+          });
+          // maplertc.setEnableSpeakerphone({
+          //   enabled: false
+          // });
+          var strartTime = new Date().getTime();
+          connentStart(Pub.toTime(strartTime));
+          afterConnent();
+        }
+    });
+
+    // maplertc.userJoinedListener({
+    //   enable: true
+    // },function(ret) {
+    //   if(ret){
+    //
+    //   }
+    // });
+    maplertc.addEventListener({
+      name:'userOfflineNoticeListener'
+    },function(ret){
+      Pub.msg('对方已退出');
+      console.log('时长' + timeLong);
+      setTimeout(function(){
+        var endTime = new Date().getTime();
+        connentEnd(Pub.toTime(endTime), timeLong);
+        leave();
+        hangup();
+      }, 1000);
+    });
+    // maplertc.userOfflineListener({
+    //   enable: true
+    // },function(ret) {
+    //   Pub.msg('对方已退出语音');
+    //   var endTime = new Date().getTime();
+    //   connentEnd(Pub.toTime(endTime), timeLong);
+    //   setInterval(function(){
+    //     leave();
+    //     hangup();
+    //   }, 1000);
+    // });
+  }
+  function afterConnent(){
+
+    Pub.eventSend('video_connented');
+    // $('#handle_left').html('<p><i class="speek-no" onclick="swichSpeek(this)"></i></p><p>静音</p>');
+    // $('#handle_middle').html('<p onclick="exitVoice()"><i class="hangup"></i></p><p>挂断</p>');
+    // $('#handle_right').html('<p><i class="sound" onclick="swichSound(this)"></i></p><p>免提</p>');
+    // $('#user_desc').text('');
+    // $('#chat_status').html('<p><span>已接通</span></p><p class="time">00:00</p>');
+    // connentTimer = setInterval(function(){
+    //   timeLong =  parseInt(timeLong) + 1000;
+    //   $('#chat_status').find('.time').text(timeShow(timeLong));
+    // }, 1000);
+  }
+  function swichSpeek(el){
+    if($(el).hasClass('active')){
+      $(el).removeClass('active')
+      maplertc.muteLocalAudioStream({
+          muted:false
+      }, function(ret) {
+          if (ret.code == 0) {
+              //success
+          }
+      });
+    }else{
+      $(el).addClass('active');
+      maplertc.muteLocalAudioStream({
+          muted:true
+      }, function(ret) {
+          if (ret.code == 0) {
+              //success
+          }
+      });
+    }
+  }
+  function swichSound(el){
+    if($(el).hasClass('active')){
+      $(el).removeClass('active')
+      maplertc.setEnableSpeakerphone({
+        enabled: false
+      });
+    }else{
+      $(el).addClass('active');
+      maplertc.setEnableSpeakerphone({
+        enabled: true
+      });
+    }
+  }
+  function timeShow(time){
+    var timeTxt = '';
+    min = Math.floor((time/1000/60) << 0),
+    sec = Math.floor((time/1000) % 60);
+    if(parseInt(min) < 10){
+      min = '0' + min;
+    }
+    if(parseInt(sec) < 10){
+      sec = '0' + sec;
+    }
+    timeTxt = min + ':' + sec;
+    return timeTxt;
+  }
+  function connentStart(time){
+    var params = {
+      msg_id: msgId,
+      s_time: time
+    }
+    Pub.post(Pub.apiChat +'chat/log_video_s_time', params, function(res){
+      console.log('接听时间' + JSON.stringify(res));
+      Pub.eventSend('video_connent', {
+        msgId: msgId
+      });
+    }, true);
+  }
+  function connentEnd(time, long){
+    var params = {
+      msg_id: msgId,
+      e_time: time,
+      duration: long
+    }
+    Pub.post(Pub.apiChat +'chat/log_video_e_time', params, function(res){
+      console.log('挂断时间' + JSON.stringify(res));
+      cancelConnent();
+      Pub.eventSend('video_connent', {
+        msgId: msgId,
+        duration: long
+      });
+    }, true);
+  }
+</script>
+
+</html>

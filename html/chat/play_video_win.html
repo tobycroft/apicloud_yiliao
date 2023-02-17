@@ -1,0 +1,121 @@
+<!doctype html>
+<html style="background-color: #000!important">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+<body ontouchstart="" style="background-color: #000!important">
+
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+apiready = function() {
+    api.parseTapmode();
+    Pub.changeStatusBar();
+    var path =  api.pageParam.path;
+    console.log(path);
+    playVideo(path)
+    Pub.eventListen('keyback', function(){
+      closeWin();
+    })
+}
+function playVideo(path){
+  var moviePlayer = api.require('moviePlayer');
+
+  moviePlayer.open({
+      rect: {
+          x: 0,
+          y: api.safeArea.top,
+          w: api.winWidth,
+          h: api.systemType=='ios'?api.winHeight - api.safeArea.bottom-api.safeArea.bottom:api.winHeight,
+      },
+      styles: {
+          head: {
+              bg: 'rgba(0,0,0,1)',
+              height: 44,
+              y: 0,
+              title: {
+                  size: 20,
+                  color: '#fff',
+                  width: 40,
+                  leftMargin: 10
+              },
+              backSize: 30,
+              backImg: 'widget://skin/default/images/icon/icon_return_white.png',
+              customButtons: [{
+                  w: 30,
+                  h: 30,
+                  rightMagin: 10,
+                  img: 'widget://image/image/collect.png',
+                  imgSelected: 'fs://image/collectSelected.png',
+              }]
+          },
+          foot: {
+              bg: 'rgba(0,0,0,0.5)',
+              height: 44,
+              palyBtn: {
+                  size: 20,
+                  playImg: 'widget://image/play.png',
+                  pauseImg: 'widget://image/pause.png',
+                  marginLeft: 5
+              },
+              currentTimeLabel: {
+                  textSize: 14,
+                  textColor: "#FFF",
+                  textWidth: 43,
+                  marginLeft: 5
+              },
+              seekBar: {
+                  sliderImg: 'widget://image/circle.png',
+                  sliderW: 20,
+                  sliderH: 20,
+                  progressColor: '#696969',
+                  progressSelected: '#76EE00',
+                  marginLeft: 10,
+                  marginRight: 10
+              },
+              totalTimeLabel: {
+                  textSize: 14,
+                  textColor: "#FFF",
+                  textWidth: 43,
+                  marginRight: 5
+              },
+              fullscreenBtn: {
+                  size: 0,
+                  verticalImg: 'widget://image/vertical.png',
+                  horizontalImg: 'widget://image/horizontal.png',
+              }
+          }
+      },
+      videoDirection: 'portrait',
+      autorotation: false,
+      showBack: true,
+      path: path,
+      autoPlay: true
+  }, function(ret, err) {
+      if (ret) {
+        console.log('打开视频成功:' + JSON.stringify(ret))
+      }else{
+        console.log('打开视频失败:' + JSON.stringify(err))
+      }
+
+  });
+  moviePlayer.addEventListener(function(ret){
+      if(ret && ret.eventType == 'back'){
+          moviePlayer.close();
+          closeWin();
+      }
+  });
+}
+function closeWin(){
+  Pub.setStatusBar();
+  api.closeWin();
+}
+</script>
+
+</html>

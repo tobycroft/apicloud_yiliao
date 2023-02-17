@@ -1,0 +1,177 @@
+<!doctype html>
+<html class="bg-transparent">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body ontouchstart="" class="bg-transparent">
+    <div class="index-popup-bg"></div>
+    <div class="index-popup" id="header" onclick="closePopup()">
+        <div class="index-popup-container">
+          <div class="item" onclick="toCreateGroup()">
+              <div class="icon"><img src="../../skin/default/images/icon/icon_group_black.png"></div>
+              <div class="name" set-lang="text:initiate_group_chat"></div>
+          </div>
+          <div class="item" onclick="addFriend()">
+              <div class="icon"><img src="../../skin/default/images/icon/icon_addperpon_black.png"></div>
+              <div class="name" set-lang="text:add_friend"></div>
+          </div>
+          <div class="item" onclick="scan()">
+              <div class="icon"><img src="../../skin/default/images/icon/icon_scan_black.png"></div>
+              <div class="name" set-lang="text:scan"></div>
+          </div>
+
+          <div class="item" onclick="toReceipt()">
+              <div class="icon"><img src="../../skin/default/images/icon/icon_receive_qr_black.png"></div>
+              <div class="name">收款码</div>
+          </div>
+          <div class="item" onclick="toPersonsSend()">
+              <div class="icon"><img src="../../skin/default/images/icon/icon_persons_send.png"></div>
+              <div class="name">群发送</div>
+          </div>
+        </div>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        var header = $api.byId('header');
+        $api.fixStatusBar(header);
+    }
+    function closePopup(){
+        api.closeFrame();
+    }
+    function scan(){
+      event.stopPropagation();
+        var FNScanner = api.require('FNScanner');
+       FNScanner.open({
+           autorotation: false,
+          //  hintText: $api.getLang('hintText'),
+          //  albumText: $api.getLang('albumText'),
+          //  lightText: $api.getLang('lightText'),
+          //  closeText: $api.getLang('closeText')
+       }, function(ret, err) {
+           if (ret) {
+               var content = ret.content;
+               if(content){
+                 var contentParam = Pub.getUrlParams(content).add_options;
+                 if(contentParam){
+                   var data = window.atob(Pub.getUrlParams(content).add_options);
+                   if(data){
+                     var dataParams = JSON.parse(data);
+                     if(dataParams.type == 'group'){
+                       var id  = dataParams.id;
+                       isIngroup($api.getStorage('uid'), id, function(data){
+                         if(data == 0){
+                           Pub.openView('../chat/group_verify_win', {
+                             pageParam:{
+                               id: id
+                             }
+                           });
+                         }else{
+                           Pub.openView('../chat/group_info_win', {
+                             pageParam:{
+                               id: id
+                             }
+                           });
+                         }
+                       });
+
+                     }else if(dataParams.type == 'private'){
+                       var id  = dataParams.id;
+                       Pub.openView('../chat/personal_info_win', {
+                         pageParam:{
+                           id: id,
+                           type: 3
+                         }
+                       });
+                     }else{
+                       Pub.msg(Pub.getLang("tip_scan"));
+                     }
+                   }
+                 }else{
+                   Pub.msg(Pub.getLang("tip_scan"));
+                 }
+                 if(JSON.parse(content).appname=="yiliao"){
+                   var content = JSON.parse(content);
+                   console.log(content);
+                   if(content.amount==0){
+                     Pub.openView("../mine/set_amount_win",{pageParam:-{
+                       type:"send",
+                       phone: content.phone
+                     }});
+                   }else{
+                     api.openFrame({
+                         name: 'pop_password_frm',
+                         url: '../mine/pop_password_frm.html',
+                         rect: {
+                             x: 0,
+                             y: 0,
+                             w: 'auto',
+                             h: 'auto'
+                         },
+                         pageParam: {
+                           phone: content.phone,
+                           amount: content.amount
+                         },
+                         bounces: false,
+                         progress: {type: ''},
+                         bgColor: 'rgba(0,0,0,0)',
+                         vScrollBarEnabled: true,
+                         hScrollBarEnabled: true
+                     });
+                   }
+                 }else{
+                   Pub.msg(Pub.getLang("tip_scan"));
+                 }
+               }
+           } else {
+               console.log(JSON.stringify(err));
+           }
+       });
+    }
+    function isIngroup(userId, groupId, callback){
+      var params = {
+        member_id: userId,
+        gid: groupId
+      }
+      Pub.post(Pub.apiChat +'group/in_group', params, function(res){
+        if(res.code == 0){
+          if(callback && typeof callback == 'function'){
+            callback(res.data);
+          }
+        }
+      });
+    }
+    function addFriend(){
+      event.stopPropagation();
+        Pub.openView('../chat/personal_add_win');
+        setTimeout(function(){
+          closePopup();
+        }, 1000);
+    }
+    function toCreateGroup(){
+      event.stopPropagation();
+      Pub.openView('../chat/group_create_win');
+      setTimeout(function(){
+        closePopup();
+      }, 1000);
+    }
+    function toReceipt(){
+      Pub.openView("../mine/receive_qr_code_win");
+    }
+    function toPersonsSend(){
+      Pub.openView("../chat/persons_send_step1_win");
+    }
+</script>
+
+</html>

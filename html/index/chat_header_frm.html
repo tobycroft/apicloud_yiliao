@@ -1,0 +1,93 @@
+<!DOCTYPE HTML>
+<html class="bgc-green">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0, minimum-scale=1.0, user-scalable=0, initial-scale=1.0, width=device-width" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body ontouchstart="" class="bgc-green">
+  <div id="app">
+    <template>
+      <div class="index-header" id="header">
+        <div class="header">
+          <div class="header-left">
+            <img src="../../skin/default/images/icon/icon_logo_white.png" alt="">
+            <span>易聊</span>
+          </div>
+          <div class="header-middle"></div>
+          <div class="header-right">
+            <a @click="toSearch" tapmode><img src="../../skin/default/images/chat/icon_search_white.png"></a>
+            <a @click="openPopup()" tapmode><img src="../../skin/default/images/icon/icon_plus_white.png"></a>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script>
+  apiready = function(){
+    api.parseTapmode();
+    Pub.setStatusBar();
+    initEvent();
+  }
+  function initEvent(){
+    var app = new Vue({
+      el: '#app',
+      data: {
+        status: 1,
+        lang: {
+          chat: Pub.getLang("chat"),
+        }
+      },
+      mounted: function(){
+        this.headerStatus();
+        var _this = this;
+        Pub.eventListen('language', function(){
+          _this.lang = {
+            chat: Pub.getLang("chat"),
+          };
+        })
+      },
+      methods: {
+        headerStatus: function(){
+          var header = $api.byId('header');
+          $api.fixStatusBar(header);
+        },
+        openPopup: function(){
+          api.openFrame({
+              name: 'index_popup_frm',
+              url: './index_popup_frm.html',
+              rect: {
+                  x: 0,
+                  y: 0,
+                  w: 'auto',
+                  h: 'auto'
+              },
+              pageParam: {
+              },
+              bounces: false,
+              bgColor: 'rgba(0,0,0,0)',
+              vScrollBarEnabled: true,
+              hScrollBarEnabled: true
+          });
+        },
+        toSearch: function(){
+          Pub.openView('../chat/chat_search_win');
+        },
+      }
+    })
+  }
+
+</script>
+
+
+</html>

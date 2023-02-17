@@ -1,0 +1,223 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-white">
+  <div class="circle-send-container">
+    <div class="textarea">
+      <textarea placeholder="这一刻的想法..." id="content" set-lang="placeholder:moment_thought"></textarea>
+    </div>
+    <div class="imgs" id="imgs">
+      <!-- <div class="img">
+        <img src="../../skin/default/images/circle/bg_circle.png">
+      </div>
+      <div class="img">
+        <img src="../../skin/default/images/circle/bg_circle.png">
+      </div>
+      <div class="img">
+        <img src="../../skin/default/images/circle/bg_circle.png">
+      </div>
+      <div class="img">
+        <img src="../../skin/default/images/circle/bg_circle.png">
+      </div>
+      <div class="img">
+        <img src="../../skin/default/images/circle/bg_circle.png">
+      </div>
+      <div class="img">
+        <img src="../../skin/default/images/circle/bg_circle.png">
+      </div>
+      <div class="img">
+        <img src="../../skin/default/images/circle/bg_circle.png">
+      </div>
+      <div class="img">
+        <img src="../../skin/default/images/circle/bg_circle.png">
+      </div> -->
+      <div class="img add" onclick="chooseImgs()"></div>
+    </div>
+    <div class="handles">
+      <div class="item active-primary" onclick="chooseLimit()" tapmode>
+        <div class="icon"><img src="../../skin/default/images/circle/icon_avatar.png"></div>
+        <div class="info">
+          <div class="info-box">
+            <div class="name" set-lang="text:who_can_see">谁可以看</div>
+            <div class="desc" id="typeText">公开</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    var imgsArr = [], authorityType = 'public';
+    apiready = function() {
+        api.parseTapmode();
+        Pub.eventListen('authority_type', function(ret){
+          if(ret){
+            authorityType = ret.value.type;
+            if(authorityType == 'public'){
+              $('#typeText').text(Pub.getLang('public'));
+            }else{
+              $('#typeText').text(Pub.getLang('only_myself_can_see'));
+            }
+          }
+        });
+        Pub.eventListen('circle_send', function(){
+          send();
+        });
+    }
+    function send(){
+      var content = $('#content').val();
+      if(!content) return Pub.msg(Pub.getLang('please_fill_in_moment_thought'));
+      //console.log(JSON.stringify(imgsArr));
+      var arrayObject = [];
+      for(var i = 0; i<imgsArr.length;i++){
+        var object = {"type":"image","url":imgsArr[i],"order":i};
+        arrayObject.push(object);
+      }
+      var params = {
+        type: authorityType,
+        content: content,
+        media: JSON.stringify(arrayObject),
+      }
+      Pub.post(Pub.apiChat + 'circle/index/publish', params, function(res){
+        console.log('发送朋友圈' + JSON.stringify(res));
+        if(res.code == 0){
+          Pub.msg(Pub.getLang('published_successfully'));
+          Pub.eventSend('circle_update');
+          Pub.eventSend('circle_personal_update');
+          setTimeout(function(){
+            var headerStatus = api.pageParam.headerStatus;
+            if(headerStatus){
+              if(headerStatus == 2){
+                Pub.setStatusBar();
+              }else{
+                Pub.changeStatusBar();
+              }
+            }else{
+              Pub.setStatusBar();
+            }
+            api.closeWin();
+          }, 1000);
+        }
+      });
+    }
+    function chooseImgs(){
+      var UIAlbumBrowser = api.require('UIAlbumBrowser');
+      UIAlbumBrowser.open({
+           max: 9,
+           type: 'all',
+           isOpenPreview: true,
+           styles: {
+               bg: '#000000',
+               mark: {
+                   position: 'bottom_left',
+                   size: 20
+               },
+               nav: {
+                   bg: '#000000',
+                   titleColor: '#ffffff',
+                   titleSize: 18,
+                   cancelColor: '#00ff00',
+                   cancelSize: 16,
+                   finishColor: '#00ff00',
+                   finishSize: 16
+               }
+           },
+       }, function(ret) {
+           if (ret) {
+               console.log(JSON.stringify(ret));
+               if (ret.eventType == 'confirm') {
+                 var imgs = ret.list;
+                 console.log('选择图片:' + JSON.stringify(imgs));
+                 var isMax = false;
+                 if(imgs.length == 9){
+                   isMax = true;
+                 }
+                 if(api.systemType == 'ios'){
+                   for(var i=0; i<imgs.length; i++){
+                     var path = imgs[i].path;
+                     UIAlbumBrowser.transPath({
+                        path: path
+                    }, function(ret2, err2) {
+                        if (ret2) {
+                          var newPath = ret2.path;
+                          Pub.uploadImg(newPath, function(img){
+                            console.log('上传图片' + JSON.stringify(img));
+                            if(imgsArr.length <9){
+                              imgsArr.push(img);
+                            }else{
+                              Pub.msg(Pub.getLang('no_more_than_nine_pic'));
+                              $('#imgs').find('.img:nth-child(n+9)').remove();
+                            }
+                            var html = '<div class="img">'+
+                              '<img src="'+newPath+'">'+
+                            '</div>';
+                            if(!isMax){
+                              $('.add').before(html);
+                            }else{
+                              $('#imgs').append(html);
+                              $('.add').remove();
+                            }
+                          });
+                        } else {
+                            console.log(JSON.stringify(err2));
+                        }
+                    });
+                   }
+                 }else{
+                   for(var i=0; i<imgs.length; i++){
+                    uploadImg(imgs, i, isMax);
+                   }
+                 }
+               }
+           }
+       });
+    }
+    function uploadImg(imgs, i, isMax){
+      var params = {
+          uploadType: 'file',
+          files: imgs[i].path
+      }
+      Pub.uploadImg(imgs[i].path, function(img){
+        if(imgsArr.length < 9){
+          imgsArr.push(img);
+        }else{
+          $('#imgs').find('.img:nth-child(n+10)').remove();
+          Pub.msg(Pub.getLang('no_more_than_nine_pic'));
+        }
+        var html = '<div class="img">'+
+          '<img src="'+ imgs[i].thumbPath +'" id="img'+i+'">'+
+        '</div>';
+        console.log(html);
+        if(!isMax){
+          $('.add').before(html);
+        }else{
+          $('#imgs').append(html);
+          $('.add').remove();
+        }
+      });
+      // Pub.post(Pub.apiChat + 'friend_circle/saveImage', params, function(res) {
+      //   console.log('图片组' + JSON.stringify(res));
+      //     if (res.code == 0) {
+      //
+      //     }
+      // });
+    }
+    function chooseLimit(){
+      Pub.openFrame('./circle_authority_popup_frm', {
+        bounces: false,
+        bgColor: 'transparent'
+      });
+    }
+</script>
+
+</html>

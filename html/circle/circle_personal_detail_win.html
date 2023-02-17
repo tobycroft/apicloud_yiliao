@@ -1,0 +1,157 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <header style="visibility: hidden;">
+      <div class="header-box bgc-black-light" id="header" >
+        <div class="header">
+            <div class="header-left">
+                <i class="return" onclick="api.closeWin()"></i>
+            </div>
+            <div class="header-middle" id="time"></div>
+            <div class="header-right">
+              <i class="more"></i>
+            </div>
+        </div>
+      </div>
+  </header>
+  <div id="footer" style="visibility: hidden;">
+    <div class="circle-detail-cont" id="content">
+    </div>
+    <div class="circle-detail-footer">
+      <a class="prise" id="prise" set-lang="text:prise">赞</a>
+      <a class="comment" id="comment" set-lang="text:comment">评论</a>
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+  var id = '', detail = {};
+  apiready = function() {
+      api.parseTapmode();
+      id = api.pageParam.id;
+      getData();
+      if(api.pageParam.headerStatus == 2){
+        Pub.keybackClose();
+      }else{
+        Pub.keybackClose(true);
+      }
+  }
+  function getData(){
+    var params = {
+      fcid: id
+    }
+    Pub.post(Pub.apiChat +'circle/list/get', params, function(res){
+      if(res.code == 0){
+        var data = res.data;
+        detail = data;
+        $('#content').text(data.post.content);
+        $('#time').text(data.post.date);
+        openPhoto();
+      }
+    });
+  }
+  function openPhoto(){
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    var headerPos = $api.offset(header);
+    var footer = $api.byId('footer');
+    var footerPos = $api.offset(footer);
+    var photos = [];
+    var item = detail.attachs;
+    for(var i=0; i<item.length; i++){
+      var img = '';
+      if(item[i].url){
+        img = item[i].url;
+      }
+      if(img.indexOf('http') == -1){
+        img = Pub.imgHost + img;
+      }
+      photos.push(img);
+    }
+    var photoBrowser = api.require('photoBrowser');
+    photoBrowser.open({
+        images: photos,
+        placeholderImg: '',
+        bgColor: '#000'
+    }, function(ret, err) {
+        if (ret) {
+          if (ret.eventType == 'show') {
+            api.openFrame({
+              name : 'circle_personal_detail_header_frm',
+              url : './circle_personal_detail_header_frm.html',
+              rect : {
+                x : 0,
+                y : 0,
+                w : 'auto',
+                h : headerPos.h,
+              },
+              bgColor: 'transparent',
+              pageParam: {
+                detail: detail,
+                headerStatus: api.pageParam.headerStatus
+              }
+            });
+            api.openFrame({
+              name : 'circle_personal_detail_footer_frm',
+              url : './circle_personal_detail_footer_frm.html',
+              rect : {
+                x : 0,
+                y : api.winHeight - footerPos.h,
+                w : 'auto',
+                h : footerPos.h,
+              },
+              bgColor: 'transparent',
+              pageParam: {
+                detail: detail,
+                headerStatus: api.pageParam.headerStatus
+              }
+            });
+          }
+          if (ret.eventType == 'click') {
+            Pub.eventSend('circle_detail_photo_click');
+          }
+        } else {
+            console.log(JSON.stringify(err));
+        }
+    });
+  }
+  function openHeader(headerPos){
+    console.log(headerPos.h);
+    console.log(api.safeArea.top);
+    api.openFrame({
+        name: 'circle_personal_header_frm',
+        url: './circle_personal_header_frm.html',
+        rect: {
+            x: 0,
+            y: 0,
+            w: 'auto',
+            h: headerPos.h + api.safeArea.top
+        },
+        bounces: false,
+        bgColor: 'transparent'
+    });
+  }
+  function setFrame(){
+    api.sendFrameToBack({
+        from: 'circle_personal_frm'
+    });
+  }
+  function openFrame(){
+      Pub.openFrame('./circle_personal_frm',{},{bounces:false, pageParam: api.pageParam, bgColor: '#fff'});
+  }
+  function closeWin() {
+      api.closeWin();
+  }
+</script>
+
+</html>

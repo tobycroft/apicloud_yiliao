@@ -1,0 +1,40 @@
+<!DOCTYPE HTML>
+<html class="bgc-green">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0, minimum-scale=1.0, user-scalable=0, initial-scale=1.0, width=device-width" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body ontouchstart="" class="bgc-green">
+  <div class="index-header" id="header">
+    <div class="header">
+      <div class="header-left">
+        <img src="../../skin/default/images/icon/icon_logo_white.png" alt="">
+        <span set-lang="text:">我的</span>
+      </div>
+      <div class="header-middle" ></div>
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script>
+  apiready = function(){
+    api.parseTapmode();
+    Pub.setStatusBar();
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    Pub.eventListen('language', function(){
+      Pub.setLang();
+    })
+  }
+
+
+</script>

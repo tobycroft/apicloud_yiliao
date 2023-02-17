@@ -1,0 +1,110 @@
+<!doctype html>
+<html class="bg-transparent">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bg-transparent">
+    <div class="shade-black" style="display: block;" onclick="api.closeFrame()" tapmode></div>
+    <div class="circle-popup" id="set">
+      <a class="active-primary" data-type="0" set-lang="text:do_not_set_permissions">不设置权限</a>
+      <a class="active-primary" data-type="1" set-lang="text:donot_let_him_see_circle">不让他看我的朋友圈</a>
+      <a class="active-primary" data-type="2" set-lang="text:donot_look_his_circle">不看他的朋友圈</a>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    var fid = '';
+    apiready = function() {
+        api.parseTapmode();
+        fid = api.pageParam.userId;
+        $('#set').find('a').on('click', function(){
+          var thisType = $(this).attr('data-type');
+          if(thisType == 0){
+            var params1 = {
+              user_id: fid,
+              type: 'hidden',
+              value: 0
+            }
+            Pub.post(Pub.apiChat +'friend_circle/friendPriv', params1, function(res){
+              if(res.code == 0){
+                var params2 = {
+                  user_id: fid,
+                  type: 'shield',
+                  value: 0
+                }
+                Pub.post(Pub.apiChat +'friend_circle/friendPriv', params2, function(res){
+                  if(res.code == 0){
+                    Pub.msg(Pub.getLang('set_success'));
+                    Pub.eventSend('personal_info');
+                    Pub.eventSend('circle_update');
+                    setTimeout(function(){
+                      api.closeFrame();
+                    }, 1000);
+                  }
+                });
+              }
+            });
+          }else if(thisType == 1){
+            var params1 = {
+              user_id: fid,
+              type: 'hidden',
+              value: 1
+            }
+            Pub.post(Pub.apiChat +'friend_circle/friendPriv', params1, function(res){
+              if(res.code == 0){
+                var params2 = {
+                  user_id: fid,
+                  type: 'shield',
+                  value: 0
+                }
+                Pub.post(Pub.apiChat +'friend_circle/friendPriv', params2, function(res){
+                  if(res.code == 0){
+                    Pub.msg(Pub.getLang('set_success'));
+                    Pub.eventSend('personal_info');
+                    Pub.eventSend('circle_update');
+                    setTimeout(function(){
+                      api.closeFrame();
+                    }, 1000);
+                  }
+                });
+              }
+            });
+          }else{
+            var params3 = {
+              user_id: fid,
+              type: 'hidden',
+              value: 0
+            }
+            Pub.post(Pub.apiChat +'friend_circle/friendPriv', params3, function(res){
+              if(res.code == 0){
+                var params4 = {
+                  user_id: fid,
+                  type: 'shield',
+                  value: 1
+                }
+                Pub.post(Pub.apiChat +'friend_circle/friendPriv', params4, function(res){
+                  if(res.code == 0){
+                    Pub.msg(Pub.getLang('set_success'));
+                    Pub.eventSend('personal_info');
+                    setTimeout(function(){
+                      api.closeFrame();
+                    }, 1000);
+                  }
+                });
+              }
+            });
+          }
+        });
+    }
+</script>
+
+</html>

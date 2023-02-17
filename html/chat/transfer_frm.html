@@ -1,0 +1,153 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="" class="bgc-white">
+  <div class="chat-transfer-container">
+    <div class="top">
+      <div class="icon"><img src="../../skin/default/images/chat/icon_transfer.png" alt="" id="avatar"></div>
+      <div class="name" id="name"></div>
+      <div class="coin-type">
+        <select class="unit" name="" id="unit"></select>
+        <!-- <div class="icon"><img src="../../skin/default/images/icon/icon_arrow_down_gray.png" alt=""></div> -->
+      </div>
+    </div>
+    <div class="content">
+      <div class="name">转账金额</div>
+      <div class="input">
+        <!-- <div class="unit">￥</div> -->
+        <input type="number" name="" value="" id="amount">
+      </div>
+      <div class="tip" onclick="tip()"><span id="tip">添加转账说明</span> <span id="edit" class="hide">修改</span></div>
+      <div class="btn-group">
+        <a class="primary" onclick="transfer()" set-lang="text:transfer">转账</a>
+      </div>
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+var fid;
+var coinId;
+    apiready = function() {
+        api.parseTapmode();
+        fid = api.pageParam.fid;
+        //getCoinType();
+        getCoinList();
+        getData();
+    }
+    function getCoinType(){
+      Pub.post(Pub.apiChat+"balance/coin/list",{type:"send"},function(res){
+        if(res.code == 0){
+          coinId = res.data[0].id;
+          console.log(coinId);
+        }
+      })
+    }
+    function getData(){
+      if($api.getStorage(fid + "_user_info")){
+        var data = $api.getStorage(fid + "_user_info");
+        if(data.face.indexOf("http")==-1){
+          $("#avatar").attr("src",Pub.imgHost+data.face);
+        }else{
+          $("#avatar").attr("src",data.face);
+        }
+        $("#name").html(data.uname);
+      }
+      Pub.post(Pub.apiChat+"friend/info/userinfo",{fid:fid},function(res){
+        if(res.code == 0){
+          if(res.data.face.indexOf("http")==-1){
+            $("#avatar").attr("src",Pub.imgHost+res.data.face);
+          }else{
+            $("#avatar").attr("src",res.data.face);
+          }
+          $("#name").html(res.data.uname);
+          $api.setStorage(fid + "_user_info",res.data);
+        }
+      })
+    }
+    function tip(){
+      Pub.prompt("请输入转账说明","","","text",function(text){
+        $("#tip").html(text);
+        $("#edit").removeClass("hide");
+      })
+    }
+    function transfer(){
+      var remark = $("#tip").html();
+      var amount = $("#amount").val();
+      if(!amount || Number(amount)==0) return Pub.msg("请输入转账金额！");
+      // Pub.prompt("请输入交易密码","","","",function(password){
+      //   if(remark == "添加转账说明"){
+      //     remark = ""
+      //   }
+      //   var params = {
+      //     fid: fid,
+      //     coin_id: coinId,
+      //     amount: amount,
+      //     password: password,
+      //     remark: remark,
+      //     type: 42,
+      //   }
+      //   Pub.post(Pub.apiChat+"packs/create_single_pack",params,function(res){
+      //   //   if(res.code == 0){
+      //   //     Pub.msg(res.data);
+      //   //     setTimeout(function(){
+      //   //       api.closeWin();
+      //   //     },1000)
+      //   //   }
+      //   // })
+      //
+      //
+      // })
+        if(remark == "添加转账说明"){
+          remark = ""
+        }
+        var params = {
+          fid: fid,
+          cid: $("#unit").find("option:selected").val(),
+          amount: amount,
+          //password: password,
+          remark: remark,
+          type: 42,
+          amountType:"chatTransfer"
+        }
+      api.openFrame({
+          name: 'pop_password_frm',
+          url: '../mine/pop_password_frm.html',
+          rect: {
+              x: 0,
+              y: 0,
+              w: 'auto',
+              h: 'auto'
+          },
+          pageParam: params,
+          bounces: false,
+          progress: {type: ''},
+          bgColor: 'rgba(0,0,0,0)',
+          vScrollBarEnabled: true,
+          hScrollBarEnabled: true
+      });
+    }
+    function getCoinList(){
+      console.log(JSON.stringify($api.getStorage("total_coin_info")));
+      if($api.getStorage("total_coin_info")){
+        var data = $api.getStorage("total_coin_info");
+        var html = "";
+        for(var i = 0;i<data.length;i++){
+          html += "<option value='"+data[i].id+"'>"+data[i].name+"</option>"
+        }
+        $("#unit").html(html);
+      }
+    }
+</script>
+
+</html>

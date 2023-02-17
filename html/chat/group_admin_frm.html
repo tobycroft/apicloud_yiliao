@@ -1,0 +1,88 @@
+<!doctype html>
+<html class="bgc-white">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-white">
+  <div id="app">
+    <template>
+      <div class="group-admin-container">
+        <div class="top">
+          <img src="../../skin/default/images/chat/icon_group_admin.png" alt="">
+          <p>群管理员</p>
+        </div>
+        <div class="introduction">
+          <p>群管理员可以拥有以下权利</p>
+          <p>·修改群聊基本信息（群聊名称、群公告等）</p>
+          <p>·删除群成员（群主、群管理员除外）</p>
+          <p>·同意进群申请</p>
+        </div>
+        <div class="group-member">
+          <div class="item to_personal" v-for="(item, index) in memberData" v-if="item.role == 'admin'">
+              <img :src="item.face" class="avatar" >
+              <p>{{item.uname}}</p>
+          </div>
+          <div class="item" @click="toAppend()">
+              <img src="../../skin/default/images/chat/icon_plus.png">
+          </div>
+          <div class="item" @click="toRemove()">
+              <img src="../../skin/default/images/chat/icon_reduce.png">
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+apiready = function() {
+    api.parseTapmode();
+    initEvent();
+}
+function initEvent(){
+  var app = new Vue({
+    el: "#app",
+    data: {
+      id: api.pageParam.id,
+      memberData: [],
+    },
+    mounted: function(){
+      var _this = this;
+      this.getMemberInfo();
+      Pub.eventListen("set_admin_refresh",function(){
+        Pub.post(Pub.apiChat +'group/info/member2', {gid:_this.id}, function(res){
+          if(res.code == 0){
+            _this.memberData = res.data.admin;
+          }
+        })
+      })
+    },
+    methods: {
+      getMemberInfo: function(){
+        var _this = this;
+        _this.memberData = $api.getStorage('member_data');
+        console.log(JSON.stringify(_this.memberData));
+      },
+      toAppend: function(){
+        var _this = this;
+        Pub.openView("./set_admin_win",{pageParam:{gid:_this.id,type:"add"}})
+      },
+      toRemove: function(){
+        var _this = this;
+        Pub.openView("./set_admin_win",{pageParam:{gid:_this.id,type:"remove"}})
+      },
+    }
+  })
+}
+</script>
+
+</html>

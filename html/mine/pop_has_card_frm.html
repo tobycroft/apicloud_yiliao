@@ -1,0 +1,95 @@
+<!doctype html>
+<html class="bg-transparent">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+<body class="bg-transparent">
+  <div class="pop-choose-bank-container">
+    <div class="title">
+      <p>选择银行卡</p>
+      <p onclick="closePop()">取消</p>
+    </div>
+    <div class="items" id="items">
+
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.js"></script>
+<script src="../../script/bank.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        getBankData();
+        Pub.eventListen("refresh_bank",function(res){
+          window.location.reload();
+        })
+    }
+    function closePop(){
+      api.closeFrame({
+          animation: {subType:"from_top"}
+      });
+
+    }
+    function choose(el){
+      var bank = $(el).attr("bank");
+      var name = $(el).attr("name");
+      Pub.eventSend("add-bank",{
+        bank:bank,
+        name:name,
+      })
+      closePop();
+    }
+    function getBankData(){
+      console.log(JSON.stringify(bankStr));
+      //var hasCard=[{name:"交通银行",cardno:"1234123412345555"},{name:"招商银行",cardno:"1234123412346666"}]
+      var html="";
+      Pub.post("user/card/list",{},function(res){
+        if(res.code==0){
+          for(var i = 0;i<res.data.length;i++){
+            var bankInfo = bankStr.filter(function(bankInfo) {return bankInfo.name == res.data[i].bank ;});
+            console.log(JSON.stringify(bankInfo));
+            html += '<div class="item" bank="'+bankInfo[0].bank+'" name="'+bankInfo[0].name+'" onclick="choose(this)" id="'+res.data[i].id+'">\
+              <img src="'+bankInfo[0].icon+'" alt="" class="icon">\
+              <p class="name">'+bankInfo[0].name+'('+res.data[i].number.substring(res.data[i].number.length-4)+')</p>\
+            </div>'
+          }
+          html += '<div class="item" onclick="addBank()">\
+            <img src="../../skin/default/images/icon/icon_extra.png" alt="" class="icon">\
+            <p class="name">添加银行卡</p>\
+          </div>'
+          $("#items").append(html);
+        }
+      })
+      console.log(html);
+      //$("#items").append(html);
+
+    }
+    function addBank(){
+      Pub.openView("./add_bank_card_win");
+    }
+    function choose(el){
+      var name = $(el).find(".name").html();
+      var icon = $(el).find(".icon").attr("src");
+      var id = $(el).attr("id");
+      Pub.eventSend("choose_bank",{
+        name:name,
+        icon:icon,
+        id:id
+      })
+      closePop();
+    }
+    function closePop(){
+      api.closeFrame({
+          animation: {subType:"from_top"}
+      });
+    }
+</script>
+
+</html>

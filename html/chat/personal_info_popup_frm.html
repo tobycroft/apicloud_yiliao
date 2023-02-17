@@ -1,0 +1,97 @@
+<!doctype html>
+<html class="bg-transparent">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bg-transparent">
+    <div class="index-popup-bg"></div>
+    <div class="index-popup" id="header"  onclick="closePopup()">
+        <div class="index-popup-container">
+          <div class="item" onclick="qrcode()">
+              <div class="icon"><img src="../../skin/default/images/chat/icon_qrcode.png"></div>
+              <div class="name" set-lang="text:personal_qrcode">个人二维码</div>
+          </div>
+          <div class="item" onclick="sendCard()">
+              <div class="icon"><img src="../../skin/default/images/chat/icon_usercard.png"></div>
+              <div class="name" set-lang="text:send_card">发送名片</div>
+          </div>
+          <div class="item" onclick="deleteFriend()" id="handle">
+              <div class="icon"><img src="../../skin/default/images/chat/icon_delete.png"></div>
+              <div class="name" set-lang="text:delete_friend">删除好友</div>
+          </div>
+        </div>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    var fid = '';
+    apiready = function() {
+        api.parseTapmode();
+        var header = $api.byId('header');
+        $api.fixStatusBar(header);
+        fid = api.pageParam.fid || api.pageParam.id;
+        var uid = $api.getStorage('uid');
+        if(uid == fid || api.pageParam.isVerify){
+            $('#handle').hide();
+        }
+        Pub.eventListen('is_friend', function(ret){
+          if(ret.value.isFriend){
+            $('#handle').show();
+          }else{
+            $('#handle').hide();
+          }
+        });
+    }
+    function closePopup(){
+      console.log('关闭窗口')
+        api.closeFrame();
+    }
+    function qrcode(){
+      event.stopPropagation();
+        Pub.openView('./personal_qrcode_win', {
+          pageParam: {
+            fid: fid,
+            isStatus: true
+          }
+        });
+        setTimeout(function(){
+          closePopup();
+        }, 1000);
+    }
+    function deleteFriend(){
+      event.stopPropagation();
+      Pub.confirm(Pub.getLang('tips'), Pub.getLang('confirm_delete_friend'), function(){
+          var params = {
+              fid: fid
+          }
+          Pub.post(Pub.apiChat +'friend/friend/delete', params, function(res){
+              console.log(JSON.stringify(res));
+              if(res.code == 0){
+                  Pub.msg(res.data || Pub.getLang('delete_success'));
+                  Pub.eventSend('book_load');
+                  Pub.eventSend('personal_info');
+                  api.closeFrame();
+              }
+          });
+      });
+    }
+    function sendCard(){
+      Pub.openView('./transmit_win', {
+        pageParam: {
+          fid: fid,
+          shareType: "send_user_card"
+        }
+      });
+    }
+</script>
+
+</html>

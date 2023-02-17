@@ -1,0 +1,75 @@
+<!doctype html>
+<html class="bg-transparent">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bg-transparent">
+  <header class="no-bg white-mode" style="background-color:rgba(0, 0, 0, .5)" id="header">
+    <div class="header">
+        <!-- <div class="header-left">
+            <i class="return" onclick="closeFrame()"></i>
+        </div> -->
+        <div class="header-middle" id="index"></div>
+        <div class="header-right">
+          <a onclick="save()" set-lang="text:save">保存</a>
+        </div>
+    </div>
+  </header>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+var downPath = '';
+apiready = function() {
+    api.parseTapmode();
+    Pub.setStatusBar();
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    var headerPos = $api.offset(header);
+		downPath = api.pageParam.img;
+}
+function save(){
+  console.log(downPath);
+  if(!downPath) return Pub.msg(Pub.getLang('pic_address_invalid'));
+  var randomString = Math.random().toString(36).substr(2);
+  Pub.showProgress();
+  api.download({
+          url : downPath,
+          report : true,
+          cache : false,
+          allowResume : true,
+          savePath: 'fs://photo'+randomString +'.jpg',
+  }, function(ret, err) {
+      if (ret.state == 1) {
+          api.saveMediaToAlbum({
+                  path : ret.savePath
+          }, function(ret2, err2) {
+            api.hideProgress();
+            if (ret2 && ret2.status) {
+                Pub.msg(Pub.getLang('save_success'));
+            } else {
+                Pub.msg(Pub.getLang('save_fail'));
+            }
+          });
+      }
+  });
+}
+function closeFrame() {
+  var headerStatus = api.pageParam.headerStatus;
+  console.log(headerStatus);
+  if(!headerStatus || headerStatus == 1){
+    Pub.setStatusBar();
+  }else if(headerStatus == 2){
+    Pub.setStatusBar();
+  }
+  api.closeFrame();
+}
+</script>
+
+</html>

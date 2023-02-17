@@ -1,0 +1,76 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0, minimum-scale=1.0, user-scalable=0, initial-scale=1.0, width=device-width" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+
+</head>
+
+<body ontouchstart="">
+    <div id="app">
+        <template>
+            <div class="notice-detail" v-if="Object.keys(detail).length>0">
+                <div class="title">{{detail.title}}</div>
+                <div class="desc">{{detail.date}}</div>
+                <div class="content" v-html="detail.content">
+                </div>
+            </div>
+        </template>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script>
+    apiready = function() {
+        api.parseTapmode();
+        Pub.setStatusBar();
+        initEvent();
+    }
+    function initEvent() {
+        var app = new Vue({
+            el: "#app",
+            data: {
+                id: api.pageParam.id,
+                detail: {}
+            },
+            mounted: function() {
+              // this.clearRed();
+                this.getData();
+
+
+            },
+            methods: {
+                clearRed: function(){
+                  var params = {
+                    id:this.id,
+                  }
+                  Pub.post('system/clear_unread', params, function(res){
+                    Pub.eventSend('notice_status');
+                  }, true)
+                },
+                getData: function(){
+                    var _this = this;
+                    var params = {
+                        id: this.id
+                    }
+                    Pub.post('system/message', params, function(res){
+                        if(res.code == 0){
+                          Pub.eventSend('notice_status');
+                            _this.detail = res.data;
+                        }
+                    });
+                }
+            }
+        });
+    }
+</script>
+
+
+</html>

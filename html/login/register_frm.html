@@ -1,0 +1,223 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="">
+  <div id="app">
+    <template>
+      <div class="login-form">
+        <div class="form-logo"><img src="../../skin/default/images/icon/icon_login.png"></div>
+        <div class="form-box">
+          <div class="item">
+            <div class="input"><input type="tel" :placeholder="lang.please_enter_mobile_number" id="mobile" v-model="mobile" @input="mobileInput"></div>
+          </div>
+          <div class="item">
+            <div class="input"><input type="tel" :placeholder="lang.verification_code" v-model="code"></div>
+            <div :class="['handle',{'disabled': isDisabled}]"><a @click="getCode" tapmode>{{verifyTxt}}</a></div>
+          </div>
+          <div class="item">
+            <div class="input"><input type="password" placeholder="8-12位字母数字组合登录密码" v-model="password"></div>
+          </div>
+          <div class="item">
+            <div class="input"><input type="password" placeholder="请再次输入登录密码" v-model="passwordConfirm"></div>
+          </div>
+          <div class="item">
+            <div class="input"><input type="password" placeholder="6位纯数字支付密码" v-model="payPassword"></div>
+          </div>
+          <div class="item">
+            <div class="input"><input type="password" placeholder="请再次输入支付密码" v-model="payPasswordConfirm"></div>
+          </div>
+          <div class="item">
+            <div class="input"><input type="text" :placeholder="lang.please_enter_nickname" v-model="nickname" maxlength="10"></div>
+          </div>
+          <div class="link"><a></a><a>{{lang.tip_nickname}}</a></div>
+          <div :class="['btn',{'disabled': registerDisabled}]" tapmode @click="register">{{lang.register}}</div>
+        </div>
+      </div>
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script src="../../script/intlTelInput.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      var app = new Vue({
+        el: '#app',
+        data: {
+          mobile: '',
+          nickname: '',
+          verifyTxt: Pub.getLang('get_verify_code'),
+          isDisabled: false,
+          registerDisabled: false,
+          code: '',
+          timer: null,
+          count: '',
+          countNum: 60,
+          countryCode: '86',
+          password: '',
+          passwordConfirm: '',
+          payPassword: '',
+          payPasswordConfirm: '',
+          lang: {
+            please_enter_mobile_number: Pub.getLang('please_enter_mobile_number'),
+            verification_code: Pub.getLang('verification_code'),
+            password_format: Pub.getLang('password_format'),
+            get_verify_code: Pub.getLang('get_verify_code'),
+            please_confirm_password: Pub.getLang('please_confirm_password'),
+            please_enter_nickname: Pub.getLang('please_enter_nickname'),
+            please_enter_pay_password: Pub.getLang('please_enter_pay_password'),
+            confirm_enter_wallet_password: Pub.getLang('confirm_enter_wallet_password'),
+            tip_nickname: Pub.getLang('tip_nickname'),
+            register: Pub.getLang('register'),
+          }
+        },
+        mounted: function(){
+          var _this = this;
+          this.mobileInit();
+          this.count = $api.getStorage('register_verify_count');
+          if(this.count){
+            this.countDown();
+          }
+          Pub.eventListen("verify_code_success",function(res){
+            Pub.msg(Pub.getLang('msg_sended'));
+            $api.setStorage('register_verify_count', 60);
+            _this.countDown();
+          })
+        },
+        methods: {
+          toRegistr: function(){
+            Pub.openView('./register_win');
+          },
+          mobileInit: function(){
+            var _this = this;
+            $("#mobile").intlTelInput({
+                preferredCountries: ['cn'],
+              // allowDropdown: false,
+              // autoHideDialCode: false,
+              // autoPlaceholder: "off",
+              // dropdownContainer: "body",
+              // excludeCountries: ["us"],
+              // formatOnDisplay: false,
+               geoIpLookup: function(callback) {
+               },
+              // initialCountry: "auto",
+              // nationalMode: false,
+              // onlyCountries: ['us', 'gb', 'ch', 'ca', 'do'],
+              // placeholderNumberType: "MOBILE",
+              // preferredCountries: ['cn', 'jp'],
+              // separateDialCode: true,
+              utilsScript: ""
+            });
+            $("#mobile").on("countrychange", function(e, countryData) {
+              console.log(JSON.stringify(countryData))
+              _this.countryCode = countryData.dialCode;
+              // do something with countryData
+            });
+          },
+          mobileInput: function(){
+            var _this = this;
+            setTimeout(function(){
+              _this.mobile = Pub.strSpace(_this.mobile.replace(/\D/g, ''), [3, 7, 11, 15], ' ');
+            },100);
+          },
+          getCode: function(){
+            var _this = this;
+            if(!this.mobile) return Pub.msg(Pub.getLang('please_enter_mobile_number'));
+            if(!this.isDisabled){
+              $(".input").blur();
+              setTimeout(function(){
+                Pub.openFrame('./pop_verify_img_frm',{},{pageParam: {phone: $api.trimAll(_this.mobile),isLogin: false},bgColor: 'rgba(0,0,0,0.5)',bounces: false});
+              },1000)
+              // var params = {
+              //   quhao: this.countryCode,
+              //   phone: $api.trimAll(this.mobile)
+              // }
+              // Pub.post('index/send_code', params, function(res){
+              //     if(res.code == 0){
+              //       Pub.msg(Pub.getLang('msg_sended'));
+              //       $api.setStorage('register_verify_count', 60);
+              //       _this.countDown();
+              //     }else{
+              //       this.isDisabled = false;
+              //       Pub.msg(Pub.getLang('msg_send_fail'));
+              //     }
+              // });
+            }
+          },
+          countDown(){
+            var _this = this;
+            if(!this.timer){
+              this.count = $api.getStorage('register_verify_count') || this.countNum;
+              console.log(this.count);
+              Pub.eventSend('register_verify_time', {
+                time: _this.count*1000
+              });
+              this.timer = setInterval(function(){
+                if(_this.count > 0 && _this.count <= _this.countNum){
+                  _this.count--;
+                  $api.setStorage('register_verify_count', _this.count);
+                  if(_this.count !== 0){
+                    _this.isDisabled = true;
+                    _this.verifyTxt = '' + _this.count +'S';
+                  }else{
+                    clearInterval(_this.timer);
+                    _this.verifyTxt = Pub.getLang('get_verify_code');
+                    _this.timer = null;
+                    _this.isDisabled = false;
+                    $api.setStorage('register_verify_count', '');
+                  }
+                }
+              }, 1000);
+            }
+         },
+          register: function(){
+            var _this = this;
+            if(!this.mobile) return Pub.msg(Pub.getLang("please_enter_mobile_number"));
+            if(!this.code) return Pub.msg(Pub.getLang("please_enter_verification_code"));
+            if(!this.password) return Pub.msg(Pub.getLang("please_enter_login_password"));
+            if(!Pub.regex.rgPassword.test(this.password)) return Pub.msg("设置8-12位字母数字组合登录密码");
+            if(!this.passwordConfirm) return Pub.msg(Pub.getLang("please_confirm_login_password"));
+            if(this.passwordConfirm != this.password) return Pub.msg(Pub.getLang("confirm_password_is_diff"));
+            if(!Pub.regex.rgPayPassword.test(this.payPassword)) return Pub.msg("请设置6位纯数字支付密码");
+            if(!this.payPasswordConfirm) return Pub.msg("请设置支付密码");
+            if(this.payPasswordConfirm != this.payPassword) return Pub.msg("请确认两次输入的支付密码是否相同");
+            if(!this.nickname) return Pub.msg(Pub.getLang("please_enter_nickname"));
+            var params = {
+              quhao: this.countryCode,
+              phone: $api.trimAll(this.mobile),
+              password: this.password,
+              pay_pass: this.payPassword,
+              code: this.code,
+              username: this.nickname,
+            }
+            Pub.post('index/register/register', params, function(res){
+                _this.registerDisabled = false;
+                if(res.code == 0){
+                  Pub.msg(Pub.getLang("register_success"));
+                  Pub.timeoutDo(function(){
+                    api.closeWin();
+                  });
+                }else{
+                  Pub.msg(res.echo);
+                }
+            });
+          }
+        }
+      })
+    }
+</script>
+
+</html>

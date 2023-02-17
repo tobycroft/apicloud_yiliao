@@ -1,0 +1,248 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <div id="list">
+  </div>
+    <!-- <div class="group-cell-index mt-20">A</div>
+    <div class="group-cell-icon">
+        <ul>
+            <li>
+                <div class="icon"><img src="../../skin/default/images/icon_friend_add_fill.png"></div>
+                <div class="name">阿菊</div>
+                <div class="handle"><i class="check active"></i></div>
+            </li>
+            <li>
+                <div class="icon"><img src="../../skin/default/images/icon_friend_fill.png"></div>
+                <div class="name">安星</div>
+                <div class="handle"><i class="check"></i></div>
+            </li>
+            <li>
+                <div class="icon"><img src="../../skin/default/images/icon_friend_fill.png"></div>
+                <div class="name">安星</div>
+                <div class="handle"><i class="check"></i></div>
+            </li>
+            <li>
+                <div class="icon"><img src="../../skin/default/images/icon_friend_fill.png"></div>
+                <div class="name">安星</div>
+                <div class="handle"><i class="check"></i></div>
+            </li>
+        </ul>
+    </div>
+    <div class="group-cell-index">B</div>
+    <div class="group-cell-icon">
+        <ul>
+            <li>
+                <div class="icon"><img src="../../skin/default/images/icon_friend_add_fill.png"></div>
+                <div class="name">阿菊</div>
+                <div class="handle"><i class="check"></i></div>
+            </li>
+            <li>
+                <div class="icon"><img src="../../skin/default/images/icon_friend_fill.png"></div>
+                <div class="name">安星</div>
+                <div class="handle"><i class="check"></i></div>
+            </li>
+        </ul>
+    </div>
+    <div class="group-cell-index">B</div>
+    <div class="group-cell-icon">
+        <ul>
+            <li>
+                <div class="icon"><img src="../../skin/default/images/icon_friend_add_fill.png"></div>
+                <div class="name">阿菊</div>
+                <div class="handle"><i class="check"></i></div>
+            </li>
+            <li>
+                <div class="icon"><img src="../../skin/default/images/icon_friend_fill.png"></div>
+                <div class="name">安星</div>
+                <div class="handle"><i class="check"></i></div>
+            </li>
+        </ul>
+    </div> -->
+    <script type="text/html" id="list_html">
+        {{if data.length > 0}}
+            {{each data}}
+                {{if $value.letter == '*'}}
+                <div class="group-cell-index mt-20" id="0">{{$value.letter}}</div>
+                {{else}}
+                <div class="group-cell-index mt-20" id="{{$value.letter}}">{{$value.letter}}</div>
+                {{/if}}
+                <div class="group-cell-icon">
+                    <ul>
+                        {{include 'friend_html' $value}}
+                    </ul>
+                </div>
+            {{/each}}
+        {{/if}}
+    </script>
+    <script type="text/html" id="friend_html">
+        {{if letterData.length}}
+            {{each letterData}}
+            <li class="to_click" data-id="{{$value.id}}" data-fid="{{$value.fid}}" data-name="{{$value.uname}}">
+                <div class="icon"><img src="{{$value.face}}" class="img_url"></div>
+                <div class="name">{{$value.uname}}</div>
+                <div class="handle"><i class="check" data-fid="{{$value.fid}}" data-img="{{$value.face}}"></i></div>
+            </li>
+            {{/each}}
+        {{/if}}
+    </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/pinyin.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+var checkArr = [], checkArrImg = [];
+var gid = '';
+apiready = function() {
+    api.parseTapmode();
+    gid = api.pageParam.id;
+    Pub.openHref();
+    getData();
+    Pub.eventListen('invite_group', function(){
+        if(checkArr.length == 0) return Pub.msg(Pub.getLang('please_choose_contact'));
+        var params = {
+            gid: gid,
+            invited_uids: JSON.stringify(checkArr)
+        }
+        Pub.post(Pub.apiChat +'group/invite/invite_group', params, function(res){
+            if(res.code == 0){
+                Pub.msg(res.echo);
+                Pub.eventSend('group_info');
+                setTimeout(function(){
+                    api.closeWin();
+                    Pub.setStatusBar();
+                }, 1000);
+            }
+        });
+    });
+}
+function getData(){
+    Pub.post(Pub.apiChat +'group/invite/can_pull', {gid:gid}, function(res){
+        console.log('好友' + JSON.stringify(res))
+        if(res.code == 0){
+            var listObj = {};
+            listObj.data = letterSort(res.data);
+            var html = template('list_html', listObj);
+            $('#list').html(html);
+            Pub.setLang();
+            $('.img_url').each(function(){
+                var thisSrc = $(this).attr('src');
+                if(thisSrc){
+                    if(thisSrc.indexOf('http') === -1){
+                        $(this).attr('src', Pub.imgHost + thisSrc);
+                    }
+                }else{
+                    $(this).attr('src', '../../skin/default/images/img_avatar.png');
+                }
+            });
+            $('.to_click').on('click', function(){
+                var thisId = $(this).attr('data-id'),
+                    thisFid = $(this).attr('data-fid'),
+                    thisName = $(this).attr('data-name');
+                    checkGroupMaster(gid, $api.getStorage('uid'), function(t){
+                      if(t == 'y'){
+                        Pub.openView('./personal_info_win', {
+                            pageParam: {
+                              fid: thisFid,
+                              name: thisName
+                            }
+                        });
+                      }
+                    });
+                    if(thisFid == $api.getStorage('uid')){
+                      Pub.openView('./personal_info_win', {
+                          pageParam: {
+                            fid: thisFid,
+                            name: thisName
+                          }
+                      });
+                    }else{
+                      checkGroupMaster(gid, $api.getStorage('uid'), function(t){
+                        if(t == 'y'){
+                          Pub.openView('./personal_info_win', {
+                              pageParam: {
+                                fid: thisFid,
+                                name: thisName
+                              }
+                          });
+                        }
+                      });
+                    }
+
+            });
+            $('.check').on('click', function(e){
+                var thisFid = $(this).attr('data-fid'),
+                    thisImg = $(this).attr('data-img');
+                e.stopPropagation();
+                if($(this).hasClass('active')){
+                    $(this).removeClass('active');
+                    checkArr = Pub.deleteByValue(checkArr, thisFid);
+                    checkArrImg = Pub.deleteByValue(checkArrImg, thisImg);
+                }else{
+                    $(this).addClass('active');
+                    checkArr = checkArr.concat(thisFid);
+                    checkArrImg = checkArrImg.concat(thisImg);
+                }
+                console.log(checkArrImg)
+                Pub.eventSend('check_arr', {
+                    checkArrImg: checkArrImg
+                });
+            });
+        }
+    }, true);
+}
+function checkGroupMaster(gid,fid,callback){
+  var params = {
+    member_id: fid,
+    gid: gid
+  }
+  Pub.post(Pub.apiChat + 'group/info/isgroupmaster', params, function(res){
+    if(res.code == 0){
+      if(callback && typeof callback == 'function'){
+        callback(res.data)
+      }
+    }
+  }, true);
+}
+function letterSort(arr){
+    if(!String.prototype.localeCompare) return null;
+    var letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ*'.split('');
+    var segs = [];
+    var curr = {};
+    for(var i=0; i<letters.length; i++){
+        curr = {letter: letters[i], letterData:[]};
+        for(var j=0; j<arr.length; j++){
+            if(arr[j].uname){
+                if(pinyin.getFullChars(arr[j].uname).substring(0,1).toUpperCase() == letters[i]){
+                    curr.letterData.push(arr[j]);
+                    // arr.splice(j,1);
+                }else{
+                  if(letters[i] == '*' && !Pub.regex.rgLetterCap.test(pinyin.getFullChars(arr[j].uname).substring(0,1).toUpperCase())){
+                      for(var k=0; k<letters.length -1; k++){
+                          if(Pub.arrIndexOf(curr.letterData, JSON.stringify(arr[j])) == -1){
+                            curr.letterData.push(arr[j]);
+                          }
+                      }
+                  }
+
+                }
+            }
+        }
+        if(curr.letterData.length) {
+         segs.push(curr);
+        }
+    }
+    return segs;
+}
+</script>
+
+</html>

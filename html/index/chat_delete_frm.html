@@ -1,0 +1,58 @@
+<!doctype html>
+<html class="bg-transparent">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+
+<body ontouchstart="" class="bg-transparent">
+    <div class="index-popup-bg" onclick="closeFrame()" tapmode></div>
+    <div class="chat-delete">
+      <a onclick="deleteEvent()" tapmode>删除</a>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    var type = '', id = '';
+    apiready = function() {
+        api.parseTapmode();
+        type = api.pageParam.type;
+        id = api.pageParam.id;
+    }
+    function deleteEvent() {
+      Pub.confirm('提示', '您确定要删除该会话吗？', function() {
+        if (type == 'group') {
+          var paramsGroup = {
+            gid: id
+          }
+          Pub.post(Pub.apiChat + 'message/msg_group_delete', paramsGroup, function(res) {
+            if (res.code == 0) {
+              Pub.eventSend('chat_list_load');
+              closeFrame();
+            }
+          });
+        } else {
+          var params = {
+            chat_id: id
+          }
+          Pub.post(Pub.apiChat + 'message/msg_delete', params, function(res) {
+            if (res.code == 0) {
+              Pub.eventSend('chat_list_load');
+              closeFrame();
+            }
+          });
+        }
+      });
+    }
+    function closeFrame(){
+      api.closeFrame();
+    }
+</script>
+
+</html>

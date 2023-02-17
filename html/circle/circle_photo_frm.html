@@ -1,0 +1,88 @@
+<!doctype html>
+<html class="bgc-black">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-black">
+  <header class="hidden no-bg white-mode" id="header">
+    <div class="header">
+        <div class="header-left">
+            <i class="return" onclick="closeWin()"></i>
+        </div>
+        <div class="header-middle" id="index"></div>
+        <div class="header-right">
+          <a onclick="save()" set-lang="text:save_image">保存图片</a>
+        </div>
+    </div>
+  </header>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+var downPath = '';
+apiready = function() {
+    api.parseTapmode();
+    Pub.setStatusBar();
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    $('#header').removeClass('hidden')
+    var headerPos = $api.offset(header);
+    var total = api.pageParam.total;
+    $('#index').text((api.pageParam.index + 1) + '/' + total);
+    Pub.eventListen('circle_photo_index', function(ret){
+      if(ret){
+        $('#index').text((ret.value.index + 1) + '/' + total);
+      }
+    });
+    Pub.eventListen('circle_photo_url', function(ret){
+      if(ret){
+        downPath = ret.value.path;
+        console.log(downPath);
+      }
+    });
+}
+function save(){
+  console.log(downPath);
+  if(!downPath) return Pub.msg(Pub.getLang('pic_address_invalid'));
+  var randomString = Math.random().toString(36).substr(2);
+  Pub.showProgress();
+  api.download({
+          url : downPath,
+          report : true,
+          cache : false,
+          allowResume : true,
+          savePath: 'fs://photo'+randomString +'.jpg',
+  }, function(ret, err) {
+      if (ret.state == 1) {
+          api.saveMediaToAlbum({
+                  path : ret.savePath
+          }, function(ret2, err2) {
+            api.hideProgress();
+            if (ret2 && ret2.status) {
+                Pub.msg(Pub.getLang('save_success'));
+            } else {
+                Pub.msg(Pub.getLang('save_fail'));
+            }
+          });
+      }
+  });
+}
+function closeWin() {
+  var headerStatus = api.pageParam.headerStatus;
+  console.log(headerStatus);
+  if(!headerStatus || headerStatus == 1){
+    Pub.changeStatusBar();
+  }else if(headerStatus == 2){
+    Pub.setStatusBar();
+  }
+  api.closeWin();
+}
+</script>
+
+</html>

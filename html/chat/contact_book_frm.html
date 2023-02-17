@@ -1,0 +1,204 @@
+<!doctype html>
+<html class="bgc-white">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bgc-white">
+    <div id="app">
+      <template>
+        <div class="book-slide" id="book_silde" v-show="listData.length > 0">
+          <a href="#A">A</a>
+          <a href="#B">B</a>
+          <a href="#C">C</a>
+          <a href="#D">D</a>
+          <a href="#E">E</a>
+          <a href="#F">F</a>
+          <a href="#G">G</a>
+          <a href="#H">H</a>
+          <a href="#I">I</a>
+          <a href="#J">J</a>
+          <a href="#K">K</a>
+          <a href="#L">L</a>
+          <a href="#M">M</a>
+          <a href="#N">N</a>
+          <a href="#O">O</a>
+          <a href="#P">P</a>
+          <a href="#Q">Q</a>
+          <a href="#R">R</a>
+          <a href="#S">S</a>
+          <a href="#T">T</a>
+          <a href="#U">U</a>
+          <a href="#V">V</a>
+          <a href="#W">W</a>
+          <a href="#X">X</a>
+          <a href="#Y">Y</a>
+          <a href="#Z">Z</a>
+          <a href="#0">*</a>
+        </div>
+        <div v-for="(item,index) in listData" :key="index">
+        <div class="group-cell-index" id="0" v-if="item.letter == '*'">{{item.letter}}</div>
+        <div class="group-cell-index" :id="item.letter" v-else>{{item.letter}}</div>
+        <div class="book-cell">
+          <ul class="big">
+            <li :class="{'active': chooseId== item2.id}" v-for="(item2, index2) in item.letterData" v-tap="()=>toInfo(item2.uid, item2.fullName)" v-swipeleft="()=>chooseItem(item2.id)" v-swiperight="()=>chooseItem(item2.id)">
+                <div class="icon" v-if="item2.face">
+                  <div class="icon-box">
+                    <!-- <img :src="getAvatarCache(item2.face)" v-if="getAvatarCache(item2.face)">
+                    <img v-lazy="(item2.face.indexOf('http') == -1)?(imgHost + item2.face):item2.face" :key="item2.face" @load="loadAvatar(item2.face)" v-else> -->
+                    <img src="../../icon/logo.png">
+                  </div>
+                </div>
+                <div class="icon" v-else>
+                  <div class="icon-box">
+                    <div class="avatar-font">{{item2.fullName.substring(0,1).toUpperCase()}}</div>
+                  </div>
+                </div>
+                <div class="contact">
+                  <div class="contact-name">{{item2.fullName}}</div>
+                  <div class="contact-desc">用户名：xxxxxxxxxxxxxxxxx</div>
+                </div>
+                <div class="button" @click="toInfo(item2.uid, item2.fullName)">
+                    <p>xxxx</p>
+                </div>
+            </li>
+          </ul>
+        </div>
+        <div class="nothing" v-show="isNomore">暂无数据</div>
+      </template>
+    </div>
+
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/pinyin.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script src="../../script/vue-lazyload.js"></script>
+<script src="../../script/vue-touch.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+
+    function initEvent() {
+        var app = new Vue({
+            el: "#app",
+            data: {
+                uid: $api.getStorage('uid'),
+                listData: [],
+                contactsData: [],
+                friendList: [],
+                imgHost: Pub.imgHost,
+                isNomore: false,
+                chooseId: '',
+            },
+            mounted: function() {
+                var _this = this;
+                _this.getContact();
+                Pub.eventListen("contact_search", function(ret){
+                    _this.search(ret.value.words)
+                });
+            },
+            methods: {
+                getContact: function() {
+                  var _this = this;
+                    var DVContacts = api.require('DVContacts');
+                    DVContacts.allContacts(function(ret, err) {
+                        if (ret) {
+                            //_this.listData = ret.contacts;
+                            if(ret.contacts.length > 0){
+                                _this.isNomore = false;
+                            }else{
+                                _this.isNomore = true;
+                            }
+                            alert("通讯录：" + JSON.stringify(ret.contacts));
+                            //_this.contactsData = ret.contacts;
+                            _this.friendList = $api.getStorage(_this.uid + "_friendList");
+                            console.log(JSON.stringify(_this.friendList));
+                            for(var i = 0;i < ret.contacts.length;i++){
+                              for(var j = 0;j < _this.friendList.length;j++){
+                                for(k in ret.contacts[i].phones){
+                                  console.log("姓名："+k+";"+"对应值："+ret.contacts[i].phones[k]);
+                                  // if(_this.friendList[j].telephone == ret.contacts[i].phones[k]){
+                                  //
+                                  //   ret.contacts[i].user_info = _this.friendList[j];
+                                  // }
+                                 }
+                                // for(var k = 0;k < ret.contacts[j].phones.length;k++){
+                                //   if(_this.friendList[j].telephone == ret.contacts[i].phones[k]){
+                                //     ret.contacts[i].user_info = _this.friendList[j];
+                                //   }
+                                // }
+                              }
+                            }
+                            _this.listData = _this.letterSort(ret.contacts);
+                            console.log(JSON.stringify(_this.listData));
+                        } else {
+                            alert(JSON.stringify(err));
+                        }
+                    });
+                },
+                letterSort: function(arr){
+                    if(!String.prototype.localeCompare) return null;
+                    var letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ*'.split('');
+                    var segs = [];
+                    var curr = {};
+                    for(var i=0; i<letters.length; i++){
+                        curr = {letter: letters[i], letterData:[]};
+                        for(var j=0; j<arr.length; j++){
+                            if(arr[j].fullName){
+                                if(pinyin.getFullChars(arr[j].fullName).substring(0,1).toUpperCase() == letters[i]){
+                                    curr.letterData.push(arr[j]);
+                                    // arr.splice(j,1);
+                                }else{
+                                    if(letters[i] == '*' && !Pub.regex.rgLetterCap.test(pinyin.getFullChars(arr[j].fullName).substring(0,1).toUpperCase())){
+                                        for(var k=0; k<letters.length -1; k++){
+                                            if(Pub.arrIndexOf(curr.letterData, JSON.stringify(arr[j])) == -1){
+                                              curr.letterData.push(arr[j]);
+                                            }
+                                        }
+                                    }
+
+                                }
+                            }
+                        }
+                        if(curr.letterData.length) {
+                         segs.push(curr);
+                        }
+                    }
+                    return segs;
+                },
+                search: function(words){
+                  var _this = this;
+                  var memberArr = _this.contactsData;
+                  var searchArr = [];
+                  if(words){
+                      for(var i = 0; i<memberArr.length; i++){
+                          if(memberArr[i].fullName.indexOf(words) > -1){
+                              searchArr.push(memberArr[i]);
+                          }
+                      }
+                      if(searchArr.length == 0) return Pub.msg(Pub.getLang('search_nothing'));
+                      //_this.contactsData = searchArr;
+                      _this.listData = _this.letterSort(searchArr);
+                  }else{
+                      _this.listData = _this.letterSort(_this.contactsData);
+                  }
+                },
+                chooseItem: function(){
+
+                },
+            }
+        })
+    }
+</script>
+
+</html>

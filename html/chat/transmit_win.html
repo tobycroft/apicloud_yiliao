@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <header id="header">
+        <div class="header-box" id="header_box">
+          <div class="header">
+            <div class="header-left">
+              <a onclick="closeWin()" set-lang="text:cancel">取消</a>
+            </div>
+            <div class="header-middle" set-lang="text:">选择联系人或群</div>
+              <!-- <div class="header-right" onclick="done()">
+                <a class="btn-green">完成</a>
+              </div> -->
+          </div>
+        </div>
+        <div class="main-search">
+          <div class="input-box">
+            <div class="input">
+                <input type="text" placeholder="搜索" set-lang="placeholder:search" id="search_text">
+                <div class="btn-submit" onclick="search()" style="cursor:pointer" tapmode set-lang="text:search">搜索</div>
+            </div>
+          </div>
+        </div>
+
+    </header>
+
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+apiready = function() {
+    api.parseTapmode();
+    Pub.setStatusBar();
+    var headerBox = $api.byId('header_box');
+    var header = $api.byId('header');
+    $api.fixStatusBar(header);
+    var headerPos = $api.offset(header);
+    openFrame(headerPos);
+    searchEvent();
+    Pub.eventListen('keyback', function(){
+      closeWin();
+    })
+}
+function openFrame(headerPos){
+    Pub.openFrame('./transmit_frm',{headerPos:headerPos},{bounces:false, pageParam: api.pageParam, bgColor: '#fff'});
+}
+function done(){
+    Pub.eventSend('transmit_done');
+}
+function searchEvent(){
+    $('#search_text').on('input propertychange', function(){
+        var thisVal = $(this).val();
+        console.log(thisVal);
+        if(thisVal){
+            $('.btn-submit').show();
+        }else{
+            $('.btn-submit').hide();
+            Pub.eventSend('transmit_search', {
+              words: ''
+            });
+        }
+    });
+
+}
+function search(){
+  var searchTxt = $('#search_text').val();
+  if(!searchTxt) return Pub.msg(Pub.getLang('please_enter_search_content'));
+  Pub.eventSend('transmit_search', {
+    words: searchTxt
+  });
+}
+function closeWin() {
+  Pub.setStatusBar();
+  api.closeWin();
+}
+</script>
+
+</html>

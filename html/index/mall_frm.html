@@ -1,0 +1,55 @@
+<!DOCTYPE HTML>
+<html class="bgc-white-dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0, minimum-scale=1.0, user-scalable=0, initial-scale=1.0, width=device-width" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+    <style>
+      body{
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        background: url(../../skin/default/images/bg/bg_mall.png) no-repeat 50% 0;
+        background-size: 100% auto;
+      }
+    </style>
+</head>
+
+<body ontouchstart="" class="bgc-white-dark" onclick="Pub.msg('暂未开放，敬请期待')">
+
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script>
+    apiready = function() {
+        api.parseTapmode();
+        Pub.setStatusBar();
+        api.openFrame({
+            name: 'mall_header_frm',
+            url: './mall_header_frm.html',
+            rect: {
+                x: 0,
+                y: 0,
+                w: 'auto',
+                h: 50+api.safeArea.top,
+            },
+            pageParam: {
+            },
+            bounces: false,
+            bgColor: 'rgba(0,0,0,0)',
+        });
+    }
+
+
+</script>
+
+
+</html>

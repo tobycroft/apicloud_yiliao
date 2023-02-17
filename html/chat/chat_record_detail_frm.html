@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <div class="group-cell-index" set-lang="text:"><span id="info"></span> <span id="type"></span>聊天记录</div>
+  <div class="chat-container">
+    <ul id="content">
+      <!-- <li class="to_group chat_record" data-gid="{{$value.gid}}" type="group">
+          <div class="avatar"><img src="{{$value.img}}" class="img_url"></div>
+          <div class="info">
+            <div class="info-top">
+              <div class="name"></div>
+            </div>
+            <div class="info-bottom">
+              <div class="desc">
+              </div>
+            </div>
+          </div>
+      </li>
+      <li class="to_group chat_record" data-chatId="{{$value.chat_id}}" type="private">
+          <div class="avatar"><img src="{{$value.face}}" class="img_url"></div>
+          <div class="info">
+            <div class="info-top">
+              <div class="name"></div>
+            </div>
+            <div class="info-bottom">
+              <div class="desc">
+              </div>
+            </div>
+          </div>
+      </li> -->
+    </ul>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+var params;
+    apiready = function() {
+        api.parseTapmode();
+        params = api.pageParam;
+        if(params.type=="group"){
+          $("#type").html("群");
+        }else{
+          $("#type").html("个人");
+        }
+        var infoHtml = "<img src='"+params.img+"'/> <span>"+params.name+"</span>";
+        $("#info").html(infoHtml);
+        getData();
+    }
+    function getData(){
+      if(params.type == "group"){
+        Pub.post(Pub.apiChat + 'search/group_search', {text: params.text,gid: params.id}, function(res){
+          if(res.code == 0){
+            var html = "";
+            for(var i = 0; i<res.data.length; i++){
+              var time = new Date(res.data[i].date * 1000).toWeiXinString();
+              var face;
+              if(res.data[i].face.indexOf("http")==-1){
+                face = Pub.imgHost + res.data[i].face;
+              }else{
+                face = res.data[i].face;
+              }
+              html += '<li class="to_group chat_record" >\
+                  <div class="avatar"><img src="'+face+'" class="img_url"></div>\
+                  <div class="info">\
+                    <div class="info-top">\
+                      <div class="name">'+res.data[i].uname+'</div>\
+                      <div class="time">'+time+'</div>\
+                    </div>\
+                    <div class="info-bottom">\
+                      <div class="desc">'+res.data[i].message+'</div>\
+                    </div>\
+                  </div>\
+              </li>'
+            }
+            $("#content").append(html);
+          }
+        })
+      }else{
+        Pub.post(Pub.apiChat + 'search/single_search', {text: params.text,chat_id: params.id}, function(res){
+          if(res.code == 0){
+            var html = "";
+            for(var i = 0; i<res.data.length; i++){
+              var time = new Date(res.data[i].date * 1000).toWeiXinString();
+              var face;
+              if(res.data[i].face.indexOf("http")==-1){
+                face = Pub.imgHost + res.data[i].face;
+              }else{
+                face = res.data[i].face;
+              }
+              html += '<li class="to_group chat_record" >\
+                  <div class="avatar"><img src="'+face+'" class="img_url"></div>\
+                  <div class="info">\
+                    <div class="info-top">\
+                      <div class="name">'+res.data[i].uname+'</div>\
+                      <div class="time">'+time+'</div>\
+                    </div>\
+                    <div class="info-bottom">\
+                      <div class="desc">'+res.data[i].message+'</div>\
+                    </div>\
+                  </div>\
+              </li>'
+            }
+            $("#content").append(html);
+          }
+        })
+      }
+    }
+
+</script>
+
+</html>

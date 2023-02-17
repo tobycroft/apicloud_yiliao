@@ -1,0 +1,158 @@
+<!doctype html>
+<html class="bgc-base">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="" class="bgc-base">
+  <div class="persons-send-input-container">
+    <div class="top">
+      <div class="title">您将发送消息给<span id="num"></span>位好友</div>
+      <div class="names" id="names"></div>
+      <div class="msg-box">
+        <div class="title">发送信息</div>
+        <div class="content" id="content">
+
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+var personsArr;
+    apiready = function() {
+        api.parseTapmode();
+        //initEvent();
+        personsArr = api.pageParam;
+        getData();
+        openUIChatBox()
+    }
+    function getData(){
+      $("#num").html(personsArr.length);
+      var html = "";
+      for(var i = 0;i<personsArr.length;i++){
+        if(i != personsArr.length - 1){
+          html += personsArr[i].name + ", "
+        }else{
+          html += personsArr[i].name
+        }
+      }
+      $("#names").html(html);
+    }
+    function openUIChatBox(){
+      var UIChatBox = api.require('UIChatBox');
+      UIChatBox.open({
+          placeholder: '',
+          maxRows: 6,
+          emotionPath: 'widget://expression/emotion',
+          texts: {
+
+          },
+          styles: {
+              topDivider: {
+                  width: 1,
+                  color: '#eaeaea'
+              },
+              inputBar: {
+                  borderColor: '#f7f7f7',
+                  bgColor: '#f7f7f7'
+              },
+              inputBox: {
+                  borderColor: '#dddddd',
+                  bgColor: '#FFFFFF',
+                  borderColor: '#fff',         //（可选项）字符串类型；输入框的边框颜色，支持 rgb，rgba，#；默认：'#B3B3B3'
+                 bgColor: '#fff',             //（可选项）字符串类型；输入框的背景色，支持 rgb，rgba，#；默认：'#f2f2f2'
+                 boardBgColor: '#fff',        //（可选项）字符串类型；面板的背景色(表情面板，附加面板)，支持 rgb，rgba，#；默认：'#f2f2f2'
+                 topMargin:8,                   //（可选项）数字类型；输入框距离顶部的边距；默认：10
+                 borderCorner:5,                 //(可选项)数字类型；默认：5
+              },
+              emotionBtn: {
+                  normalImg: 'widget://skin/default/images/icon/icon_emoji.png'
+              },
+              recordBtn: {
+                  normalBg: '#ffffff',
+                  activeBg: '#ccc',
+                  color: '#000',
+                  size: 14
+              },
+              indicator: {
+                  target: 'both',
+                  color: '#ffffff',
+                  activeColor: '#21b2ff'
+              },
+              sendBtn: {
+                  titleColor: '#ffffff',
+                  bg: '#eb5f48',
+                  activeBg: '#e24f37',
+                  titleSize: 14
+              }
+          },
+          extras: {
+
+          }
+      }, function(ret, err) {
+          if (ret) {
+              console.log(JSON.stringify(ret))
+              if (ret.eventType == 'send') {
+                  //_this.sendMsg(ret.msg);
+                  sendMsg(ret.msg);
+              }
+
+          } else {
+              console.log(JSON.stringify(err));
+          }
+      });
+    }
+    function sendMsg(msg){
+      if(!msg) return Pub.msg("发送消息不能为空！");
+      api.showProgress({
+          title: '群发中...',
+          modal: true
+      });
+      for(var i = 0;i<personsArr.length;i++){
+        var params = {
+            fid: personsArr[i].fid,
+            msg: msg,
+            extra: '',
+            ident: (new Date()).valueOf(),
+        }
+        if(i<personsArr.length-1){
+          Pub.post(Pub.apiChat +'chat/single/text', params, function(res) {
+              console.log(JSON.stringify(res));
+              if (res.code == 0) {
+                // Pub.eventSend('close_chat_personal_home', {
+                //   id: personsArr[i].fid
+                // });
+                // _this.getMsg();
+
+              }
+          }, true);
+        }else{
+          Pub.post(Pub.apiChat +'chat/single/text', params, function(res) {
+              console.log(JSON.stringify(res));
+              if (res.code == 0) {
+                // Pub.eventSend('close_chat_personal_home', {
+                //   id: personsArr[i].fid
+                // });
+                // _this.getMsg();
+                api.hideProgress();
+                Pub.msg("发送成功！");
+              }
+          }, true);
+        }
+      }
+      $("#content").prepend("<div>"+msg+"</div>");
+    }
+</script>
+
+</html>

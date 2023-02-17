@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <div id="app">
+    <template>
+      <div class="about-container">
+        <div class="logo">
+          <img src="../../icon/logo.png">
+        </div>
+        <div class="name">易聊</div>
+        <div class="name">版本号：{{version}}</div>
+        <div class="desc">更专业的数字资产平台</div>
+        <div class="content" v-html="content">
+        </div>
+      </div>
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      var app = new Vue({
+        el: '#app',
+        data: {
+          content: '',
+          version: api.version,
+          lang: {
+            professional_platform: Pub.getLang('professional_platform'),
+          }
+        },
+        mounted: function(){
+          var _this = this;
+          this.getData();
+        },
+        methods: {
+          getData: function(){
+            var _this = this;
+            Pub.post('api/index/aboutUs', {}, function(res){
+              if(res.code == 0){
+                _this.content = res.data;
+              }
+            })
+          }
+        }
+      });
+    }
+
+</script>
+
+</html>

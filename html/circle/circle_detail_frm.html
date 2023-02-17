@@ -1,0 +1,598 @@
+<!doctype html>
+<html class="bgc-white">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bgc-white">
+    <div id="app">
+        <template>
+      <div class="circle-container">
+        <div class="circle-list" style="margin-top: 0">
+          <ul v-if="Object.keys(detailData).length > 0">
+            <li>
+              <div class="avatar">
+                <img :src="getAvatarCache(detailData.user_info.face)" v-if="getAvatarCache(detailData.user_info.face)">
+                <img v-lazy="(detailData.user_info.face.indexOf('http') == -1)?(imgHost + detailData.user_info.face):detailData.user_info.face" :key="detailData.user_info.face"  @load="loadImg(detailData.user_info.face)" v-else>
+              </div>
+              <div class="info">
+                <div class="name">{{detailData.user_info.uname}}</div>
+                <div class="desc">{{detailData.content}}</div>
+                <div class="imgs single" v-if="detailData.attachs.length == 1">
+                  <a v-for="(attachs, attachsIndex) in detailData.attachs" :key="attachsIndex" @click="showPhoto(detailData.attachs, attachsIndex)">
+                    <img v-lazy="(attachs.url.indexOf('http') == -1)?(imgHost + attachs.url):attachs.url" :key="attachs.url">
+                  </a>
+                </div>
+                <div class="imgs four" v-else-if="detailData.attachs.length == 4">
+                  <a v-for="(attachs, attachsIndex) in detailData.attachs" :key="attachsIndex" @click="showPhoto(detailData.attachs, attachsIndex)">
+                    <img v-lazy="(attachs.url.indexOf('http') == -1)?(imgHost + attachs.url):attachs.url" :key="attachs.url">
+                  </a>
+                </div>
+                <div class="imgs" v-else>
+                  <a v-for="(attachs, attachsIndex) in detailData.attachs" :key="attachsIndex" @click="showPhoto(detailData.attachs, attachsIndex)">
+                    <img v-lazy="(attachs.url.indexOf('http') == -1)?(imgHost + attachs.url):attachs.url" :key="attachs.url">
+                  </a>
+                </div>
+                <div class="handle">
+                  <div class="handle-left">{{detailData.post.date}}<a v-if="uid == detailData.uid" @click="deleteCircle(detailData.post.id, index)">{{lang.delete}}</a></div>
+                  <div class="handle-right">
+                    <div class="omit">
+                      <span class="omit-icon" @click="showHandle(detailData.post.id)"></span>
+                      <div :class="['omit-popup', {'active': commentChooseId == detailData.post.id}]">
+                        <div class="popup-cont">
+                          <a :class="['prise', {'active': detailData.commended == 1}]" @click="toPrise(detailData.post.id)"><i></i>{{lang.prise}}</a>
+                          <a class="comment" @click="toComment(detailData.post.id)"><i></i>{{lang.comment}}</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="comment-container" v-if="detailData.likes.length > 0 || detailData.comments.length > 0">
+                  <div class="prise-box" v-if="detailData.likes.length > 0">
+                    <a v-for="(likes, likesIndex) in detailData.likes" :key="likesIndex">
+                      {{likes.user_info.uname}}
+                    </a>
+                  </div>
+                  <div class="comment-box" v-if="detailData.comments.length > 0">
+                    <div class="comment-item" v-for="(comment, commentIndex) in detailData.comments" :key="commentIndex">
+                      <div class="comment-avatar" @click="toInfo(comment.uid)">
+                        <img :src="getAvatarCache(comment.user_info.face)" v-if="getAvatarCache(comment.user_info.face)">
+                        <img v-lazy="(comment.user_info.face.indexOf('http') == -1)?(imgHost + comment.user_info.face):comment.user_info.face" :key="comment.user_info.face" @load="loadImg(comment.user_info.face)" v-else>
+                      </div>
+                      <div class="comment-info">
+                        <div class="comment-info-top">
+                          <div class="comment-name">{{comment.user_info.uname}}</div>
+                          <div class="comment-time">{{timeShow(comment.date)}}</div>
+                        </div>
+                        <div class="comment-info-bottom">
+                          <div style="display:inline-block;" v-html="messageCont(comment.comment)"></div> <a v-if="uid == comment.uid" @click="deleteComment(comment.id)">{{lang.delete}}</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </template>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/info.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script src="../../script/vue-lazyload.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+
+    function initEvent() {
+        Vue.use(VueLazyload, {
+            error: '../../icon/error.png',
+            loading: '../../icon/loading.gif'
+        });
+        var app = new Vue({
+            el: '#app',
+            data: {
+                imgHost: Pub.imgHost,
+                id: api.pageParam.id,
+                detailData: {},
+                sourcePath: 'widget://expression/emotion',
+                emotionData: {},
+                uid: $api.getStorage('uid'),
+                commentCircleId: '',
+                commentId: '',
+                commentCircleIndex: '',
+                commentChooseId: '',
+                UIChatBox: {},
+                photoBrowser: {},
+                isShowPhoto: false,
+                panelHeight: 0,
+                inputBarHeight: 0,
+                lang: {
+                    delete: Pub.getLang('delete'),
+                    prise: Pub.getLang('prise'),
+                    comment: Pub.getLang('comment'),
+                }
+            },
+            mounted: function() {
+                var _this = this;
+                this.avatarCache = $api.getStorage('avatar_cache') || {};
+                this.getImgsPaths(this.sourcePath, function(emotion) {
+                    _this.emotionData = emotion;
+                });
+                this.getData();
+                this.UIChatBox = api.require('UIChatBox');
+                this.photoBrowser = api.require("photoBrowser");
+                this.chat();
+                this.chatStatus(false);
+            },
+            methods: {
+                loadImg: function(img) {
+                    var _this = this;
+                    var imgUrl = img.indexOf('http') == -1 ? (Pub.imgHost + img) : img;
+                    if (!this.avatarCache) {
+                        this.avatarCache = {};
+                    }
+                    api.imageCache({
+                        url: imgUrl
+                    }, function(ret, err) {
+                        var url = ret.url;
+                        if (JSON.stringify(_this.avatarCache).indexOf(window.btoa(img)) == -1) {
+                            _this.avatarCache[window.btoa(img)] = url;
+                            $api.setStorage('avatar_cache', _this.avatarCache);
+                            console.log(JSON.stringify(_this.avatarCache))
+                        }
+                    });
+                },
+                getAvatarCache: function(img) {
+                    var imgName = window.btoa(img);
+                    if (this.avatarCache.hasOwnProperty(imgName)) {
+                        return this.avatarCache[imgName];
+                    } else {
+                        return false;
+                    }
+                },
+                getData: function() {
+                    var _this = this;
+                    var params = {
+                        fcid: this.id
+                    }
+                    Pub.post(Pub.apiChat + 'circle/list/get', params, function(res) {
+                        if (res.code == 0) {
+                            for (var i in res.data) {
+                                if (res.data[i] == null) {
+                                    res.data[i] = [];
+                                }
+                                for (var o in res.data[i]) {
+                                    if (res.data[i][o] == null) {
+                                        res.data[i][o] = [];
+                                    }
+                                }
+                            }
+                            _this.detailData = res.data;
+
+                            if ($api.getStorage(res.data.uid + "_user_info")) {
+                                _this.detailData.user_info = $api.getStorage(res.data.uid + "_user_info");
+                            } else if ($api.getStorage(res.data.uid + "_anynomous")) {
+                                _this.detailData.user_info = $api.getStorage(res.data.uid + "_anynomous");
+                            }
+                            //_this.detailData = circleListAddFriendInfo(_this.detailData);
+                            _this.detailData.likes = circleListAddFriendInfo(_this.detailData.likes);
+                            _this.detailData.comments = circleListAddFriendInfo(_this.detailData.comments);
+                            if (_this.detailData.likes != null) {
+                                for (var i = 0; i < _this.detailData.likes.length; i++) {
+                                    //alert(JSON.stringify(detailData));
+                                    if (_this.detailData.likes[i].uid == $api.getStorage("uid")) {
+                                        //alert(JSON.stringify(detailData));
+                                        _this.detailData.commended = 1;
+                                    }
+                                }
+                            }
+                            console.log(JSON.stringify(_this.detailData));
+                        }
+                    });
+                },
+                timeShow: function(text) {
+                    return Pub.timestampFormat(text);
+                },
+                showHandle: function(id) {
+                    event.stopPropagation();
+                    if (this.commentChooseId) {
+                        this.commentChooseId = '';
+                        this.chatStatus(false);
+                    } else {
+                        this.commentChooseId = id;
+                    }
+
+                },
+                unhandle: function() {
+                    var _this = this;
+                    document.querySelector('body').style.cursor = 'pointer';
+                    document.querySelector('body').onclick = function(e) {
+                        if (_this.commentChooseId) {
+                            _this.commentChooseId = '';
+                            _this.chatStatus(false);
+                            e.preventDefault();
+                            return false;
+                        }
+                    }
+                },
+                toComment: function(id, commentId) {
+                    event.stopPropagation();
+                    this.chatStatus(true);
+                    if (id) {
+                        this.commentCircleId = id;
+                    }
+                    if (commentId) {
+                        this.commentId = commentId;
+                    }
+                },
+                deleteCircle: function(id, index) {
+                    var _this = this;
+                    Pub.confirm(Pub.getLang('tips'), Pub.getLang('confirm_delete'), function() {
+                        var params = {
+                            id: id
+                        }
+                        Pub.post(Pub.apiChat + 'circle/operation/del_circle', params, function(res) {
+                            console.log('删除' + JSON.stringify(res));
+                            if (res.code == 0) {
+                                Pub.eventSend('circle_personal_update');
+                                api.closeToWin({
+                                    name: 'circle_personal_win'
+                                });
+
+                            }
+                        });
+                    });
+                },
+                deleteComment: function(id, index) {
+                    var _this = this;
+                    Pub.confirm(Pub.getLang('tips'), Pub.getLang('confirm_delete'), function() {
+                        var params = {
+                            id: id
+                        }
+                        Pub.post(Pub.apiChat + 'circle/operation/del_comment', params, function(res) {
+                            console.log('删除' + JSON.stringify(res));
+                            if (res.code == 0) {
+                                _this.getData();
+                            }
+                        });
+                    });
+                },
+                toPrise: function(id, index) {
+                    event.stopPropagation();
+                    var _this = this;
+                    if (_this.detailData.commended == 1) {
+                        like = 0;
+                    } else {
+                        like = 1;
+                    }
+                    var params = {
+                        fcid: id,
+                        like: like,
+                    }
+                    Pub.post(Pub.apiChat + 'circle/operation/like', params, function(res) {
+                        console.log('点赞' + JSON.stringify(res));
+                        if (res.code == 0) {
+                            _this.commentChooseId = '';
+                            //_this.detailData = res.data;
+                            //_this.detailData.commended = params.like;
+                            _this.getData();
+                            Pub.eventSend('circle_detail_update');
+                        }
+                    });
+                },
+                commentSend: function(cont) {
+                    var _this = this;
+                    if (!cont) return Pub.msg(Pub.getLang('please_enter_a_comment'));
+                    var params = {
+                        fcid: _this.commentCircleId,
+                        comment: cont,
+                        pid: _this.commentId || 0,
+                    }
+                    Pub.post(Pub.apiChat + 'circle/operation/comment', params, function(res) {
+                        console.log('评论' + JSON.stringify(res));
+                        if (res.code == 0) {
+                            _this.getData();
+                            Pub.eventSend('circle_detail_update');
+                            _this.commentChooseId = '';
+                            _this.chatStatus(false);
+                            _this.UIChatBox.closeKeyboard();
+                        }
+                    });
+                },
+                showPhoto: function(item, index) {
+                    var _this = this;
+                    console.log(index);
+                    Pub.openView('./circle_photo_win', {
+                        pageParam: {
+                            item: item,
+                            index: index,
+                            headerStatus: _this.headerStatus
+                        }
+                    });
+                },
+                toInfo: function(id) {
+                    var isStatus = false;
+                    if (this.headerStatus == 2 || !this.headerStatus) {
+                        isStatus = false;
+                    } else {
+                        isStatus = true;
+                    }
+                    Pub.openView('../chat/personal_info_win', {
+                        pageParam: {
+                            fid: id,
+                            isStatus: isStatus
+                        }
+                    });
+                },
+                getImgsPaths: function(sourcePathOfChatBox, callback) {
+                    var jsonPath = "widget://expression/emotion/emotion.json"; //表情的JSON数组
+                    api.readFile({
+                        path: jsonPath
+                    }, function(ret, err) {
+                        if (ret.status) {
+                            var emotionArray = JSON.parse(ret.data);
+                            var emotion = {};
+                            for (var i = 0; i < emotionArray.length; i++) {
+                                emotion[emotionArray[i]['text']] = '<img src="../../expression/emotion/' + emotionArray[i]['name'] + '.png' + '" width="25" height="25">';
+                            }
+                            /*把emotion对象 回调出去*/
+                            if ("function" === typeof(callback)) {
+                                callback(emotion);
+                            }
+                        }
+                    });
+                },
+                messageCont: function(msg) {
+                    var _this = this;
+                    if (msg) {
+                        var htmlMsg = msg.replace(Pub.regex.rgEmotion, function(a, b) {
+                            if (_this.emotionData[a] && _this.emotionData[a] != 'undefined') {
+                                return _this.emotionData[a];
+                            } else {
+                                return a;
+                            }
+                        });
+                        return htmlMsg;
+                    } else {
+                        return '';
+                    }
+                },
+                scrollEvent: function() {
+                    var _this = this;
+                    this.bgHeight = this.$refs.circle_bg.offsetHeight;
+                    window.addEventListener('scroll', function() {
+                        var scrollH = document.body.scrollTop;
+                        if (scrollH >= _this.bgHeight - _this.headerH) {
+                            if (_this.headerStatus != 1) {
+                                api.execScript({
+                                    frameName: 'circle_header_frm',
+                                    script: 'setHeader(1)'
+                                });
+                            }
+                        } else {
+                            if (_this.headerStatus != 2) {
+                                api.execScript({
+                                    frameName: 'circle_header_frm',
+                                    script: 'setHeader(2)'
+                                });
+                            }
+                        }
+                    });
+                },
+                chatSpace: function(isChat) {
+                    if (isChat) {
+                        this.$nextTick(() => {
+                            var container = this.$el.querySelector('.circle_container');
+                            if (this.panelHeight > 0) {
+                                document.querySelector('html').style.paddingBottom = this.panelHeight + this.inputBarHeight + api.safeArea.bottom + api.safeArea.top + 'px';
+                            } else {
+                                document.querySelector('html').style.paddingBottom = 60 + api.safeArea.bottom + 'px'
+                            }
+                        })
+                    } else {
+                        document.querySelector('html').style.paddingBottom = 0;
+                    }
+                },
+                getHeaderH: function(h) {
+                    this.headerH = h;
+                },
+                chat: function() {
+                    var _this = this;
+                    _this.chatSpace(false);
+                    _this.UIChatBox.open({
+                        placeholder: Pub.getLang('please_enter_a_comment'),
+                        maxRows: 6,
+                        emotionPath: 'widget://expression/emotion',
+                        texts: {
+                            sendBtn: {
+                                title: Pub.getLang('send')
+                            }
+                        },
+                        styles: {
+                            topDivider: {
+                                width: 1,
+                                color: '#eaeaea'
+                            },
+                            inputBar: {
+                                borderColor: '#f7f7f7',
+                                bgColor: '#f7f7f7'
+                            },
+                            inputBox: {
+                                borderColor: '#dddddd',
+                                bgColor: '#FFFFFF',
+                                borderColor: '#fff', //（可选项）字符串类型；输入框的边框颜色，支持 rgb，rgba，#；默认：'#B3B3B3'
+                                bgColor: '#fff', //（可选项）字符串类型；输入框的背景色，支持 rgb，rgba，#；默认：'#f2f2f2'
+                                boardBgColor: '#fff', //（可选项）字符串类型；面板的背景色(表情面板，附加面板)，支持 rgb，rgba，#；默认：'#f2f2f2'
+                                topMargin: 8, //（可选项）数字类型；输入框距离顶部的边距；默认：10
+                                borderCorner: 5, //(可选项)数字类型；默认：5
+                                leftIcon: 0
+                            },
+                            emotionBtn: {
+                                normalImg: 'widget://skin/default/images/chat/icon_expression.png'
+                            },
+                            keyboardBtn: {
+                                normalImg: ''
+                            },
+                            recordBtn: {
+                                normalBg: '#ffffff',
+                                activeBg: '#ccc',
+                                color: '#000',
+                                size: 14
+                            },
+                            indicator: {
+                                target: 'both',
+                                color: '#ffffff',
+                                activeColor: '#21b2ff'
+                            },
+                            sendBtn: {
+                                titleColor: '#ffffff',
+                                bg: '#21b2ff',
+                                activeBg: '#21b2ff',
+                                titleSize: 14
+                            }
+                        },
+                        isShowSendBtn: true,
+                        extras: {
+                            titleSize: 10,
+                            titleColor: '#a3a3a3',
+                            isAdaptScreenSize: false,
+                            btns: [{
+                                title: Pub.getLang('album'),
+                                normalImg: '../../skin/default/images/chat/icon_photo.png',
+                                activeImg: '../../skin/default/images/chat/icon_photo.png'
+                            }, {
+                                title: Pub.getLang('shot'),
+                                normalImg: '../../skin/default/images/chat/icon_shot.png',
+                                activeImg: '../../skin/default/images/chat/icon_shot.png'
+                            }, {
+                                title: Pub.getLang('red_packet'),
+                                normalImg: '../../skin/default/images/chat/icon_redpacket.png',
+                                activeImg: '../../skin/default/images/chat/icon_redpacket.png'
+                            }]
+                        }
+                    }, function(ret, err) {
+                        if (ret) {
+                            console.log(JSON.stringify(ret))
+                            if (ret.eventType == 'send') {
+                                _this.commentSend(ret.msg);
+                            }
+                            // 点击附件功能面板
+                            if (ret.eventType == 'clickExtras') {
+                                // ret.index : 0 => 相册；1 => 拍摄；2=> 发红包
+                                if (ret.index == 0) {
+                                    _this.albumEvent(function(data) {
+                                        var params = {
+                                            img: data,
+                                            type: 'album'
+                                        }
+                                        _this.sendImg('upload', params)
+                                    })
+                                }
+                                if (ret.index == 1) {
+                                    _this.cameraEvent(function(data) {
+                                        var params = {
+                                            img: data,
+                                            type: 'camera'
+                                        }
+                                        _this.sendImg('upload', params)
+                                    })
+                                }
+                                if (ret.index == 2) {
+                                    Pub.eventSend('chat_window_end');
+                                    Pub.openView('../redpacket/give_redpacket_win', {
+                                        pageParam: {
+                                            fid: _this.fid
+                                        }
+                                    });
+                                }
+                            }
+
+                        } else {
+                            console.log(JSON.stringify(err));
+                        }
+                    });
+                    // 监听键盘变化
+                    _this.UIChatBox.addEventListener({
+                        target: 'inputBar',
+                        name: 'move'
+                    }, function(ret, err) {
+                        if (ret) {
+                            console.log(JSON.stringify(ret));
+                            _this.panelHeight = ret.panelHeight;
+                            _this.inputBarHeight = ret.inputBarHeight;
+                            _this.chatSpace();
+                        } else {
+                            // alert(JSON.stringify(err));
+                        }
+                    });
+                    // 监听录音
+                    _this.UIChatBox.addEventListener({
+                        target: 'recordBtn',
+                        name: 'press'
+                    }, function(ret, err) {
+                        if (ret) {
+                            api.startRecord();
+
+                            // alert(JSON.stringify(ret));
+                        } else {
+                            alert(JSON.stringify(err));
+                        }
+                    });
+                    _this.UIChatBox.addEventListener({
+                        target: 'recordBtn',
+                        name: 'press_cancel'
+                    }, function(ret, err) {
+                        if (ret) {
+                            api.stopRecord(function(ret, err) {
+                                if (ret) {
+                                    console.log(JSON.stringify(ret));
+                                    var path = ret.path;
+                                    var duration = ret.duration;
+                                    if (duration < 1) return Pub.msg(Pub.getLang('voice_too_short'));
+                                    Pub.uploadImg('image', path, function(response) {
+                                        if (response) {
+                                            var param = {
+                                                type: 'amr',
+                                                path: response,
+                                                duration: duration
+                                            }
+                                            _this.sendAudio('upload', param);
+                                        }
+                                    });
+                                }
+                            });
+                            // alert(JSON.stringify(ret));
+                        } else {
+                            alert(JSON.stringify(err));
+                        }
+                    });
+                },
+                chatStatus: function(isShow) {
+                    if (isShow) {
+                        this.UIChatBox.show();
+                    } else {
+                        this.UIChatBox.hide();
+                    }
+                    this.chatSpace(isShow);
+                }
+            }
+        });
+    }
+</script>
+
+</html>

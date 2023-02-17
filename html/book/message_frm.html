@@ -1,0 +1,268 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <div class="book-verify-list" id="app">
+    <template>
+        <ul>
+          <li v-for="(item, index) in listData" :key="index">
+              <div class="avatar" @click="toInfo(item.sub_type, item.user.uid, item.id)" v-if="item.type == 'friend'">
+                <img :src="getAvatarCache(item.user.face)" :key="item.user.face" v-if="getAvatarCache(item.user.face)">
+                <img v-lazy="(item.user.face && item.user.face.indexOf('http') == -1)?(imgHost + item.user.face):item.user.face" :key="item.user.face" @load="loadImg(item.user.face)" v-else>
+              </div>
+              <div class="avatar" v-else>
+                <img :src="getAvatarCache(item.group.img)" :key="item.group.img" v-if="getAvatarCache(item.group.img)">
+                <img v-lazy="(item.group.img && item.group.img.indexOf('http') == -1)?(imgHost + item.group.img):item.group.img" :key="item.group.img" @load="loadImg(item.group.img)" v-else>
+              </div>
+              <div class="info" v-if="item.type == 'friend'" @touchStart="touchStartDel(item.id)" @touchEnd="toucheEndDel">
+                  <h3><span v-if="item.type=='group'"></span>{{item.user.uname}}</h3>
+                  <p>{{item.comment}}</p>
+              </div>
+              <div class="info" v-else @touchStart="touchStartDel(item.id)" @touchEnd="toucheEndDel">
+                  <h3><span v-if="item.type=='group'"></span>{{item.group.group_name}}</h3>
+                  <p>{{item.comment}}</p>
+              </div>
+              <div class="handle" v-if="item.type == 'friend'">
+                <a v-if="item.sub_type == 'add'" @click="pass(item.id)">{{lang.accept}}</a>
+                <span v-if="item.sub_type == 'approve' && uid == item.user.uid">{{lang.accepted}}</span>
+                <span v-if="item.sub_type == 'approve' && uid != item.user.uid">{{lang.adopted}}</span>
+              </div>
+              <div class="handle" v-else>
+                <a v-if="item.sub_type == 'invite'" @click="passGroup(item.id)">{{lang.agree_join_group}}</a>
+                <span v-if="item.sub_type == 'approve'">{{lang.agreed_join_group}}</span>
+              </div>
+          </li>
+        </ul>
+        <div class="default-box" v-show="isShowImg">
+          <img src="../../image/default/default_no_data.png">
+          <h3>{{lang.no_more}}</h3>
+        </div>
+      </template>
+    </div>
+
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script src="../../script/vue-lazyload.js"></script>
+<script type="text/javascript">
+    var timer = {};
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      Vue.use(VueLazyload, {
+        error: '../../icon/error.png',
+        loading: '../../icon/loading.gif'
+      });
+      var app = new Vue({
+        el: '#app',
+        data: {
+          uid: $api.getStorage('uid'),
+          imgHost: Pub.imgHost,
+          listData: [],
+          listDataInit: '',
+          isShowImg: false,
+          touchTimer: {},
+          avatarCache: {},
+          fs: api.require('fs'),
+          lang: {
+            accept: Pub.getLang("accept"),
+            accepted: Pub.getLang("accepted"),
+            adopted: Pub.getLang("adopted"),
+            agree_join_group: Pub.getLang("agree_join_group"),
+            agreed_join_group: Pub.getLang("agreed_join_group"),
+          }
+        },
+        mounted: function(){
+          var _this = this;
+          $api.rmStorage('avatar_cache');
+          this.avatarCache = $api.getStorage('avatar_cache') || {};
+          if(this.avatarCache && Object.keys(this.avatarCache).length > 0){
+            for(var i in this.avatarCache){
+              if(this.avatarCache.hasOwnProperty(i)){
+                _this.isExist(i,this.avatarCache[i]);
+              }
+            }
+          }
+          this.getDataInit();
+          Pub.eventListen("message_remove_all",function(){
+            console.log(JSON.stringify(_this.listData));
+            if(_this.listData.length==0) return Pub.msg("消息列表已清空！")
+            Pub.confirm("提示", "您确定要删除消息记录吗？", function(){
+              Pub.post(Pub.apiChat +'request/request/clear', {}, function(res){
+                if(res.code == 0){
+                  _this.getDataInit();
+                  Pub.msg("删除成功！")
+                }
+              }, true);
+            })
+          })
+          Pub.eventListen('book_count', function(ret){
+            _this.getData();
+          });
+          // timer = setInterval(function(){
+          //     _this.getData();
+          // }, 4000);
+          // Pub.eventListen('book_new_load', function(){
+          //     clearInterval(timer);
+          //     _this.getDataInit();
+          //     timer = setInterval(function(){
+          //         _this.getData()
+          //     }, 4000);
+          // });
+          // Pub.eventListen('book_new_end', function(){
+          //     clearInterval(timer);
+          // });
+          // Pub.eventListen('login', function(){
+          //   _this.getDataInit();
+          // });
+        },
+        methods: {
+          loadImg: function(img){
+            var _this = this;
+            var imgUrl = img.indexOf('http') == -1?(Pub.imgHost + img):img;
+            if(!this.avatarCache){
+              this.avatarCache = {};
+            }
+            api.imageCache({
+                url: imgUrl
+            }, function(ret, err) {
+                var url = ret.url;
+                if(JSON.stringify(_this.avatarCache).indexOf(window.encodeURI(img)) == -1 || !_this.avatarCache[window.encodeURI(img)]){
+                  _this.avatarCache[window.encodeURI(img)] = url;
+                  $api.setStorage('avatar_cache', _this.avatarCache);
+                }
+            });
+
+          },
+          getAvatarCache: function(img){
+            var _this = this;
+            var imgName = window.encodeURI(img);
+            if(this.avatarCache.hasOwnProperty(imgName)){
+              return _this.avatarCache[imgName];
+            }else{
+              return false;
+            }
+          },
+          isExist: function(i, img){
+            var _this = this;
+            this.fs.exist({
+                path: img
+            }, function(ret, err) {
+              if(!ret.exist){
+                _this.avatarCache[i] = '';
+              }
+            })
+          },
+          getDataInit: function(){
+            var _this = this;
+            Pub.post(Pub.apiChat +'request/request/list', {}, function(res){
+                console.log('新的好友:' + JSON.stringify(res));
+                if(res.code == 0){
+                  _this.listData = res.data;
+                  _this.listDataInit = JSON.stringify(res.data);
+                  if(_this.listData.length > 0){
+                    _this.isShowImg = false;
+                  }else{
+                    _this.isShowImg = true;
+                  }
+                }
+            }, true);
+          },
+          getData: function(){
+            var _this = this;
+            Pub.post(Pub.apiChat +'request/request/list', {}, function(res){
+                console.log('新的好友:' + JSON.stringify(res));
+                if(res.code == 0){
+                  if(JSON.stringify(res.data) != _this.listDataInit){
+                    _this.listData = res.data;
+                    _this.listDataInit = JSON.stringify(res.data);
+                    if(_this.listData.length > 0){
+                      _this.isShowImg = false;
+                    }else{
+                      _this.isShowImg = true;
+                    }
+                  }
+                }
+            }, true);
+          },
+          pass: function(id){
+            var _this = this;
+            var params = {
+                id: id,
+                approve: 1,
+                comment: ''
+            }
+            Pub.post(Pub.apiChat +'request/request/operation', params, function(res){
+                if(res.code == 0){
+                  _this.getDataInit();
+                  Pub.eventSend('book_count');
+                }
+            });
+          },
+          passGroup: function(id){
+            var _this = this;
+            var params = {
+                request_list_id: id,
+                decision: 1
+            }
+            Pub.post(Pub.apiChat +'group/decide_group_invite_app', params, function(res){
+                if(res.code == 0){
+                  _this.getDataInit();
+                  Pub.eventSend('book_count');
+                }
+            });
+          },
+          toInfo: function(type, id, passId){
+            var _this = this;
+            var isVerify = false;
+            if(type == 'add'){
+              isVerify = true;
+            }else{
+              isVerify = false;
+            }
+            Pub.openView('../chat/personal_info_win', {
+              pageParam: {
+                fid: id,
+                isVerify: isVerify,
+                passId: passId
+              }
+            });
+          },
+          touchStartDel: function(id){
+            var _this = this;
+            var ids = [];
+            ids.push(id);
+            _this.touchTimer = setTimeout(function(){
+              Pub.confirm(Pub.getLang("tip"), Pub.getLang("confirm_delete"), function(){
+                var params = {
+                  id_list: JSON.stringify(ids)
+                }
+                Pub.post(Pub.apiChat +'request/request/del', params, function(res){
+                  if(res.code == 0){
+                    _this.getData();
+                  }
+                });
+              });
+            }, 1000);
+          },
+          toucheEndDel: function(){
+            clearTimeout(this.touchTimer);
+          }
+        }
+      });
+    }
+</script>
+
+</html>

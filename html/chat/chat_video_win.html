@@ -1,0 +1,47 @@
+<!doctype html>
+<html class="bgc-gradual-gray">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+<body class="bgc-gradual-gray">
+ </body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+apiready = function() {
+    api.parseTapmode();
+    Pub.setStatusBar();
+    openFrame();
+    Pub.eventListen('keyback', function(){
+      Pub.confirm('提示', '您确定要挂断吗', function(){
+        Pub.eventSend('voice_hangup');
+      });
+    });
+    api.removeEventListener({
+        name: 'resume'
+    });
+    api.setKeepScreenOn({
+        keepOn: true
+    });
+    var ajpush = api.require('ajpush');
+    ajpush.setBadge({
+      badge:0
+    });
+}
+function openFrame(headerPos){
+     Pub.openFrame('./chat_video_frm',{},{bounces:false, reload: true, pageParam: api.pageParam});
+}
+function closeWin() {
+  api.setKeepScreenOn({
+      keepOn: false
+  });
+    api.closeWin();
+}
+</script>
+
+</html>

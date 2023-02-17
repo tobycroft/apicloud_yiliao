@@ -1,0 +1,203 @@
+@charset "UTF-8";
+@import "variable.less";
+
+.header-main{
+  position: relative;
+  width: 100%;
+  box-sizing: content-box;
+  -webkit-box-sizing: content-box;
+  background-color: @c-redpacket;
+  overflow: hidden;
+  .header{
+    position: relative;
+    display: table;
+    width: 100%;
+    vertical-align: middle;
+    .px2rem(height, 76);
+    a{
+      display: inline-block;
+      padding: 5px 6px;
+      &:active{
+      }
+    }
+    .header-left{
+      display: table-cell;
+      vertical-align: middle;
+      .px2rem(padding-left, 15);
+      i{
+        position: relative;
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        &.return{
+          &::after{
+            width: 10px;
+            height: 10px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            display: inline-block;
+            margin: 2px 0 0 2px;
+            content: "";
+            border-right: 2px solid #fff;
+            border-top: 2px solid #fff;
+            -webkit-transform: translate(-50%,-50%) rotate(-135deg);
+            transform: translate(-50%,-50%) rotate(-135deg);
+            .border-radius(2);
+          }
+        }
+      }
+    }
+    .header-middle {
+        position: absolute;
+        .px2rem(width, 340);
+        top: 50%;
+        left: 50%;
+        text-align: center;
+        .translate-50;
+        .fontSize(36);
+        color: @c-white;
+        line-height: 1!important;
+    }
+    .header-right{
+      display: table-cell;
+      vertical-align: middle;
+      text-align: right;
+      .px2rem(padding-right, 15);
+      a{
+        display: inline-block;
+        .px2rem(padding, 12);
+        color: @c-white;
+        img{
+          .px2rem(width, 76);
+        }
+      }
+    }
+  }
+}
+
+.mine-edit-container{
+  width: 100%;
+  .overflow-hidden;
+  .px2rem(padding-top, 30);
+  .px2rem(padding-left, 35);
+  .px2rem(padding-right, 35);
+  .avatar{
+    width: 100%;
+    img{
+      .px2rem(width, 124);
+      .px2rem(height, 124);
+      .border-radius-full;
+    }
+    p{
+      .px2rem(padding-top, 10);
+      .fontSize(30);
+      color: @c-gray-light;
+    }
+  }
+  .input-box{
+    width: 100%;
+    .px2rem(margin-top, 30);
+    .border(border-bottom, 1, @bd-primary);
+    &.bd-primary{
+      .border(border-bottom, 1, @c-primary)
+    }
+    .name{
+      .fontSize(30);
+      color: @c-black-lighter;
+      font-weight: bold;
+    }
+    .input{
+      width: 100%;
+      .px2rem(height, 80);
+      .px2rem(margin-top, 20);
+      input{
+        color: @c-primary;
+      }
+    }
+    .textarea{
+      width: 100%;
+      .px2rem(height, 100);
+      .px2rem(padding-top, 10);
+      textarea{
+        width: 100%;
+        height: 100%;
+      }
+    }
+  }
+  .limit{
+    width: 100%;
+    .px2rem(padding-top, 10);
+    text-align: right;
+    .fontSize(22);
+    color: @c-gray-light;
+  }
+  .tips{
+    width: 100%;
+    display: table;
+    vertical-align: middle;
+    .px2rem(padding-top, 10);
+    span{
+      display: table-cell;
+      vertical-align: middle;
+      .fontSize(22);
+      color: @c-gray-light;
+    }
+    label{
+      display: table-cell;
+      text-align: right;
+      vertical-align: middle;
+      .fontSize(24);
+      color: @c-gray-light;
+    }
+  }
+  .radio-box{
+    display: table;
+    width: 100%;
+    .px2rem(margin-top, 50);
+    .info{
+      display:table-cell;
+      vertical-align: middle;
+      h3{
+        .fontSize(30);
+        color: @c-black-lighter;
+      }
+      p{
+        .fontSize(24);
+        color: @c-gray-light;
+      }
+    }
+    .check{
+      display: table-cell;
+      vertical-align: middle;
+      text-align: right;
+    }
+  }
+}
+.chat-delete{
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 1001;
+  .translate-50;
+  .px2rem(width, 360);
+  background-color: @bgc-white;
+  .border-radius(10);
+  .overflow-hidden;
+  a{
+    display: block;
+    width: 100%;
+    .px2rem(height, 90);
+    text-align: center;
+    .fontSize(32);
+    color: @c-black;
+    .px2rem(line-height, 90);
+    .border(border-bottom, 1, @bd-primary);
+    &:last-child{
+      border-bottom: none;
+    }
+    &:active{
+      background-color: @bgc-active;
+    }
+  }
+}

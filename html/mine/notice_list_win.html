@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body>
+    <header class="hidden" id="header">
+        <div class="header">
+            <div class="header-left">
+                <a><i class="return" onclick="closeWin()"></i></a>
+            </div>
+            <div class="header-middle" id="name">
+            </div>
+            <!-- <div class="header-right">
+                <div class="all-read" onclick="readAll()" tapmode set-lang="text:all_reading">全部阅读</div>
+            </div> -->
+        </div>
+    </header>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        Pub.setStatusBar();
+        var header = $api.byId('header');
+        $api.fixStatusBar(header);
+        $('#header').removeClass('hidden');
+        var headerPos = $api.offset(header);
+        var type = api.pageParam.type;
+        if(type == '1'){
+          $('#name').text(Pub.getLang("system_message"))
+        }else if(type == '2'){
+          $('#name').text(Pub.getLang("user_message"))
+        }else if(type == '3'){
+          $('#name').text(Pub.getLang("recharge_message"))
+        }else if(type == '4'){
+          $('#name').text(Pub.getLang("withdraw_message"))
+        }
+        openFrame(headerPos);
+    }
+    function openFrame(headerPos) {
+        Pub.openFrame('./notice_list_frm', {
+            headerPos: headerPos,
+        }, {
+            bounces: false,
+            pageParam: api.pageParam,
+            bgColor: 'transparent'
+        });
+    }
+    function readAll(){
+        Pub.eventSend('read_all');
+    }
+    function closeWin() {
+      api.closeWin();
+    }
+</script>
+
+</html>

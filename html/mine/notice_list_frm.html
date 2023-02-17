@@ -1,0 +1,123 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0, minimum-scale=1.0, user-scalable=0, initial-scale=1.0, width=device-width" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body ontouchstart="">
+    <div id="app">
+        <template>
+            <div class="notice-list">
+                <div :class="['item',{'active': item.unread==0}]" v-for="(item,index) in listData" :key="index" @click="toDetail(item.id)">
+                    <div class="img">
+                        <div class="img-box"><img :src="item.img?item.img:'../../skin/default/images/icon/icon_notice_big.png'"></div>
+                    </div>
+                    <div class="info">
+                        <div class="name">{{item.title}}</div>
+                        <div class="time">
+                            {{item.date}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="nothing" v-show="isNomore">{{lang.no_more}}</div>
+        </template>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script>
+    apiready = function() {
+        api.parseTapmode();
+        Pub.setStatusBar();
+        initEvent();
+    }
+    function initEvent() {
+        var app = new Vue({
+            el: "#app",
+            data: {
+              type: api.pageParam.type,
+                listData: [],
+                isNomore: false,
+                lang:{
+                  no_more: Pub.getLang("no_more"),
+                }
+            },
+            mounted: function() {
+                var _this = this;
+                this.getData();
+                this.pullDown();
+                Pub.eventListen('notice_status', function(){
+                    _this.getData();
+                });
+            },
+            methods: {
+                getImg: function(img) {
+                    if (img) {
+                        if (img.indexOf('http') == -1) {
+                            return Pub.imgHost + img;
+                        } else {
+                            return img;
+                        }
+                    }
+                    return '';
+                },
+                getData: function(callback){
+                    var _this = this;
+                    var params = {
+                        type: this.type,
+                    }
+                    Pub.post('system/system_all', params, function(res){
+                        if(res.code == 0){
+                            _this.listData = res.data;
+                            if(_this.listData.length > 0){
+                                _this.isNomore = false;
+                            }else{
+                                _this.isNomore = true;
+                            }
+                        }
+                        if(callback && typeof callback === 'function'){
+                            callback();
+                        }
+                    });
+                },
+                toDetail: function(id,index){
+                    Pub.openView('./notice_detail_win', {
+                        pageParam: {
+                            id: id
+                        }
+                    });
+                },
+                readAll: function(){
+                    var _this = this;
+                    Pub.post('api/notice/allRead', {},function(res){
+                        if(res.code == 0){
+                            Pub.eventSend('notice_status');
+                            Pub.msg(res.echo);
+                            _this.getData();
+                        }
+                    });
+                },
+                pullDown: function(){
+                    var _this = this;
+                    Pub.pullDown(function(){
+                        _this.getData(function(){
+                            Pub.pullDownDone();
+                        });
+                    });
+                }
+            }
+        });
+    }
+</script>
+
+
+</html>

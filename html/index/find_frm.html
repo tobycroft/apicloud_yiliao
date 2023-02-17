@@ -1,0 +1,270 @@
+<!doctype html>
+<html class="bgc-primary">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bgc-primary">
+    <div id="app">
+        <template>
+      <!-- <div class="find-banner" @touchstart="touchstartBanner" @touchend="touchendBanner">
+        <div class="swiper-container">
+          <div class="swiper-wrapper">
+            <div class="swiper-slide" v-for="(item,index) in bannerData" :key="index">
+              <img :src="(item.pic.indexOf('http') == -1)?(imgHost + item.pic):item.pic">
+            </div>
+          </div>
+          <div class="swiper-pagination"></div>
+        </div>
+      </div> -->
+      <div class="group-cell-icon">
+        <ul>
+          <li class="link" @click="toPage('../circle/circle_win')" tapmode>
+            <div class="icon"><img src="../../skin/default/images/icon/icon_friend_circle.png"></div>
+            <div class="name">朋友圈</div>
+          </li>
+        </ul>
+        <ul class="mt-20">
+          <li class="link" onclick="scan()" tapmode>
+            <div class="icon"><img src="../../skin/default/images/icon/icon_scan_blue.png"></div>
+            <div class="name">扫一扫</div>
+            <div class="line"></div>
+          </li>
+          <!-- <li class="link" onclick="addFriend()" tapmode>
+            <div class="icon"><img src="../../skin/default/images/icon/icon_add_blue.png"></div>
+            <div class="name">加好友</div>
+          </li> -->
+        </ul>
+        <ul class="mt-20">
+          <li class="link" @click="toPage('../mall/mall_win')" tapmode>
+            <div class="icon"><img src="../../skin/default/images/icon/icon_buy.png"></div>
+            <div class="name">商城</div>
+          </li>
+        </ul>
+      </div>
+    </template>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/swiper.min.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+
+    function initEvent() {
+        var app = new Vue({
+            el: '#app',
+            data: {
+                imgHost: Pub.imgHost,
+                bannerData: [],
+                chooseType: 2,
+                type: 2,
+                amount: 0,
+                applyMenu: [],
+                applyData: [],
+                isShowall: false,
+                newsData: [],
+                circleData: [],
+                lang: {
+                    friend_circle: Pub.getLang("friend_circle"),
+                    application: Pub.getLang("application"),
+                    retract: Pub.getLang("retract"),
+                    more: Pub.getLang("more"),
+                    information: Pub.getLang("information"),
+                }
+            },
+            mounted: function() {
+                var _this = this;
+                this.openHeader();
+                this.getBanner();
+                this.pullDown();
+                // this.getCircleCount();
+                Pub.eventListen('language', function() {
+                    _this.lang = {
+                        friend_circle: Pub.getLang("friend_circle"),
+                        application: Pub.getLang("application"),
+                        retract: Pub.getLang("retract"),
+                        more: Pub.getLang("more"),
+                        information: Pub.getLang("information"),
+                    };
+                    Pub.setTabText();
+                });
+            },
+            methods: {
+                getBanner: function() {
+                    var _this = this;
+                    Pub.post('community/index/get_slideshow', {}, function(res) {
+                        if (res.code == 0) {
+                            _this.bannerData = res.data;
+                            _this.$nextTick(function() {
+                                _this.swiperEvent();
+                            });
+                        }
+                    });
+                },
+                swiperEvent: function() {
+                    var swiper = new Swiper('.swiper-container', {
+                        centeredSlides: true,
+                        spaceBetween: 0,
+                        slidesPerView: 'auto',
+                        loop: true,
+                        autoplay: true,
+                        observer: true,
+                        observeParents: true,
+                        pagination: {
+                            el: '.swiper-pagination',
+                        },
+                    })
+                },
+                touchstartBanner: function(e) {
+                    e.preventDefault();
+                    api.setFrameAttr({
+                        name: 'find_frm',
+                        bounces: false,
+                    });
+                },
+                touchendBanner: function(e) {
+                    e.preventDefault();
+                    api.setFrameAttr({
+                        name: 'find_frm',
+                        bounces: true,
+                    });
+                },
+
+                toPage: function(url) {
+                    Pub.openView(url);
+                },
+                pullDown: function() {
+                    var _this = this;
+                    Pub.pullDown(function() {
+                        _this.getBanner();
+                        // _this.getCircleCount();
+                        Pub.timeoutDo(function() {
+                            Pub.pullDownDone();
+                        }, 1000);
+                    });
+                },
+                openHeader: function() {
+                    api.openFrame({
+                        name: 'find_header_frm',
+                        url: './find_header_frm.html',
+                        rect: {
+                            x: 0,
+                            y: 0,
+                            w: 'auto',
+                            h: 50 + api.safeArea.top,
+                        },
+                        pageParam: {},
+                        bounces: false,
+                        bgColor: 'rgba(0,0,0,0)',
+                    });
+                },
+                unOpen: function() {
+                    Pub.msg("暂未开放，敬请期待！")
+                }
+            }
+        });
+    }
+
+    function scan() {
+        event.stopPropagation();
+        var FNScanner = api.require('FNScanner');
+        FNScanner.open({
+            autorotation: false,
+            //  hintText: $api.getLang('hintText'),
+            //  albumText: $api.getLang('albumText'),
+            //  lightText: $api.getLang('lightText'),
+            //  closeText: $api.getLang('closeText')
+        }, function(ret, err) {
+            if (ret) {
+                var content = ret.content;
+                if (content) {
+                    var contentParam = Pub.getUrlParams(content).add_options;
+                    if (contentParam) {
+                        var data = window.atob(Pub.getUrlParams(content).add_options);
+                        if (data) {
+                            var dataParams = JSON.parse(data);
+                            if (dataParams.type == 'group') {
+                                var id = dataParams.id;
+                                isIngroup($api.getStorage('uid'), id, function(data) {
+                                    if (data == 0) {
+                                        Pub.openView('../chat/group_verify_win', {
+                                            pageParam: {
+                                                id: id
+                                            }
+                                        });
+                                    } else {
+                                        Pub.openView('../chat/group_info_win', {
+                                            pageParam: {
+                                                id: id
+                                            }
+                                        });
+                                    }
+                                });
+
+                            } else if (dataParams.type == 'private') {
+                                var id = dataParams.id;
+                                Pub.openView('../chat/personal_info_win', {
+                                    pageParam: {
+                                        id: id,
+                                        type: 3
+                                    }
+                                });
+                            } else {
+                                Pub.msg(Pub.getLang("tip_scan"));
+                            }
+                        }
+                    } else {
+                        Pub.msg(Pub.getLang("tip_scan"));
+                    }
+
+
+                }
+            } else {
+                console.log(JSON.stringify(err));
+            }
+        });
+    }
+
+    function addFriend() {
+        event.stopPropagation();
+        var permission = 'contacts';
+        var resultList = api.hasPermission({
+            list: [permission]
+        });
+        if (resultList[0].granted) {
+            toContact();
+        } else {
+            api.confirm({
+                msg: '应用需要您的授权才能访问通讯录',
+                buttons: ['取消', '去设置']
+            }, function(ret) {
+                if (ret.buttonIndex == 2) {
+                    api.requestPermission({
+                        list: [permission],
+                    }, function(res) {
+                        if (res.list[0].granted) {
+                            toContact();
+                        }
+                    });
+                }
+            });
+        }
+    }
+    function toContact(){
+      Pub.openView("../chat/contact_book_win");
+    }
+</script>
+
+</html>

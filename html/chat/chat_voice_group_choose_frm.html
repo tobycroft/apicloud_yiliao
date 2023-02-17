@@ -1,0 +1,173 @@
+<!doctype html>
+<html class="bg-transparent">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+<body class="bg-transparent">
+    <div class="chat-voice-member-list" id="member_list">
+      <!-- <div class="item">
+        <div class="avatar">
+          <img src="../../icon/logo.png">
+        </div>
+        <div class="name">佳佳</div>
+        <div class="check"></div>
+      </div>
+      <div class="item active">
+        <div class="avatar">
+          <img src="../../icon/logo.png">
+        </div>
+        <div class="name">佳佳</div>
+        <div class="check"></div>
+      </div> -->
+    </div>
+    <script type="text/html" id="member_list_html">
+        {{if data.length > 0}}
+            {{each data}}
+              <div class="item"  data-fid="{{$value.user_info.uid}}"  data-img="{{$value.user_info.face}}"  data-name="{{$value.uname}}">
+                <div class="avatar">
+                  <img src="{{$value.user_info.face}}" class="img_url">
+                </div>
+                <div class="name">{{$value.user_info.uname}}</div>
+                <div class="check"></div>
+              </div>
+            {{/each}}
+        {{/if}}
+    </script>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/pinyin.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+  var checkArr = [], checkArrImg = [];
+  var id = '';
+  apiready = function() {
+      api.parseTapmode();
+      id = api.pageParam.id;
+      getData();
+      Pub.eventListen('vioce_search_word', function(ret){
+        if(ret){
+          var searchWord = ret.value.searchWord;
+          if(searchWord){
+            $('#member_list').find('.item').each(function(){
+              var thisName = $(this).find('.name').text();
+              if(thisName.toLowerCase().indexOf(searchWord.toLowerCase()) == -1){
+                $(this).hide();
+              }else{
+                $(this).show();
+              }
+            });
+          }else{
+            $('#member_list').find('.item').show();
+          }
+        }
+      });
+      Pub.eventListen('group_vioce_start', function(){
+        if(checkArr.length == 1) return Pub.msg('请选择成员');
+        if(checkArr.length > 9) return Pub.msg('不能超过9个成员');
+        var params = {
+          gid: id
+        }
+        Pub.post(Pub.apiChat +'chat/group_voice_chat', params, function(res){
+          if(res.code == 0){
+            Pub.openView('./chat_voice_group_win', {
+              pageParam: {
+                id: id,
+                channel: res.data.channel,
+                msgId: res.data.msg_id,
+                type: 'group',
+                members: checkArr,
+                isSender: true
+              }
+            });
+          }
+        });
+
+      });
+      // Pub.eventListen('invite_group', function(){
+      //     if(checkArr.length == 0) return Pub.msg('请选择联系人');
+      //     var params = {
+      //         gid: gid,
+      //         invited_uids: JSON.stringify(checkArr)
+      //     }
+      //     Pub.post(Pub.apiChat +'group/invite/invite_group', params, function(res){
+      //         if(res.code == 0){
+      //             Pub.msg(res.data);
+      //             Pub.eventSend('group_info');
+      //             setTimeout(function(){
+      //                 api.closeWin();
+      //                 Pub.setStatusBar();
+      //             }, 1000);
+      //         }
+      //     });
+      // });
+  }
+  function getData(){
+      var params = {
+          gid: id
+      }
+      Pub.post(Pub.apiChat +'group/group_member', params, function(res){
+          console.log('群成员:' + JSON.stringify(res));
+          if(res.code == 0){
+              var data = {};
+              memberData = res.data;
+              for(var i=0; i<memberData.length; i++){
+                if(memberData[i].user_info.uid == $api.getStorage('uid')){
+                  var checkObj = {
+                    id: memberData[i].user_info.uid,
+                    face: memberData[i].user_info.face
+                  };
+                  checkArr.push(checkObj);
+                  memberData.splice(i, 1);
+                }
+              }
+              data.data = memberData;
+              var html = template('member_list_html', data);
+              $('#member_list').html(html);
+              Pub.eventSend('member_choose', {
+                chooseMember: checkArr
+              });
+              $('.img_url').each(function(){
+                  var thisSrc = $(this).attr('src');
+                  if(thisSrc){
+                      if(thisSrc.indexOf('http') == -1){
+                          $(this).attr('src', Pub.imgHost + thisSrc);
+                      }
+                  }else{
+                      $(this).attr('src', '../../skin/default/images/default_avatar.png');
+                  }
+              });
+              $('#member_list').find('.item').on('click', function(){
+                var thisId = $(this).attr('data-fid'),
+                    thisImg = $(this).attr('data-img');
+                    console.log(thisId);
+                if($(this).hasClass('active')){
+                  $(this).removeClass('active');
+                  for(var i=0; i<checkArr.length; i++){
+                    if(checkArr[i].id == thisId){
+                      checkArr.splice(i, 1);
+                    }
+                  }
+                } else {
+                  $(this).addClass('active');
+                  var thisObj = {
+                    id: thisId,
+                    face: thisImg
+                  }
+                  checkArr.push(thisObj);
+                }
+                Pub.eventSend('member_choose', {
+                  chooseMember: checkArr
+                });
+              });
+          }
+      });
+  }
+</script>
+
+</html>

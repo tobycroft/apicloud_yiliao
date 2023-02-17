@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="">
+  <div class="bank-card-container">
+    <div id="bankCards">
+      <!-- <div class="card-ele">
+        <div class="icon"><embed src="../../skin/default/images/bank/icon_jianshe.svg" type="image/svg+xml" /></div>
+        <div class="info">
+          <p>建设银行</p>
+          <p>储蓄卡</p>
+          <p>**** **** **** 6694</p>
+        </div>
+        <div class="unbind">解除绑定</div>
+        <img src="../../skin/default/images/bank/bg_zhongxin.svg" alt="" class="bg">
+      </div> -->
+    </div>
+    <div class="add" onclick="Pub.openView('./add_bank_card_win')">
+      <img src="../../skin/default/images/icon/icon_extra_white.png" alt="">
+      <span>添加银行卡</span>
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/bank.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        getData();
+        Pub.eventListen("refresh_bank",function(res){
+          window.location.reload();
+        })
+    }
+    function getData(){
+      Pub.post("user/card/list",{},function(res){
+        console.log(JSON.stringify(res));
+        var html ="";
+        if(res.code==0){
+          for(var i = 0;i<res.data.length;i++){
+            var bankInfo = bankStr.filter(function(bankInfo) {return bankInfo.name == res.data[i].bank;});
+            html +='<div class="card-ele" onclick="unbindCard(this)" id="'+res.data[i].id+'">\
+              <div class="icon"><embed src="'+bankInfo[0].icon+'" type="image/svg+xml" /></div>\
+              <div class="info">\
+                <p>'+res.data[i].bank+'</p>\
+                <p>储蓄卡</p>\
+                <p>**** **** **** '+res.data[i].number.substring(res.data[i].number.length-4)+'</p>\
+              </div>\
+              <div class="unbind">解除绑定</div>\
+              <img src="'+bankInfo[0].bg+'" alt="" class="bg">\
+            </div>'
+          }
+          $("#bankCards").append(html)
+        }
+      })
+    }
+    function unbindCard(el){
+      Pub.confirm("","确定解除绑定？",function(){
+        var id = $(el).attr("id");
+        Pub.post("user/card/delete",{id:id},function(res){
+          if(res.code==0){
+            Pub.msg(res.echo);
+            window.location.reload();
+          }
+        })
+      })
+    }
+
+</script>
+
+</html>

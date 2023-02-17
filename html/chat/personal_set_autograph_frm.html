@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body ontouchstart="">
+  <div id="app">
+    <template>
+      <div class="group-name-edit">
+    <div class="title" set-lang="text:signature">个性签名</div>
+    <div class="textarea">
+        <textarea placeholder="请设置个性签名" set-lang="placeholder:please_enter_sign" maxlength="50" v-model="content" @input="contentInput"></textarea>
+        <div class="close" @click="clearName" tapmode set-lang="text:reset">重置</div>
+        <div class="font-num"><span>{{fontNum}}</span>/50</div>
+      </div>
+    </div>
+    </template>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        initEvent();
+    }
+    function initEvent(){
+      var app = new Vue({
+        el: '#app',
+        data: {
+          fontNum: 0,
+          content: api.pageParam.data.introduction || '',
+          data : api.pageParam.data
+        },
+        mounted: function(){
+          var _this = this;
+          Pub.eventListen('personal_set_sign', function(){
+            _this.clickSubmit();
+          }) },
+        methods: {
+          contentInput: function(){
+            if(this.content){
+              this.fontNum = this.content.length;
+            }else{
+              this.fontNum = '';
+            }
+          },
+          clearName: function(){
+            this.content = '';
+            this.fontNum = 0;
+          },
+          clickSubmit: function(){
+            var _this = this;
+            if(!this.content) return Pub.msg(Pub.getLang("please_enter_sign"));
+            // var params = {
+            //   introduction: this.content
+            // }
+            _this.data.introduction = this.content
+            Pub.post('user/edit/edit_info', _this.data, function(res){
+              if(res.code == 0){
+                Pub.eventSend('update_userinfo');
+                api.closeWin();
+              }
+            });
+          }
+        }
+      })
+    }
+</script>
+
+</html>

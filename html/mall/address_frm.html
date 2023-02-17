@@ -1,0 +1,146 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+</head>
+<body class="address_page">
+  <div class="address_content">
+    <div class="address_input_ele">
+      <input type="text" placeholder="收货人姓名" id="username">
+    </div>
+    <div class="address_input_ele">
+      <input type="tel" placeholder="手机号码" id="phone">
+    </div>
+    <div class="address_input_ele" onclick="choose_city()">
+      <p id="city">所在地区</p>
+      <img src="../../skin/default/images/icon/icon_triangle_down_gray.png" class="next_page_icon">
+    </div>
+    <div class="address_input_ele">
+      <input type="text" placeholder="详细地址" id="address">
+    </div>
+  </div>
+  <div class="address_bottom">
+    <button onclick="add_addr()">确认</button>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script>
+var UIActionSelector;
+var province;
+var city;
+var area;
+var id;
+var data = {};
+  apiready = function(){
+    UIActionSelector = api.require('UIActionSelector');
+    getAddress();
+  }
+  function close_win(){
+    api.closeWin();
+  }
+  function getAddress(){
+    Pub.post(Pub.imgHost + 'shop/addr/index/list',{},function(res){
+      if(res.code == 0){
+        if(res.data.length>0){
+          data = res.data[0];
+          $("#username").val(data.name);
+          $("#phone").val(data.phone);
+          $("#city").html(data.provience+data.city+data.state);
+          $("#address").val(data.address);
+        }
+      }
+    })
+  }
+  function choose_city(){
+    UIActionSelector.open({
+        datas: 'widget://res/city.json',
+        layout: {
+            row: 5,
+            col: 3,
+            height: 30,
+            size: 12,
+            sizeActive: 14,
+            rowSpacing: 5,
+            colSpacing: 10,
+            maskBg: 'rgba(0,0,0,0.2)',
+            bg: '#fff',
+            color: '#888',
+            colorActive: '#f00',
+            colorSelected: '#f00'
+        },
+        animation: true,
+        cancel: {
+            text: '取消',
+            size: 12,
+            w: 90,
+            h: 35,
+            bg: '#fff',
+            bgActive: '#ccc',
+            color: '#888',
+            colorActive: '#fff'
+        },
+        ok: {
+            text: '确定',
+            size: 12,
+            w: 90,
+            h: 35,
+            bg: '#fff',
+            bgActive: '#ccc',
+            color: '#888',
+            colorActive: '#fff'
+        },
+        title: {
+            text: '请选择',
+            size: 12,
+            h: 44,
+            bg: '#eee',
+            color: '#888'
+        },
+        fixedOn: api.frameName
+    }, function(ret, err) {
+        if (ret){
+          if(!ret.level1||ret.level1=="undefined"){
+            console.log("xxxxxxx");
+            $("#city").html("所在地区");
+          }else{
+            $("#city").html(ret.level1+ret.level2+ret.level3);
+            data.provience = ret.level1;
+            data.city = ret.level2;
+            data.state = ret.level3;
+          }
+        }
+    });
+  }
+  function add_addr(){
+    data.address = $("#address").val();
+    data.name = $("#username").val();
+    data.phone = $("#phone").val();
+    data.is_default = 1;
+    if(!data.address||!data.provience||!data.city||!data.name||!data.phone){
+      api.toast({msg: "请填写完整信息！"});
+    }else if(!(/^1[3456789]\d{9}$/.test(data.phone)) && data.country_code=="86"){
+      api.toast({msg: "请填写正确的手机号！"});
+    }else{
+      console.log(JSON.stringify(data));
+      Pub.post(Pub.imgHost + 'shop/addr/index/add',data,function(res){
+        console.log(JSON.stringify(res));
+        if(res.code==0){
+          api.toast({msg: "保存成功！"});
+          // Pub.openView('./my_address_win');
+          // api.sendEvent({
+          //     name: 'reload_address_list',
+          //     extra: {
+          //     }
+          // });
+
+        }
+      })
+    }
+  }
+</script>

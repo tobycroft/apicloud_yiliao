@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>lechat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body>
+  <div class="group-name-edit">
+    <div class="title" set-lang="text:friend_note">好友备注</div>
+    <div class="input">
+      <input type="text" maxlength="10" id="remark" placeholder="请设置好友备注" set-lang="placeholder:please_set_friend_note">
+      <div class="close" onclick="clearName()">×</div>
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/template.js"></script>
+<script type="text/javascript">
+    var fid = '';
+    apiready = function() {
+        api.parseTapmode();
+        if(api.pageParam.fid){
+          fid = api.pageParam.fid
+        }
+        if(api.pageParam.remark){
+          $('#remark').val(api.pageParam.remark);
+        }
+        Pub.eventListen('personal_remark', function(){
+          var remark = $('#remark').val();
+          var params = {
+            fid: fid,
+            uname: remark
+          }
+          Pub.post(Pub.apiChat +'friend/info/uname_set', params, function(res){
+            console.log('好友备注' + JSON.stringify(res))
+            if(res.code == 0){
+              Pub.eventSend('personal_info',{
+                uid: fid,
+                nickname: remark,
+              });
+              Pub.eventSend("update_userinfo");
+              setTimeout(function(){
+                api.closeWin();
+              }, 1000);
+            }
+          });
+        });
+    }
+    function clearName(){
+      $('#remark').val('');
+    }
+</script>
+
+</html>

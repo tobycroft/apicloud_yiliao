@@ -1,0 +1,39 @@
+<!doctype html>
+<html class="bg-transparent">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body class="bg-transparent">
+    <div class="shade-black" style="display: block;" onclick="api.closeFrame()" tapmode></div>
+    <div class="circle-popup" id="choose">
+      <a class="active-primary" data-type="public" set-lang="text:public_everyone_can_see">公开——众人皆可见</a>
+      <a class="active-primary" data-type="private" set-lang="text:only_myself_can_see">仅自己可见</a>
+    </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+        api.parseTapmode();
+        clickEvent();
+    }
+    function clickEvent(){
+      $('#choose').find('a').on('click', function(){
+        var thisType = $(this).attr('data-type');
+        Pub.eventSend('authority_type',{
+          type: thisType
+        });
+        api.closeFrame();
+      });
+    }
+</script>
+
+</html>

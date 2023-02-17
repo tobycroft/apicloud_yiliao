@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title>chat</title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+
+<body>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/public.js"></script>
+<script type="text/javascript">
+    var url = '';
+    apiready = function() {
+        api.parseTapmode();
+        url = api.pageParam.url;
+        clip();
+        Pub.eventListen('circle_bg_clip', function(){
+            var randomString = Math.random().toString(36).substr(2);
+            console.log(randomString)
+            var FNImageClip = api.require('FNImageClip');
+            FNImageClip.save({
+                destPath: 'fs://imgae_clipper'+ randomString +'.jpg',
+                copyToAlbum: false,
+                quality: 1
+            }, function(ret, err) {
+                if (ret) {
+                  var files = [];
+                  var imgOptim = api.require('imageOptim');
+                  console.log('图片路径:' + ret.destPath);
+                  imgOptim.compress({ quality: .8, width: 500, imgPath: ret.destPath, destinationPath: ret.destPath }, function (rets, errs) {
+                    console.log('图片压缩成功'+JSON.stringify(rets));
+                    console.log('图片压缩成功'+JSON.stringify(errs));
+                      if (rets) {
+                        var imgSrc = rets.imgPath;
+                        files.push(imgSrc);
+                        Pub.uploadImg(files, function(img){
+                          var params = {
+                              bg: img
+                          }
+                          console.log('图片参数' + JSON.stringify(params));
+                          Pub.post(Pub.apiChat + 'circle/operation/bg', params, function(res){
+                              console.log('图片上传' + JSON.stringify(res))
+                              if(res.code == 0){
+                                Pub.msg(res.echo || Pub.getLang("set_success"));
+                                Pub.eventSend('circle_info_update');
+                                setTimeout(function(){
+                                    api.closeWin();
+                                }, 1000);
+                              }
+                          });
+
+                        });
+                      } else {
+                      }
+                  });
+
+
+                } else {
+                    console.log(JSON.stringify(err));
+                }
+            });
+        });
+    }
+    function clip(){
+        var FNImageClip = api.require('FNImageClip');
+         FNImageClip.open({
+             rect: {
+                 x: 0,
+                 y: 0
+             },
+             mode: 'clip',
+             srcPath: url,
+             style: {
+                 mask: 'rgba(0,0,0,.5)',
+                 clip: {
+                     x: (api.winWidth - 300) / 2,
+                     y:(api.winHeight - 300) / 2,
+                     w: 300,
+                     h: 300,
+                     borderColor: '#21b2ff',
+                     borderWidth: 0,
+                     appearance: 'rectangle'
+                 }
+             },
+             fixedOn: api.frameName
+         }, function(ret, err) {
+             if (ret) {
+                 console.log(JSON.stringify(ret));
+             } else {
+                 console.log(JSON.stringify(err));
+             }
+         });
+    }
+</script>
+
+</html>

@@ -1,0 +1,168 @@
+<!doctype html>
+<html class="bgc-primary">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no, email=no, date=no, address=no" />
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../../skin/default/css/main/main.css" id="skin" />
+    <script src="../../script/language.js"></script>
+</head>
+<body class="bgc-primary">
+  <div class="order-detail-container">
+    <div class="post-status">
+      <p id="postStatus"></p>
+    </div>
+    <div class="address">
+      <img src="../../skin/default/images/mall/icon_position.png" alt="" class="icon">
+      <div class="address-text">
+        <p><span id="receiver"></span><span class="phone" id="phone"></span></p>
+        <p id="address"></p>
+      </div>
+    </div>
+    <div class="order-info">
+      <div class="shop-name">
+        <p id="shopName"></p>
+      </div>
+      <div class="goods-info" id="content">
+        <!-- <div class="list">
+          <img src="../../skin/default/images/mall/demo2.png" alt="" class="img">
+          <div class="name">
+            <p>日式寿司生鱼片高端食材进口活三文鱼现片</p>
+            <p>规格：64GB</p>
+          </div>
+          <div class="price">
+            <p>$10299.00</p>
+            <p>X 1件</p>
+          </div>
+        </div> -->
+      </div>
+      <div class="post-way">
+        <p set-lang="text:freight">运费</p>
+        <p id="freight"></p>
+      </div>
+      <div class="message">
+        <input type="text" placeholder="给卖家留言" set-lang="placeholder:Leave_a_message_to_the_seller" readonly="readonly" id="message">
+      </div>
+      <div class="total-price">
+        <p><font set-lang="text:total">共</font><span id="num"></span><font set-lang="text:piece">件</font><font set-lang="text:goods">商品</font>，<font set-lang="text:Total_price">总价</font>：</p>
+        <p><span id="price"></span></p>
+      </div>
+    </div>
+    <div class="order-message">
+      <div class="name">
+        <p set-lang="text:Order_information">订单信息</p>
+      </div>
+      <div class="detail">
+        <p><font set-lang="text:Order_No">订单编号</font>：<span id="orderNo"></span><span class="copy" onclick="copy('orderNo')" set-lang="text:copy">复制</span></p>
+        <!-- <p>创建时间：<span id="orderNo">xxxxxxxxxxxx</span></p> -->
+        <p><font set-lang="text:Order_time">订单时间</font>：<span id="orderTime"></span></p>
+      </div>
+      <div class="detail" id="postInfo">
+        <p><font set-lang="text:Express_No">快递编号</font>：<span id="postOrder"></span><span class="copy" onclick="copy('postOrder')" set-lang="text:copy">复制</span></p>
+        <p><font set-lang="text:Express_belongs_to">快递所属</font>：<span id="postCompany"></span></p>
+      </div>
+    </div>
+    <div class="btn" id="confirm" set-lang="text:Confirm_receipt">
+      确认收货
+    </div>
+  </div>
+</body>
+<script src="../../script/jquery.min.js"></script>
+<script src="../../script/api.js"></script>
+<script src="../../script/swiper.min.js"></script>
+<script src="../../script/public.js"></script>
+<script src="../../script/vue.min.js"></script>
+<script type="text/javascript">
+var data;
+apiready = function() {
+    api.parseTapmode();
+    getData();
+}
+function getData(){
+  data = api.pageParam;
+  console.log(JSON.stringify(data));
+  var html = "";
+  var num = 0;
+  if(data.status==1){
+    $("#postStatus").html(Pub.getLang("To_be_send"));
+  }else if(data.status==2){
+    $("#postStatus").html(Pub.getLang("Shipped"));
+  }else if(data.status==3){
+    $("#postStatus").html(Pub.getLang("Received"));
+  }else{
+    $("#postStatus").html(Pub.getLang("Evaluated"));
+  }
+  if(data.status==1){
+    $("#postInfo").addClass("hide");
+  }else{
+    $("#postInfo").removeClass("hide");
+    $("#postOrder").html(data.kd_no);
+    $("#postCompany").html(data.kd_name);
+  }
+  if(data.status!=2){
+    $("#confirm").addClass("hide");
+  }else{
+    $("#confirm").removeClass("hide");
+  }
+  $("#receiver").html(data.username);
+  $("#phone").html(data.phone);
+  if(data.address.indexOf("非中国")!=-1){
+    var address = data.address.replace('非中国非中国非中国', '');
+    $("#address").html(address.split(",")[0]+address.split(",")[2]+"("+Pub.getLang("Zip_code")+"："+address.split(",")[1]+")");
+  }else{
+    $("#address").html(data.address);
+  }
+  $("#shopName").html(data.store_name);
+  if(Number(data.freight)!=0){
+    if(data.price_type==1){
+      $("#freight").html("$"+data.freight);
+    }else{
+      $("#freight").html(data.freight+" nems");
+    }
+
+  }else{
+    $("#freight").html(Pub.getLang("free_shipping"));
+  }
+  $("#message").val(data.message || Pub.getLang("No_message"));
+  for(var i = 0;i<data.order_info.length;i++){
+    num += data.order_info[i].num;
+    if(data.order_info[i].pic.indexOf('http')==-1){
+      data.order_info[i].pic = Pub.imgHost+data.order_info[i].pic
+    }
+    html += '<div class="list">\
+      <img src="'+data.order_info[i].pic+'" alt="" class="img">\
+      <div class="name">\
+        <p>'+data.order_info[i].good_name+'</p>\
+        <p>'+Pub.getLang("Specifications")+'：'+data.order_info[i].combo_name+'</p>\
+      </div>\
+      <div class="price">'
+      if(data.price_type==1){
+        html += '<p>$'+data.order_info[i].price+'</p>'
+      }else{
+        html += '<p>'+data.order_info[i].price+' nems</p>'
+      }
+        html += '<p>X '+data.order_info[i].num+''+Pub.getLang("piece")+'</p>\
+      </div>\
+    </div>'
+  }
+  $("#content").html(html);
+  $("#num").html(num);
+  if(data.price_type==1){
+    $("#price").html("$"+data.price);
+  }else{
+    $("#price").html(data.price+" nems");
+  }
+
+  $("#orderNo").html(data.order_no);
+  $("#orderTime").html(data.order_date);
+  // $("#orderNo").html(data.order_no);
+  // $("#orderNo").html(data.order_no);
+
+}
+function copy(name){
+  Pub.copy($("#"+name).html());
+}
+</script>
+
+</html>
